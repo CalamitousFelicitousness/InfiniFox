@@ -1,0 +1,134 @@
+:root {
+  --primary-bg-color: #1a1a1a;
+  --secondary-bg-color: #2a2a2a;
+  --primary-text-color: #ffffff;
+  --secondary-text-color: #a0a0a0;
+  --accent-color: #646cff;
+  --border-color: #444444;
+  --font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  background-color: var(--primary-bg-color);
+  color: var(--primary-text-color);
+}
+
+.app-layout {
+  display: flex;
+  height: 100vh;
+}
+
+.canvas-container {
+  flex-grow: 1;
+  overflow: hidden; /* Prevent scrollbars on the container */
+}
+
+
+.loader {
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--accent-color);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  z-index: 1000;
+}
+
+.control-panel {
+  width: 350px;
+  background-color: var(--secondary-bg-color);
+  padding: 1rem;
+  border-right: 1px solid var(--border-color);
+  overflow-y: auto;
+}
+
+.panel-header {
+  margin-bottom: 2rem;
+}
+
+.generation-panel h3 {
+  margin-top: 0;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--secondary-text-color);
+}
+
+.form-group textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background-color: var(--primary-bg-color);
+  color: var(--primary-text-color);
+.panel-header h2 {
+  margin: 0;
+}
+
+h3 {
+}
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+
+.generate-btn {
+.size-inputs {
+  display: flex;
+  gap: 1rem;
+  border: none;
+  border-radius: 4px;
+textarea, select, input[type="number"] {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background-color: var(--primary-bg-color);
+  color: var(--primary-text-color);
+  margin-bottom: 1rem;
+  box-sizing: border-box;
+}
+
+textarea {
+  min-height: 80px;
+}
+
+.number-input-group, .slider-group, .dropdown-group, form label {
+  color: white;
+  margin-bottom: 1rem;
+  color: var(--secondary-text-color);
+}
+
+.number-input-group label, .slider-group label, .dropdown-group label {
+  cursor: pointer;
+}
+
+.tabs {
+  display: flex;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tabs button {
+  flex: 1;
+  padding: 0.75rem;
+  border: none;
+  background-color: transparent;
+  color: var(--secondary-text-color);
+  cursor: pointer;
+  font-size: 0.9rem;
+  border-bottom: 2px solid transparent;
+}
+
+.tabs button.active {
+  color: var(--primary-text-color);
+  border-bottom: 2px solid var(--accent-color);
