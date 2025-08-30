@@ -1,0 +1,39 @@
+.canvas-container {
+  position: relative;
+  flex-grow: 1;
+  overflow: hidden;
+  background-color: var(--primary-bg-color);
+  background-image: 
+    linear-gradient(45deg, #1a1a1a 25%, transparent 25%),
+    linear-gradient(-45deg, #1a1a1a 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #1a1a1a 75%),
+    linear-gradient(-45deg, transparent 75%, #1a1a1a 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}
+
+.canvas-controls {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 100;
+  display: flex;
+  gap: 0.5rem;
+  background-color: var(--secondary-bg-color);
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.canvas-controls button {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+}
+
+.zoom-level {
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  color: var(--secondary-text-color);
+  font-size: 0.9rem;
+}

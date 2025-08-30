@@ -1,0 +1,68 @@
+.image-upload {
+  margin-bottom: 1rem;
+}
+
+.upload-area {
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: var(--primary-bg-color);
+  position: relative;
+}
+
+.upload-area:hover {
+  border-color: var(--accent-color);
+  background-color: rgba(100, 108, 255, 0.05);
+}
+
+.upload-area.dragging {
+  border-color: var(--accent-color);
+  background-color: rgba(100, 108, 255, 0.1);
+}
+
+.upload-area input[type="file"] {
+  display: none;
+}
+
+.upload-prompt {
+  color: var(--secondary-text-color);
+  font-size: 0.9rem;
+}
+
+.upload-prompt span {
+  color: var(--accent-color);
+  text-decoration: underline;
+}
+
+.image-preview {
+  margin-top: 1rem;
+  position: relative;
+}
+
+.image-preview img {
+  max-width: 100%;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+.image-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--secondary-text-color);
+}
+
+.clear-image-btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  background-color: var(--secondary-bg-color);
+  border: 1px solid var(--border-color);
+  color: var(--secondary-text-color);
+  cursor: pointer;
+  border-radius: 4px;
+}
