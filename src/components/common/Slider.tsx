@@ -1,3 +1,5 @@
+import { useRef, useState, useEffect } from 'preact/hooks'
+
 import './Slider.css'
 
 interface SliderProps {
@@ -19,11 +21,91 @@ export function Slider({
   step = 1,
   disabled = false,
 }: SliderProps) {
+  const sliderRef = useRef<HTMLDivElement>(null)
+  const trackRef = useRef<HTMLDivElement>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [showTooltip, setShowTooltip] = useState(false)
+
+  const updateValueFromPointer = (e: PointerEvent) => {
+    if (!trackRef.current || disabled) return
+    
+    const rect = trackRef.current.getBoundingClientRect()
+    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width))
+    const percentage = x / rect.width
+    const newValue = min + (max - min) * percentage
+    
+    // Snap to step
+    const steppedValue = Math.round(newValue / step) * step
+    const clampedValue = Math.max(min, Math.min(max, steppedValue))
+    
+    onInput(clampedValue)
+  }
+
+  useEffect(() => {
+    const handlePointerMove = (e: PointerEvent) => {
+      if (isDragging) {
+        e.preventDefault()
+        updateValueFromPointer(e)
+      }
+    }
+
+    const handlePointerUp = (e: PointerEvent) => {
+      if (isDragging) {
+        setIsDragging(false)
+        setShowTooltip(false)
+        document.body.style.userSelect = ''
+      }
+    }
+
+    if (isDragging) {
+      document.addEventListener('pointermove', handlePointerMove)
+      document.addEventListener('pointerup', handlePointerUp)
+      document.addEventListener('pointercancel', handlePointerUp)
+    }
+
+    return () => {
+      document.removeEventListener('pointermove', handlePointerMove)
+      document.removeEventListener('pointerup', handlePointerUp)
+      document.removeEventListener('pointercancel', handlePointerUp)
+    }
+  }, [isDragging])
+
+  const handlePointerDown = (e: PointerEvent) => {
+    if (disabled) return
+    e.preventDefault()
+    setIsDragging(true)
+    setShowTooltip(true)
+    document.body.style.userSelect = 'none'
+    updateValueFromPointer(e)
+  }
+
+  const percentage = ((value - min) / (max - min)) * 100
+
   return (
-    <div class="slider-group">
+    <div class="slider-group" ref={sliderRef}>
       <label>
         {label}: {value}
       </label>
+      <div 
+        class="slider-track" 
+        ref={trackRef}
+        onPointerDown={handlePointerDown}
+        style={{ opacity: disabled ? 0.5 : 1 }}
+      >
+        <div 
+          class="slider-fill" 
+          style={{ width: `${percentage}%` }}
+        />
+        <div 
+          class="slider-thumb" 
+          style={{ left: `${percentage}%` }}
+        >
+          {showTooltip && (
+            <div class="slider-tooltip">{value}</div>
+          )}
+        </div>
+      </div>
+      {/* Keep native input as fallback/accessibility */}
       <input
         type="range"
         min={min}
@@ -32,6 +114,8 @@ export function Slider({
         value={value}
         onInput={(e) => onInput(parseFloat(e.currentTarget.value))}
         disabled={disabled}
+        style={{ display: 'none' }}
+        aria-label={label}
       />
     </div>
   )

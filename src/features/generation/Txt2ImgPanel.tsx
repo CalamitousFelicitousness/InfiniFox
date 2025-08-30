@@ -3,6 +3,7 @@ import { useEffect } from 'preact/hooks'
 import { Dropdown } from '../../components/common/Dropdown'
 import { NumberInput } from '../../components/common/NumberInput'
 import { Slider } from '../../components/common/Slider'
+import { Tooltip } from '../../components/common/Tooltip'
 import { useStore } from '../../store/store'
 import './Txt2ImgPanel.css'
 
@@ -53,11 +54,14 @@ export function Txt2ImgPanel() {
         />
 
         <label>Negative Prompt</label>
+        <Tooltip content="Describe what you DON'T want to see in the image">
         <textarea
           value={negativePrompt}
           onInput={(e) => setNegativePrompt(e.currentTarget.value)}
           disabled={isLoading}
+          placeholder="Things to avoid in the generation..."
         />
+        </Tooltip>
 
         <Dropdown
           label="Sampler"
@@ -67,13 +71,16 @@ export function Txt2ImgPanel() {
           disabled={isLoading}
         />
 
+        <Tooltip content="Use -1 for a random seed">
         <NumberInput
           label="Seed"
           value={seed}
           onInput={(val) => setSeed(val)}
           disabled={isLoading}
         />
+        </Tooltip>
 
+        <Tooltip content="More steps = higher quality but slower generation">
         <Slider
           label="Steps"
           value={steps}
@@ -83,7 +90,9 @@ export function Txt2ImgPanel() {
           step={1}
           disabled={isLoading}
         />
+        </Tooltip>
 
+        <Tooltip content="How closely to follow the prompt (7-9 is usually best)">
         <Slider
           label="CFG Scale"
           value={cfgScale}
@@ -93,6 +102,7 @@ export function Txt2ImgPanel() {
           step={0.5}
           disabled={isLoading}
         />
+        </Tooltip>
 
         <div class="size-inputs">
           <NumberInput
@@ -109,9 +119,11 @@ export function Txt2ImgPanel() {
           />
         </div>
 
+        <Tooltip content="Ctrl/Cmd + Enter">
         <button type="submit" class="generate-btn" disabled={isLoading}>
           {isLoading ? 'Generating...' : 'Generate'}
         </button>
+        </Tooltip>
       </form>
     </>
   )

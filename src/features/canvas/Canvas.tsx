@@ -1,8 +1,10 @@
-import { useEffect, useState, useRef } from 'preact/hooks'
 import Konva from 'konva'
+import { useEffect, useState, useRef } from 'preact/hooks'
 import { Stage, Layer, Image as KonvaImage, Transformer } from 'react-konva'
 
+import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
 import { useStore } from '../../store/store'
+import { preventDefaultTouch } from '../../utils/pointerEvents'
 
 import { CanvasContextMenu } from './CanvasContextMenu'
 import './Canvas.css'
@@ -21,7 +23,12 @@ export function Canvas() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [scale, setScale] = useState(1)
   const [position, setPosition] = useState({ x: 0, y: 0 })
-  const [contextMenu, setContextMenu] = useState<{ visible: boolean; x: number; y: number; imageId: string | null }>({
+  const [contextMenu, setContextMenu] = useState<{
+    visible: boolean
+    x: number
+    y: number
+    imageId: string | null
+  }>({
     visible: false,
     x: 0,
     y: 0,
@@ -29,6 +36,25 @@ export function Canvas() {
   })
   const stageRef = useRef<Konva.Stage>(null)
   const transformerRef = useRef<Konva.Transformer>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Prevent default touch behaviors on canvas
+  useEffect(() => {
+    const container = containerRef.current
+    if (container) {
+      preventDefaultTouch(container)
+    }
+  }, [])
+
+  // Setup keyboard shortcuts
+  useKeyboardShortcuts({
+    onDelete: () => {
+      if (selectedId) {
+        removeImage(selectedId)
+        setSelectedId(null)
+      }
+    },
+  })
 
   useEffect(() => {
     const imagePromises = images.map((imgData) => {
@@ -47,7 +73,7 @@ export function Canvas() {
     if (transformerRef.current && stageRef.current) {
       const stage = stageRef.current
       const transformer = transformerRef.current
-      
+
       if (selectedId) {
         const selectedNode = stage.findOne(`#${selectedId}`)
         if (selectedNode) {
@@ -85,7 +111,10 @@ export function Canvas() {
     })
   }
 
-  const handleContextMenu = (e: Konva.KonvaEventObject<PointerEvent>, imageId: string) => {
+  const handleContextMenu = (
+    e: Konva.KonvaEventObject<PointerEvent | MouseEvent>,
+    imageId: string
+  ) => {
     e.evt.preventDefault()
     const stage = stageRef.current
     if (!stage) return
@@ -99,8 +128,11 @@ export function Canvas() {
     })
   }
 
-  const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    // Deselect if clicking on empty area
+  const handleStagePointerDown = (
+    e: Konva.KonvaEventObject<PointerEvent | MouseEvent | TouchEvent>
+  ) => {
+    // Handle all pointer types (mouse, touch, pen)
+    // Deselect if clicking/tapping on empty area
     const clickedOnEmpty = e.target === e.target.getStage()
     if (clickedOnEmpty) {
       setSelectedId(null)
@@ -153,21 +185,29 @@ export function Canvas() {
   }
 
   return (
-    <div class="canvas-container">
+    <div class="canvas-container" ref={containerRef}>
       <div class="canvas-controls">
         <button onClick={() => setScale(scale * 1.2)}>Zoom In</button>
         <button onClick={() => setScale(scale / 1.2)}>Zoom Out</button>
-        <button onClick={() => { setScale(1); setPosition({ x: 0, y: 0 }) }}>Reset</button>
+        <button
+          onClick={() => {
+            setScale(1)
+            setPosition({ x: 0, y: 0 })
+          }}
+        >
+          Reset
+        </button>
         <span class="zoom-level">{Math.round(scale * 100)}%</span>
       </div>
 
       <Stage
         ref={stageRef}
-        width={window.innerWidth - 350}
+        width={window.innerWidth - 400}
         height={window.innerHeight}
         draggable
         onWheel={handleWheel}
-        onClick={handleStageClick}
+        onPointerDown={handleStagePointerDown}
+        onTouchStart={handleStagePointerDown}
         scaleX={scale}
         scaleY={scale}
         x={position.x}
@@ -182,7 +222,7 @@ export function Canvas() {
               x={img.x}
               y={img.y}
               draggable
-              onClick={() => setSelectedId(img.id)}
+              onPointerDown={() => setSelectedId(img.id)}
               onTap={() => setSelectedId(img.id)}
               onContextMenu={(e) => handleContextMenu(e, img.id)}
               onDragEnd={(e) => handleDragEnd(e, img.id)}

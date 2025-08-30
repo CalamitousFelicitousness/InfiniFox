@@ -1,0 +1,105 @@
+.batch-settings-panel {
+  background-color: var(--secondary-bg-color);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.batch-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.batch-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--primary-text-color);
+}
+
+.batch-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.batch-toggle input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.batch-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.batch-count {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.batch-count label {
+  color: var(--secondary-text-color);
+  font-size: 0.9rem;
+}
+
+.batch-count input {
+  width: 80px;
+  padding: 0.25rem 0.5rem;
+  background-color: var(--primary-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--primary-text-color);
+}
+
+.batch-variations h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  color: var(--primary-text-color);
+}
+
+.variation-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.variation-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: var(--secondary-text-color);
+}
+
+.variation-group input[type="text"],
+.variation-group input[type="number"],
+.variation-group textarea {
+  width: 100%;
+  padding: 0.5rem;
+  background-color: var(--primary-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--primary-text-color);
+}
+
+.batch-info {
+  padding: 0.75rem;
+  background-color: var(--primary-bg-color);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: var(--secondary-text-color);
+}
+
+.batch-info p {
+  margin: 0;
+}
+
+.batch-info strong {
+  color: var(--accent-color);
+}

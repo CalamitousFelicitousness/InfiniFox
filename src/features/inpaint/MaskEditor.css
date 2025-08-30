@@ -1,0 +1,103 @@
+.mask-editor {
+  margin-bottom: 1rem;
+}
+
+.mask-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.tool-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tool-buttons button {
+  flex: 1;
+  padding: 0.5rem;
+  background-color: var(--primary-bg-color);
+  border: 1px solid var(--border-color);
+  color: var(--secondary-text-color);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.tool-buttons button.active {
+  background-color: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+}
+
+.tool-buttons button:hover:not(.active):not(:disabled) {
+  background-color: var(--secondary-bg-color);
+}
+
+.tool-buttons button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.brush-size-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.brush-size-control label {
+  color: var(--secondary-text-color);
+  font-size: 0.9rem;
+}
+
+.brush-size-control input[type="range"] {
+  width: 100%;
+}
+
+.mask-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.mask-actions button {
+  flex: 1;
+  padding: 0.5rem;
+  background-color: var(--secondary-bg-color);
+  border: 1px solid var(--border-color);
+  color: var(--primary-text-color);
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.mask-actions button:hover:not(:disabled) {
+  background-color: var(--primary-bg-color);
+}
+
+.mask-canvas {
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: var(--primary-bg-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.mask-hint {
+  color: var(--secondary-text-color);
+  font-size: 0.85rem;
+  text-align: center;
+  font-style: italic;
+}
+
+.input-type-indicator {
+  padding: 0.25rem 0.5rem;
+  background-color: var(--accent-color);
+  color: white;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  text-align: center;
+  opacity: 0.8;
+}

@@ -1,5 +1,6 @@
 import { useEffect } from 'preact/hooks'
 
+import { useHistoryStore } from '../store/historyStore'
 import { useStore } from '../store/store'
 
 interface ShortcutHandlers {
@@ -13,6 +14,7 @@ interface ShortcutHandlers {
 
 export function useKeyboardShortcuts(handlers: ShortcutHandlers = {}) {
   const { clearCanvas } = useStore()
+  const { undo, redo, canUndo, canRedo } = useHistoryStore()
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -50,13 +52,17 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers = {}) {
       // Undo (Ctrl/Cmd + Z)
       if (ctrlOrCmd && e.key === 'z' && !e.shiftKey) {
         e.preventDefault()
-        handlers.onUndo?.()
+        if (canUndo) {
+          undo()
+        }
       }
 
       // Redo (Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y)
       if ((ctrlOrCmd && e.shiftKey && e.key === 'z') || (ctrlOrCmd && e.key === 'y')) {
         e.preventDefault()
-        handlers.onRedo?.()
+        if (canRedo) {
+          redo()
+        }
       }
 
       // Clear Canvas (Ctrl/Cmd + Shift + Delete)
@@ -70,5 +76,5 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers = {}) {
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [handlers, clearCanvas])
+  }, [handlers, clearCanvas, undo, redo, canUndo, canRedo])
 }

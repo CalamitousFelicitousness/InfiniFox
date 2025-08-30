@@ -1,0 +1,36 @@
+.control-panel {
+  width: 400px;
+  background-color: var(--secondary-bg-color);
+  padding: 1rem;
+  border-right: 1px solid var(--border-color);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: 100vh;
+}
+
+.control-panel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.control-panel::-webkit-scrollbar-track {
+  background: var(--primary-bg-color);
+}
+
+.control-panel::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.control-panel::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-color);
+}
+
+/* Touch-friendly sizes for mobile/tablet */
+@media (pointer: coarse) {
+  .control-panel button {
+    min-height: 44px; /* Minimum touch target size */
+    min-width: 44px;
+  }
+}

@@ -1,0 +1,75 @@
+.number-input-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.number-input-group label {
+  margin-bottom: 0.5rem;
+  color: var(--secondary-text-color);
+  font-size: 0.9rem;
+  user-select: none;
+}
+
+.number-input-group input[type="number"] {
+  padding: 0.5rem;
+  padding-right: 30px; /* Space for buttons */
+  background-color: var(--primary-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--primary-text-color);
+  font-size: 0.9rem;
+}
+
+/* Hide native spin buttons */
+.number-input-group input[type="number"]::-webkit-inner-spin-button,
+.number-input-group input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.number-input-group input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.number-input-buttons {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 28px); /* Adjust for label height */
+}
+
+.number-input-buttons button {
+  flex: 1;
+  width: 24px;
+  padding: 0;
+  background-color: var(--secondary-bg-color);
+  border: 1px solid var(--border-color);
+  color: var(--secondary-text-color);
+  cursor: pointer;
+  font-size: 0.6rem;
+  line-height: 1;
+  touch-action: none;
+}
+
+.number-input-buttons button:first-child {
+  border-radius: 0 2px 0 0;
+  border-bottom: none;
+}
+
+.number-input-buttons button:last-child {
+  border-radius: 0 0 2px 0;
+}
+
+.number-input-buttons button:hover:not(:disabled) {
+  background-color: var(--accent-color);
+  color: white;
+}
+
+.number-input-buttons button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}

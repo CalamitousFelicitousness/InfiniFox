@@ -1,0 +1,74 @@
+.slider-group {
+  margin-bottom: 1rem;
+}
+
+.slider-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--secondary-text-color);
+  font-size: 0.9rem;
+}
+
+.slider-track {
+  position: relative;
+  height: 6px;
+  background-color: var(--border-color);
+  border-radius: 3px;
+  cursor: pointer;
+  touch-action: none; /* Prevent scrolling while dragging */
+  user-select: none;
+}
+
+.slider-fill {
+  position: absolute;
+  height: 100%;
+  background-color: var(--accent-color);
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+.slider-thumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  background-color: white;
+  border: 2px solid var(--accent-color);
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.1s;
+}
+
+.slider-track:hover .slider-thumb {
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+.slider-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  background-color: var(--primary-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Touch-friendly sizing */
+@media (pointer: coarse) {
+  .slider-track {
+    height: 8px;
+    margin: 12px 0;
+  }
+  
+  .slider-thumb {
+    width: 28px;
+    height: 28px;
+  }
+}

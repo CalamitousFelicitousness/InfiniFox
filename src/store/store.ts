@@ -4,6 +4,14 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import { sdnextApi } from '../api/sdnextApi'
 import type { Sampler, SdModel } from '../types/sdnext'
 
+import {
+  AddImageCommand,
+  RemoveImageCommand,
+  MoveImageCommand,
+  useHistoryStore,
+} from './historyStore'
+import { useQueueStore } from './queueStore'
+
 interface ImageData {
   id: string
   src: string
@@ -42,11 +50,24 @@ interface AppState {
   fetchSamplers: () => Promise<void>
   generateTxt2Img: () => Promise<void>
   generateImg2Img: (baseImage: string, denoisingStrength: number) => Promise<void>
+  generateInpaint: (params: {
+    baseImage: string
+    maskImage: string
+    denoisingStrength: number
+    maskBlur: number
+    inpaintingFill: string
+    inpaintFullRes: boolean
+    inpaintFullResPadding: number
+  }) => Promise<void>
   removeImage: (id: string) => void
   duplicateImage: (id: string) => void
   updateImagePosition: (id: string, x: number, y: number) => void
   setImageAsInput: (src: string) => void
   clearCanvas: () => void
+  addImage: (image: ImageData) => void
+  addImageDirect: (image: ImageData) => void
+  removeImageDirect: (id: string) => void
+  updateImagePositionDirect: (id: string, x: number, y: number) => void
 }
 
 export const useStore = create<AppState>()(
@@ -115,17 +136,28 @@ export const useStore = create<AppState>()(
           return
         }
         set({ isLoading: true })
+
+        const params = {
+          prompt,
+          negative_prompt: negativePrompt,
+          sampler_name: sampler,
+          seed,
+          steps,
+          cfg_scale: cfgScale,
+          width,
+          height,
+        }
+
+        // Check if batch mode is enabled
+        const { batchSettings } = useQueueStore.getState()
+        if (batchSettings.enabled) {
+          useQueueStore.getState().addBatch(params, 'txt2img')
+          set({ isLoading: false })
+          return
+        }
+
         try {
-          const response = await sdnextApi.txt2img({
-            prompt,
-            negative_prompt: negativePrompt,
-            sampler_name: sampler,
-            seed,
-            steps,
-            cfg_scale: cfgScale,
-            width,
-            height,
-          })
+          const response = await sdnextApi.txt2img(params)
 
           const newImage = {
             src: `data:image/png;base64,${response.images[0]}`,
@@ -133,9 +165,10 @@ export const useStore = create<AppState>()(
             y: Math.random() * (window.innerHeight - 200),
             id: `img-${Date.now()}`,
           }
-          set((state) => ({ images: [...state.images, newImage] }))
+          get().addImage(newImage)
         } catch (error) {
           console.error('Failed to generate image:', error)
+          alert('Failed to generate image. Check console for details.')
         } finally {
           set({ isLoading: false })
         }
@@ -155,27 +188,36 @@ export const useStore = create<AppState>()(
         }
 
         set({ isLoading: true })
-        try {
-          const response = await sdnextApi.img2img({
-            init_images: [baseImage],
-            prompt,
-            negative_prompt: negativePrompt,
-            sampler_name: sampler,
-            seed,
-            steps,
-            cfg_scale: cfgScale,
-            width,
-            height,
-            denoising_strength: denoisingStrength,
-          })
+        const params = {
+          init_images: [baseImage],
+          prompt,
+          negative_prompt: negativePrompt,
+          sampler_name: sampler,
+          seed,
+          steps,
+          cfg_scale: cfgScale,
+          width,
+          height,
+          denoising_strength: denoisingStrength,
+        }
 
+        // Check if batch mode is enabled
+        const { batchSettings } = useQueueStore.getState()
+        if (batchSettings.enabled) {
+          useQueueStore.getState().addBatch(params, 'img2img')
+          set({ isLoading: false })
+          return
+        }
+
+        try {
+          const response = await sdnextApi.img2img(params)
           const newImage = {
             src: `data:image/png;base64,${response.images[0]}`,
             x: Math.random() * (window.innerWidth - 200),
             y: Math.random() * (window.innerHeight - 200),
             id: `img-${Date.now()}`,
           }
-          set((state) => ({ images: [...state.images, newImage] }))
+          get().addImage(newImage)
         } catch (error) {
           console.error('Failed to generate image:', error)
           alert('Failed to generate image. Check console for details.')
@@ -184,7 +226,84 @@ export const useStore = create<AppState>()(
         }
       },
 
+      generateInpaint: async (params) => {
+        const { prompt, negativePrompt, sampler, seed, steps, cfgScale, width, height } = get()
+
+        if (!prompt) {
+          alert('Please enter a prompt.')
+          return
+        }
+
+        set({ isLoading: true })
+
+        const apiParams = {
+          init_images: [params.baseImage],
+          mask: params.maskImage,
+          prompt,
+          negative_prompt: negativePrompt,
+          sampler_name: sampler,
+          seed,
+          steps,
+          cfg_scale: cfgScale,
+          width,
+          height,
+          denoising_strength: params.denoisingStrength,
+          mask_blur: params.maskBlur,
+          inpainting_fill:
+            params.inpaintingFill === 'fill'
+              ? 0
+              : params.inpaintingFill === 'original'
+                ? 1
+                : params.inpaintingFill === 'latent_noise'
+                  ? 2
+                  : 3,
+          inpaint_full_res: params.inpaintFullRes,
+          inpaint_full_res_padding: params.inpaintFullResPadding,
+        }
+
+        // Check if batch mode is enabled
+        const { batchSettings } = useQueueStore.getState()
+        if (batchSettings.enabled) {
+          useQueueStore.getState().addBatch(apiParams, 'inpaint')
+          set({ isLoading: false })
+          return
+        }
+
+        try {
+          const response = await sdnextApi.img2img(apiParams)
+          const newImage = {
+            src: `data:image/png;base64,${response.images[0]}`,
+            x: Math.random() * (window.innerWidth - 200),
+            y: Math.random() * (window.innerHeight - 200),
+            id: `img-${Date.now()}`,
+          }
+          get().addImage(newImage)
+        } catch (error) {
+          console.error('Failed to generate inpaint:', error)
+          alert('Failed to generate inpaint. Check console for details.')
+        } finally {
+          set({ isLoading: false })
+        }
+      },
+
+      addImage: (image: ImageData) => {
+        const command = new AddImageCommand(image, useStore)
+        useHistoryStore.getState().executeCommand(command)
+      },
+
+      addImageDirect: (image: ImageData) => {
+        set((state) => ({ images: [...state.images, image] }))
+      },
+
       removeImage: (id: string) => {
+        const image = get().images.find((img) => img.id === id)
+        if (image) {
+          const command = new RemoveImageCommand(image, useStore)
+          useHistoryStore.getState().executeCommand(command)
+        }
+      },
+
+      removeImageDirect: (id: string) => {
         set((state) => ({
           images: state.images.filter((img) => img.id !== id),
         }))
@@ -200,16 +319,27 @@ export const useStore = create<AppState>()(
             x: originalImage.x + 50,
             y: originalImage.y + 50,
           }
-          set((state) => ({
-            images: [...state.images, newImage],
-          }))
+          get().addImage(newImage)
         }
       },
 
       updateImagePosition: (id: string, x: number, y: number) => {
-        set((state) => ({
-          images: state.images.map((img) => (img.id === id ? { ...img, x, y } : img)),
-        }))
+        const image = get().images.find((img) => img.id === id)
+        if (image) {
+          const oldPos = { x: image.x, y: image.y }
+          const command = new MoveImageCommand(id, oldPos, { x, y }, useStore)
+          useHistoryStore.getState().executeCommand(command)
+        }
+      },
+
+      updateImagePositionDirect: (id: string, x: number, y: number) => {
+        // Use shallow equality check to prevent unnecessary re-renders
+        const currentImage = get().images.find((img) => img.id === id)
+        if (currentImage && (currentImage.x !== x || currentImage.y !== y)) {
+          set((state) => ({
+            images: state.images.map((img) => (img.id === id ? { ...img, x, y } : img)),
+          }))
+        }
       },
 
       setImageAsInput: (src: string) => {
