@@ -143,8 +143,5 @@ src/
 ## 📝 License
 MIT
 
-## 🤝 Contributing
-Contributions are welcome! Please follow the existing code style and add tests for new features.
-
 ---
 Built with ❤️ using Preact, TypeScript, Konva.js, and Zustand
