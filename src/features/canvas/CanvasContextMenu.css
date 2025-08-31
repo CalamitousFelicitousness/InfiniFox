@@ -39,3 +39,13 @@
 .context-menu .delete-option:hover {
   background-color: rgba(255, 107, 107, 0.1);
 }
+
+.context-menu button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  color: var(--secondary-text-color);
+}
+
+.context-menu button:disabled:hover {
+  background-color: transparent;
+}

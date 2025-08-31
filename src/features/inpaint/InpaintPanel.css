@@ -44,6 +44,41 @@
   cursor: pointer;
 }
 
-.checkbox-group input[type="checkbox"] {
+.checkbox-group input[type='checkbox'] {
   cursor: pointer;
+}
+
+.source-mode-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.source-mode-toggle button {
+  flex: 1;
+  padding: 0.75rem;
+  background-color: var(--secondary-bg-color);
+  border: 1px solid var(--border-color);
+  color: var(--secondary-text-color);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.source-mode-toggle button:hover:not(:disabled) {
+  background-color: var(--primary-bg-color);
+  border-color: var(--accent-color);
+  color: var(--primary-text-color);
+}
+
+.source-mode-toggle button.active {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+  color: white;
+}
+
+.source-mode-toggle button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

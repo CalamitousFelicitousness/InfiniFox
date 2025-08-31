@@ -20,6 +20,21 @@ interface ImageData {
   y: number
   width?: number
   height?: number
+  metadata?: {
+    type: 'generated' | 'uploaded' | 'reference'
+    usedIn?: Set<'img2img' | 'inpaint' | 'controlnet'>
+  }
+}
+
+interface ImageRole {
+  imageId: string
+  role: 'img2img' | 'inpaint' | 'controlnet'
+}
+
+interface CanvasSelectionMode {
+  active: boolean
+  mode: 'img2img' | 'inpaint' | 'controlnet' | null
+  callback?: (imageId: string, imageSrc: string) => void
 }
 
 interface ApiSettings {
@@ -42,6 +57,8 @@ interface AppState {
   width: number
   height: number
   isLoading: boolean
+  activeImageRoles: ImageRole[]
+  canvasSelectionMode: CanvasSelectionMode
   images: ImageData[]
   apiSettings: ApiSettings
 
@@ -75,7 +92,15 @@ interface AppState {
   removeImage: (id: string) => void
   duplicateImage: (id: string) => void
   updateImagePosition: (id: string, x: number, y: number) => void
+  setImageRole: (imageId: string, role: 'img2img' | 'inpaint' | 'controlnet' | null) => void
+  getImageRole: (imageId: string) => string | null
+  clearImageRoles: () => void
   setImageAsInput: (src: string) => void
+  startCanvasSelection: (
+    mode: 'img2img' | 'inpaint' | 'controlnet',
+    callback: (imageId: string, imageSrc: string) => void
+  ) => void
+  cancelCanvasSelection: () => void
   clearCanvas: () => void
   addImage: (image: ImageData) => void
   addImageDirect: (image: ImageData) => void
@@ -100,6 +125,12 @@ export const useStore = create<AppState>()(
       height: 512,
       isLoading: false,
       images: [],
+      activeImageRoles: [],
+      canvasSelectionMode: {
+        active: false,
+        mode: null,
+        callback: undefined,
+      },
       apiSettings: {
         apiUrl: import.meta.env.VITE_SDNEXT_API_URL || 'http://127.0.0.1:7860/sdapi/v1',
         wsUrl: import.meta.env.VITE_SDNEXT_WS_URL || '127.0.0.1:7860',
@@ -270,6 +301,10 @@ export const useStore = create<AppState>()(
             x: Math.random() * (window.innerWidth - 200),
             y: Math.random() * (window.innerHeight - 200),
             id: `img-${Date.now()}`,
+            metadata: {
+              type: 'generated',
+              usedIn: new Set(),
+            },
           }
           get().addImage(newImage)
         } catch (error) {
@@ -327,6 +362,10 @@ export const useStore = create<AppState>()(
             x: Math.random() * (window.innerWidth - 200),
             y: Math.random() * (window.innerHeight - 200),
             id: `img-${Date.now()}`,
+            metadata: {
+              type: 'generated',
+              usedIn: new Set(),
+            },
           }
           get().addImage(newImage)
           set({ isLoading: false })
@@ -393,6 +432,10 @@ export const useStore = create<AppState>()(
             x: Math.random() * (window.innerWidth - 200),
             y: Math.random() * (window.innerHeight - 200),
             id: `img-${Date.now()}`,
+            metadata: {
+              type: 'generated',
+              usedIn: new Set(),
+            },
           }
           get().addImage(newImage)
           set({ isLoading: false })
@@ -461,10 +504,70 @@ export const useStore = create<AppState>()(
         }
       },
 
+      setImageRole: (imageId: string, role: 'img2img' | 'inpaint' | 'controlnet' | null) => {
+        set((state) => {
+          const newRoles = state.activeImageRoles.filter((r) => r.role !== role)
+          if (role && imageId) {
+            newRoles.push({ imageId, role })
+          }
+
+          // Update image metadata
+          const images = state.images.map((img) => {
+            if (img.id === imageId && img.metadata) {
+              if (role) {
+                img.metadata.usedIn?.add(role)
+              } else {
+                img.metadata.usedIn?.clear()
+              }
+            }
+            return img
+          })
+
+          return { activeImageRoles: newRoles, images }
+        })
+      },
+
+      getImageRole: (imageId: string) => {
+        const role = get().activeImageRoles.find((r) => r.imageId === imageId)
+        return role ? role.role : null
+      },
+
+      clearImageRoles: () => {
+        set({ activeImageRoles: [] })
+      },
+
       setImageAsInput: (src: string) => {
         // This will be used to send image to img2img panel
         // You might want to add a mechanism to switch tabs or notify the img2img panel
         console.log('Setting image as input for img2img:', src)
+        // Find image by src and set its role
+        const image = get().images.find((img) => img.src === src)
+        if (image) {
+          get().setImageRole(image.id, 'img2img')
+        }
+      },
+
+      startCanvasSelection: (
+        mode: 'img2img' | 'inpaint' | 'controlnet',
+        callback: (imageId: string, imageSrc: string) => void
+      ) => {
+        set({
+          canvasSelectionMode: {
+            active: true,
+            mode,
+            callback,
+          },
+        })
+      },
+
+      cancelCanvasSelection: () => {
+        set({
+          canvasSelectionMode: {
+            active: false,
+            mode: null,
+            callback: undefined,
+          },
+        })
       },
 
       clearCanvas: () => {

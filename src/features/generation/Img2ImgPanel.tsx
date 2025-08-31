@@ -6,6 +6,8 @@ import { NumberInput } from '../../components/common/NumberInput'
 import { Slider } from '../../components/common/Slider'
 import { useStore } from '../../store/store'
 
+import './Img2ImgPanel.css'
+
 export function Img2ImgPanel() {
   const {
     prompt,
@@ -27,10 +29,13 @@ export function Img2ImgPanel() {
     setHeight,
     generateImg2Img,
     isLoading,
+    startCanvasSelection,
+    images,
   } = useStore()
 
   const [baseImage, setBaseImage] = useState<string>('')
   const [denoisingStrength, setDenoisingStrength] = useState(0.75)
+  const [selectionMode, setSelectionMode] = useState<'upload' | 'canvas'>('upload')
 
   const handleImageSelect = (base64: string, imgWidth: number, imgHeight: number) => {
     setBaseImage(base64)
@@ -39,6 +44,26 @@ export function Img2ImgPanel() {
       setWidth(imgWidth)
       setHeight(imgHeight)
     }
+  }
+
+  const handleSelectFromCanvas = () => {
+    setSelectionMode('canvas')
+    startCanvasSelection('img2img', (imageId: string, imageSrc: string) => {
+      // Remove data URL prefix if present
+      const base64 = imageSrc.includes('base64,') 
+        ? imageSrc.split(',')[1] 
+        : imageSrc
+      
+      // Get image dimensions
+      const img = new Image()
+      img.onload = () => {
+        setBaseImage(base64)
+        setWidth(img.width)
+        setHeight(img.height)
+        setSelectionMode('upload')
+      }
+      img.src = imageSrc.includes('data:image') ? imageSrc : `data:image/png;base64,${imageSrc}`
+    })
   }
 
   const handleGenerate = (e: Event) => {
@@ -56,7 +81,32 @@ export function Img2ImgPanel() {
     <>
       <h3>Image to Image</h3>
       <form onSubmit={handleGenerate}>
-        <ImageUpload onImageSelect={handleImageSelect} disabled={isLoading} />
+        <div class="img2img-source-section">
+          <label>Source Image</label>
+          
+          {images.length > 0 && (
+            <div class="source-mode-toggle">
+              <button
+                type="button"
+                class={selectionMode === 'upload' ? 'active' : ''}
+                onClick={() => setSelectionMode('upload')}
+                disabled={isLoading}
+              >
+                Upload New
+              </button>
+              <button
+                type="button"
+                class={selectionMode === 'canvas' ? 'active' : ''}
+                onClick={handleSelectFromCanvas}
+                disabled={isLoading}
+              >
+                Select from Canvas ({images.length})
+              </button>
+            </div>
+          )}
+          
+          <ImageUpload onImageSelect={handleImageSelect} currentImage={baseImage ? `data:image/png;base64,${baseImage}` : undefined} disabled={isLoading} />
+        </div>
 
         <label>Prompt</label>
         <textarea

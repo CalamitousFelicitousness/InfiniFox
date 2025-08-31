@@ -17,12 +17,31 @@ interface KonvaImageData {
   image: HTMLImageElement
 }
 
+interface CanvasState {
+  showUploadMenu: boolean
+  uploadPosition: { x: number; y: number }
+}
+
 export function Canvas() {
-  const { images, removeImage, duplicateImage, setImageAsInput } = useStore()
+  const { 
+    images, 
+    removeImage, 
+    duplicateImage, 
+    setImageAsInput, 
+    activeImageRoles, 
+    addImage,
+    canvasSelectionMode,
+    cancelCanvasSelection,
+    setImageRole
+  } = useStore()
   const [konvaImages, setKonvaImages] = useState<KonvaImageData[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [scale, setScale] = useState(1)
   const [position, setPosition] = useState({ x: 0, y: 0 })
+  const [canvasState, setCanvasState] = useState<CanvasState>({
+    showUploadMenu: false,
+    uploadPosition: { x: 0, y: 0 }
+  })
   const [contextMenu, setContextMenu] = useState<{
     visible: boolean
     x: number
@@ -37,6 +56,9 @@ export function Canvas() {
   const stageRef = useRef<Konva.Stage>(null)
   const transformerRef = useRef<Konva.Transformer>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isDraggingFile, setIsDraggingFile] = useState(false)
+  const [dropPosition, setDropPosition] = useState<{ x: number; y: number } | null>(null)
 
   // Prevent default touch behaviors on canvas
   useEffect(() => {
@@ -45,6 +67,75 @@ export function Canvas() {
       preventDefaultTouch(container)
     }
   }, [])
+
+  // Setup drag and drop handlers
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setIsDraggingFile(true)
+      
+      // Calculate drop position relative to canvas
+      const stage = stageRef.current
+      if (stage) {
+        const containerRect = container.getBoundingClientRect()
+        const x = (e.clientX - containerRect.left - position.x) / scale
+        const y = (e.clientY - containerRect.top - position.y) / scale
+        setDropPosition({ x, y })
+      }
+    }
+
+    const handleDragLeave = (e: DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      // Only set to false if we're leaving the container entirely
+      if (e.target === container) {
+        setIsDraggingFile(false)
+        setDropPosition(null)
+      }
+    }
+
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setIsDraggingFile(false)
+      
+      const files = Array.from(e.dataTransfer?.files || [])
+      const imageFile = files.find(f => f.type.startsWith('image/'))
+      
+      if (imageFile && dropPosition) {
+        handleImageFile(imageFile, dropPosition.x, dropPosition.y)
+      }
+      setDropPosition(null)
+    }
+
+    container.addEventListener('dragover', handleDragOver)
+    container.addEventListener('dragleave', handleDragLeave)
+    container.addEventListener('drop', handleDrop)
+
+    return () => {
+      container.removeEventListener('dragover', handleDragOver)
+      container.removeEventListener('dragleave', handleDragLeave)
+      container.removeEventListener('drop', handleDrop)
+    }
+  }, [position, scale])
+
+  // Get border color based on image role
+  const getImageBorderColor = (imageId: string) => {
+    const role = activeImageRoles.find(r => r.imageId === imageId)
+    if (role) {
+      switch (role.role) {
+        case 'img2img': return '#4ade80' // green
+        case 'inpaint': return '#a78bfa' // purple
+        case 'controlnet': return '#fbbf24' // yellow
+        default: return '#646cff' // default blue
+      }
+    }
+    return selectedId === imageId ? '#646cff' : 'transparent'
+  }
 
   // Setup keyboard shortcuts
   useKeyboardShortcuts({
@@ -128,9 +219,53 @@ export function Canvas() {
     })
   }
 
+  const handleStageContextMenu = (e: Konva.KonvaEventObject<PointerEvent | MouseEvent>) => {
+    e.evt.preventDefault()
+    const stage = stageRef.current
+    if (!stage) return
+
+    // Check if we clicked on empty space or an image
+    const clickedOnEmpty = e.target === e.target.getStage()
+    
+    if (clickedOnEmpty) {
+      // Show upload context menu for empty space
+      const pointer = stage.getPointerPosition()
+      if (pointer) {
+        const containerRect = stage.container().getBoundingClientRect()
+        setContextMenu({
+          visible: true,
+          x: containerRect.left + pointer.x,
+          y: containerRect.top + pointer.y,
+          imageId: null, // null indicates empty space
+        })
+        // Store the canvas position for image placement
+        setCanvasState({
+          ...canvasState,
+          uploadPosition: { x: pointer.x / scale - position.x / scale, y: pointer.y / scale - position.y / scale }
+        })
+      }
+    }
+  }
+
   const handleStagePointerDown = (
     e: Konva.KonvaEventObject<PointerEvent | MouseEvent | TouchEvent>
   ) => {
+    // If we're in selection mode and clicked on an image
+    if (canvasSelectionMode.active && e.target !== e.target.getStage()) {
+      const clickedImage = konvaImages.find(img => img.id === e.target.id())
+      if (clickedImage && canvasSelectionMode.callback) {
+        // Call the callback with image data
+        canvasSelectionMode.callback(clickedImage.id, clickedImage.src)
+        // Set the image role
+        if (canvasSelectionMode.mode) {
+          setImageRole(clickedImage.id, canvasSelectionMode.mode)
+        }
+        // Exit selection mode
+        cancelCanvasSelection()
+        return
+      }
+    }
+
     // Handle all pointer types (mouse, touch, pen)
     // Deselect if clicking/tapping on empty area
     const clickedOnEmpty = e.target === e.target.getStage()
@@ -211,8 +346,94 @@ export function Canvas() {
     }
   }
 
+  const handleUploadImage = () => {
+    fileInputRef.current?.click()
+    setContextMenu({ ...contextMenu, visible: false })
+  }
+
+  const handleImageFile = (file: File, x: number, y: number) => {
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const base64 = e.target?.result as string
+      
+      // Create new image at the clicked position
+      const img = new Image()
+      img.onload = () => {
+        const newImage = {
+          id: `img-${Date.now()}-uploaded`,
+          src: base64,
+          x: x,
+          y: y,
+          width: img.width,
+          height: img.height,
+          metadata: {
+            type: 'uploaded' as const,
+            usedIn: new Set<'img2img' | 'inpaint' | 'controlnet'>()
+          }
+        }
+        addImage(newImage)
+      }
+      img.src = base64
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleFileSelect = (e: Event) => {
+    const input = e.target as HTMLInputElement
+    const file = input.files?.[0]
+    if (!file) return
+    
+    handleImageFile(file, canvasState.uploadPosition.x, canvasState.uploadPosition.y)
+    
+    // Reset file input
+    if (input) {
+      input.value = ''
+    }
+  }
+
   return (
-    <div class="canvas-container" ref={containerRef}>
+    <div 
+      class={`canvas-container ${isDraggingFile ? 'dragging-file' : ''} ${canvasSelectionMode.active ? 'selection-mode' : ''}`} 
+      ref={containerRef}
+    >
+      {isDraggingFile && (
+        <div class="drop-overlay">
+          <div class="drop-message">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <p>Drop image here</p>
+            {dropPosition && (
+              <span class="drop-coords">Position: {Math.round(dropPosition.x)}, {Math.round(dropPosition.y)}</span>
+            )}
+          </div>
+        </div>
+      )}
+      
+      {canvasSelectionMode.active && (
+        <div class="selection-mode-overlay">
+          <div class="selection-mode-header">
+            <h3>Select an image for {canvasSelectionMode.mode}</h3>
+            <button 
+              class="cancel-selection-btn"
+              onClick={cancelCanvasSelection}
+            >
+              Cancel
+            </button>
+          </div>
+          <div class="selection-mode-hint">
+            Click on any image to select it
+          </div>
+        </div>
+      )}
+
       <div class="canvas-controls">
         <button onClick={() => setScale(scale * 1.2)}>Zoom In</button>
         <button onClick={() => setScale(scale / 1.2)}>Zoom Out</button>
@@ -227,6 +448,14 @@ export function Canvas() {
         <span class="zoom-level">{Math.round(scale * 100)}%</span>
       </div>
 
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={handleFileSelect}
+      />
+
       <Stage
         ref={stageRef}
         width={window.innerWidth - 400}
@@ -235,6 +464,7 @@ export function Canvas() {
         onWheel={handleWheel}
         onPointerDown={handleStagePointerDown}
         onTouchStart={handleStagePointerDown}
+        onContextMenu={handleStageContextMenu}
         onDragMove={handleStageDragMove}
         onDragEnd={handleStageDragEnd}
         scaleX={scale}
@@ -256,6 +486,14 @@ export function Canvas() {
               onContextMenu={(e) => handleContextMenu(e, img.id)}
               onDragMove={() => {/* Position handled internally by Konva during drag */}}
               onDragEnd={(e) => handleDragEnd(e, img.id)}
+              stroke={getImageBorderColor(img.id)}
+              strokeWidth={selectedId === img.id || activeImageRoles.some(r => r.imageId === img.id) ? 3 : 0}
+              shadowBlur={selectedId === img.id ? 10 : 0}
+              shadowColor={getImageBorderColor(img.id)}
+              shadowOpacity={0.5}
+              opacity={canvasSelectionMode.active ? 0.7 : 1}
+              onMouseEnter={(e) => canvasSelectionMode.active && (e.target.opacity(1))}
+              onMouseLeave={(e) => canvasSelectionMode.active && (e.target.opacity(0.7))}
             />
           ))}
           <Transformer ref={transformerRef} />
@@ -266,10 +504,12 @@ export function Canvas() {
         visible={contextMenu.visible}
         x={contextMenu.x}
         y={contextMenu.y}
+        imageId={contextMenu.imageId}
         onDelete={handleDelete}
         onDuplicate={handleDuplicate}
         onSendToImg2Img={handleSendToImg2Img}
         onDownload={handleDownload}
+        onUploadImage={handleUploadImage}
         onClose={() => setContextMenu({ ...contextMenu, visible: false })}
       />
     </div>

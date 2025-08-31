@@ -30,6 +30,8 @@ export function InpaintPanel() {
     setHeight,
     generateInpaint,
     isLoading,
+    startCanvasSelection,
+    images,
   } = useStore()
 
   const [baseImage, setBaseImage] = useState<string>('')
@@ -37,6 +39,7 @@ export function InpaintPanel() {
   const [denoisingStrength, setDenoisingStrength] = useState(0.75)
   const [maskBlur, setMaskBlur] = useState(4)
   const [maskMode, setMaskMode] = useState<'draw' | 'upload'>('draw')
+  const [imageSourceMode, setImageSourceMode] = useState<'upload' | 'canvas'>('upload')
   const [inpaintingFill, setInpaintingFill] = useState<'fill' | 'original' | 'latent_noise' | 'latent_nothing'>('original')
   const [inpaintFullRes, setInpaintFullRes] = useState(true)
   const [inpaintFullResPadding, setInpaintFullResPadding] = useState(32)
@@ -47,6 +50,26 @@ export function InpaintPanel() {
       setWidth(imgWidth)
       setHeight(imgHeight)
     }
+  }
+
+  const handleSelectFromCanvas = () => {
+    setImageSourceMode('canvas')
+    startCanvasSelection('inpaint', (imageId: string, imageSrc: string) => {
+      // Remove data URL prefix if present
+      const base64 = imageSrc.includes('base64,') 
+        ? imageSrc.split(',')[1] 
+        : imageSrc
+      
+      // Get image dimensions
+      const img = new Image()
+      img.onload = () => {
+        setBaseImage(base64)
+        setWidth(img.width)
+        setHeight(img.height)
+        setImageSourceMode('upload')
+      }
+      img.src = imageSrc.includes('data:image') ? imageSrc : `data:image/png;base64,${imageSrc}`
+    })
   }
 
   const handleMaskSelect = (base64: string) => {
@@ -88,7 +111,29 @@ export function InpaintPanel() {
       <form onSubmit={handleGenerate}>
         <div class="inpaint-image-section">
           <label>Base Image</label>
-          <ImageUpload onImageSelect={handleImageSelect} disabled={isLoading} />
+          
+          {images.length > 0 && (
+            <div class="source-mode-toggle">
+              <button
+                type="button"
+                class={imageSourceMode === 'upload' ? 'active' : ''}
+                onClick={() => setImageSourceMode('upload')}
+                disabled={isLoading}
+              >
+                Upload New
+              </button>
+              <button
+                type="button"
+                class={imageSourceMode === 'canvas' ? 'active' : ''}
+                onClick={handleSelectFromCanvas}
+                disabled={isLoading}
+              >
+                Select from Canvas ({images.length})
+              </button>
+            </div>
+          )}
+          
+          <ImageUpload onImageSelect={handleImageSelect} currentImage={baseImage ? `data:image/png;base64,${baseImage}` : undefined} disabled={isLoading} />
         </div>
 
         {baseImage && (

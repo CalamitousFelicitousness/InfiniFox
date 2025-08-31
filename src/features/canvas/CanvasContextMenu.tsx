@@ -1,15 +1,19 @@
 import { useEffect, useRef } from 'preact/hooks'
 
+import { useStore } from '../../store/store'
+
 import './CanvasContextMenu.css'
 
 interface CanvasContextMenuProps {
   visible: boolean
   x: number
   y: number
+  imageId: string | null
   onDelete: () => void
   onDuplicate: () => void
   onSendToImg2Img: () => void
   onDownload: () => void
+  onUploadImage: () => void
   onClose: () => void
 }
 
@@ -17,13 +21,16 @@ export function CanvasContextMenu({
   visible,
   x,
   y,
+  imageId,
   onDelete,
   onDuplicate,
   onSendToImg2Img,
   onDownload,
+  onUploadImage,
   onClose,
 }: CanvasContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
+  const { setImageRole, getImageRole } = useStore()
 
   useEffect(() => {
     const handlePointerDown = (e: PointerEvent) => {
@@ -52,6 +59,16 @@ export function CanvasContextMenu({
 
   if (!visible) return null
 
+  const handleSendToImg2Img = () => {
+    if (imageId) {
+      setImageRole(imageId, 'img2img')
+      onSendToImg2Img()
+    }
+  }
+
+  const currentRole = imageId ? getImageRole(imageId) : null
+  const roleIndicator = currentRole ? ` (Active: ${currentRole})` : ''
+
   return (
     <div
       ref={menuRef}
@@ -62,9 +79,35 @@ export function CanvasContextMenu({
         top: `${y}px`,
       }}
     >
-      <button onPointerDown={(e) => { e.preventDefault(); onSendToImg2Img() }}>
-        Send to img2img
+      {imageId === null ? (
+        // Context menu for empty canvas space
+        <>
+          <button onPointerDown={(e) => { e.preventDefault(); onUploadImage() }}>
+            Upload Image
+          </button>
+          <hr />
+          <button onPointerDown={(e) => { e.preventDefault(); /* TODO: Quick generate */ }} disabled>
+            Generate Here (Coming Soon)
+          </button>
+        </>
+      ) : (
+        // Context menu for image
+        <>
+      <button onPointerDown={(e) => { e.preventDefault(); handleSendToImg2Img() }}>
+        Send to img2img{currentRole === 'img2img' ? ' ✓' : ''}
       </button>
+      <button onPointerDown={(e) => { e.preventDefault(); /* TODO: Send to inpaint */ }} disabled>
+        Send to Inpaint{currentRole === 'inpaint' ? ' ✓' : ''} (Coming Soon)
+      </button>
+      <hr />
+      {currentRole && (
+        <>
+          <button onPointerDown={(e) => { e.preventDefault(); setImageRole(imageId, null) }}>
+            Clear Role{roleIndicator}
+          </button>
+          <hr />
+        </>
+      )}
       <button onPointerDown={(e) => { e.preventDefault(); onDuplicate() }}>
         Duplicate
       </button>
@@ -75,6 +118,8 @@ export function CanvasContextMenu({
       <button onPointerDown={(e) => { e.preventDefault(); onDelete() }} class="delete-option">
         Delete
       </button>
+        </>
+      )}
     </div>
   )
 }

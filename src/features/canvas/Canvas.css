@@ -37,3 +37,110 @@
   color: var(--secondary-text-color);
   font-size: 0.9rem;
 }
+
+/* Drag and drop overlay */
+.canvas-container.dragging-file::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: rgba(100, 108, 255, 0.1);
+  border: 3px dashed var(--accent-color);
+  border-radius: 8px;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.drop-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 1001;
+  pointer-events: none;
+}
+
+.drop-message {
+  text-align: center;
+  color: white;
+}
+
+.drop-message svg {
+  margin: 0 auto 1rem;
+  opacity: 0.9;
+  animation: bounce 1s infinite;
+}
+
+.drop-message p {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.drop-coords {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Selection mode overlay */
+.canvas-container.selection-mode {
+  cursor: crosshair;
+}
+
+.selection-mode-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent);
+  z-index: 100;
+  pointer-events: none;
+  padding: 1rem;
+}
+
+.selection-mode-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.selection-mode-header h3 {
+  margin: 0;
+  color: white;
+  font-size: 1.2rem;
+  text-transform: capitalize;
+}
+
+.cancel-selection-btn {
+  pointer-events: all;
+  padding: 0.5rem 1rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-selection-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.selection-mode-hint {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+}
+
+.canvas-container.selection-mode .konvajs-content {
+  cursor: pointer !important;
+}
