@@ -141,9 +141,36 @@ export function Canvas() {
     setContextMenu({ ...contextMenu, visible: false })
   }
 
+  const handleStageDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
+    // Only update position if we're dragging the stage itself (not an image)
+    if (e.target !== e.target.getStage()) {
+      return
+    }
+    
+    // Update position state after dragging the stage
+    setPosition({
+      x: e.target.x(),
+      y: e.target.y(),
+    })
+  }
+
+  const handleStageDragMove = () => {
+    // Position is handled internally by Konva during drag
+  }
+
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>, imageId: string) => {
+    e.cancelBubble = true // Prevent bubbling to stage
     const node = e.target
-    useStore.getState().updateImagePosition(imageId, node.x(), node.y())
+    const newX = node.x()
+    const newY = node.y()
+    
+    // Update both local state and store
+    setKonvaImages(prev => prev.map(img => 
+      img.id === imageId ? { ...img, x: newX, y: newY } : img
+    ))
+    
+    // Update store for persistence
+    useStore.getState().updateImagePosition(imageId, newX, newY)
   }
 
   const handleDelete = () => {
@@ -208,6 +235,8 @@ export function Canvas() {
         onWheel={handleWheel}
         onPointerDown={handleStagePointerDown}
         onTouchStart={handleStagePointerDown}
+        onDragMove={handleStageDragMove}
+        onDragEnd={handleStageDragEnd}
         scaleX={scale}
         scaleY={scale}
         x={position.x}
@@ -225,6 +254,7 @@ export function Canvas() {
               onPointerDown={() => setSelectedId(img.id)}
               onTap={() => setSelectedId(img.id)}
               onContextMenu={(e) => handleContextMenu(e, img.id)}
+              onDragMove={() => {/* Position handled internally by Konva during drag */}}
               onDragEnd={(e) => handleDragEnd(e, img.id)}
             />
           ))}

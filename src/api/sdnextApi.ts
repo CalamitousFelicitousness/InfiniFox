@@ -7,10 +7,6 @@ import type {
   SdModel,
 } from '../types/sdnext'
 
-// It's a good practice to have the API URL configurable.
-// For now, we'll use a default value that can be overridden by an environment variable.
-const API_BASE_URL = import.meta.env.VITE_SDNEXT_API_URL || 'http://127.0.0.1:7860/sdapi/v1'
-
 /**
  * A custom error class for API-related issues.
  * This helps in distinguishing API errors from other runtime errors.
@@ -37,6 +33,11 @@ class ApiClientError extends Error {
  * @throws {ApiClientError} if the request fails.
  */
 async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  // Get API URL from store
+  const { useStore } = await import('../store/store')
+  const apiSettings = useStore.getState().apiSettings
+  const API_BASE_URL = apiSettings.apiUrl
+  
   const url = `${API_BASE_URL}/${endpoint}`
   const defaultHeaders = {
     'Content-Type': 'application/json',

@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 
 import { sdnextApi } from '../api/sdnextApi'
+import { progressService, type ProgressMethod } from '../services/progress/ProgressService'
 import type { Sampler, SdModel } from '../types/sdnext'
 
 import {
@@ -21,6 +22,13 @@ interface ImageData {
   height?: number
 }
 
+interface ApiSettings {
+  apiUrl: string
+  wsUrl: string
+  progressMethod: ProgressMethod
+  apiType: 'sdnext' | 'a1111' | 'comfyui' | 'custom'
+}
+
 interface AppState {
   prompt: string
   negativePrompt: string
@@ -35,6 +43,7 @@ interface AppState {
   height: number
   isLoading: boolean
   images: ImageData[]
+  apiSettings: ApiSettings
 
   setPrompt: (prompt: string) => void
   setNegativePrompt: (negativePrompt: string) => void
@@ -45,6 +54,10 @@ interface AppState {
   setCfgScale: (cfgScale: number) => void
   setWidth: (width: number) => void
   setHeight: (height: number) => void
+  setApiSettings: (settings: Partial<ApiSettings>) => void
+  setIsLoading: (loading: boolean) => void
+  testConnection: () => Promise<{ connected: boolean; progressMethod: string }>
+  detectApiType: () => Promise<string>
 
   fetchSdModels: () => Promise<void>
   fetchSamplers: () => Promise<void>
@@ -87,6 +100,12 @@ export const useStore = create<AppState>()(
       height: 512,
       isLoading: false,
       images: [],
+      apiSettings: {
+        apiUrl: import.meta.env.VITE_SDNEXT_API_URL || 'http://127.0.0.1:7860/sdapi/v1',
+        wsUrl: import.meta.env.VITE_SDNEXT_WS_URL || '127.0.0.1:7860',
+        progressMethod: 'auto' as ProgressMethod,
+        apiType: 'sdnext' as const,
+      },
 
       // Actions
       setPrompt: (prompt) => set({ prompt }),
@@ -106,6 +125,89 @@ export const useStore = create<AppState>()(
       setCfgScale: (cfgScale) => set({ cfgScale }),
       setWidth: (width) => set({ width }),
       setHeight: (height) => set({ height }),
+      setIsLoading: (isLoading) => set({ isLoading }),
+      setApiSettings: async (settings) => {
+        set((state) => ({
+          apiSettings: { ...state.apiSettings, ...settings },
+        }))
+
+        // Update progress service if method changed
+        if (settings.progressMethod !== undefined && settings.progressMethod !== null) {
+          await progressService.setMethod(settings.progressMethod)
+        }
+      },
+
+      testConnection: async () => {
+        const { apiSettings } = get()
+        try {
+          // Test basic API connection
+          const response = await fetch(`${apiSettings.apiUrl}/samplers`)
+          if (!response.ok) {
+            return { connected: false, progressMethod: 'none' }
+          }
+
+          // Test progress monitoring
+          const method = apiSettings.progressMethod || 'auto'
+          await progressService.setMethod(method)
+          const progressMethod = progressService.getActiveMethod()
+
+          return { connected: true, progressMethod }
+        } catch (error) {
+          console.error('Connection test failed:', error)
+          return { connected: false, progressMethod: 'none' }
+        }
+      },
+
+      detectApiType: async () => {
+        const { apiSettings } = get()
+        try {
+          // SD.Next detection - check for specific endpoints
+          try {
+            // SD.Next has /sdapi/v1/platform endpoint
+            const platformResponse = await fetch(`${apiSettings.apiUrl}/platform`)
+            if (platformResponse.ok) {
+              const data = await platformResponse.json()
+              if (data.app === 'sd.next') {
+                return 'sdnext'
+              }
+            }
+          } catch {
+            /* empty */
+          }
+
+          // Alternative SD.Next detection
+          try {
+            const response = await fetch(`${apiSettings.apiUrl}/../motd`)
+            if (response.ok) {
+              return 'sdnext'
+            }
+          } catch {
+            /* empty */
+          }
+
+          // Check for ComfyUI
+          try {
+            const response = await fetch(
+              `${apiSettings.apiUrl.replace('/sdapi/v1', '')}/system_stats`
+            )
+            if (response.ok) {
+              return 'comfyui'
+            }
+          } catch {
+            /* empty */
+          }
+
+          // Default to A1111 if standard endpoints work
+          const response = await fetch(`${apiSettings.apiUrl}/sd-models`)
+          if (response.ok) {
+            return 'a1111'
+          }
+
+          return 'custom'
+        } catch {
+          return 'custom'
+        }
+      },
 
       fetchSdModels: async () => {
         try {
@@ -157,7 +259,11 @@ export const useStore = create<AppState>()(
         }
 
         try {
+          // Start progress monitoring before making the request
+          progressService.startPolling()
+
           const response = await sdnextApi.txt2img(params)
+          console.log('Generation response received:', response)
 
           const newImage = {
             src: `data:image/png;base64,${response.images[0]}`,
@@ -170,7 +276,9 @@ export const useStore = create<AppState>()(
           console.error('Failed to generate image:', error)
           alert('Failed to generate image. Check console for details.')
         } finally {
+          progressService.stopPolling()
           set({ isLoading: false })
+          console.log('Generation finished, loading state cleared')
         }
       },
 
@@ -210,6 +318,9 @@ export const useStore = create<AppState>()(
         }
 
         try {
+          // Start progress monitoring
+          progressService.startPolling()
+
           const response = await sdnextApi.img2img(params)
           const newImage = {
             src: `data:image/png;base64,${response.images[0]}`,
@@ -218,11 +329,14 @@ export const useStore = create<AppState>()(
             id: `img-${Date.now()}`,
           }
           get().addImage(newImage)
+          set({ isLoading: false })
         } catch (error) {
           console.error('Failed to generate image:', error)
           alert('Failed to generate image. Check console for details.')
-        } finally {
           set({ isLoading: false })
+        } finally {
+          progressService.stopPolling()
+          progressService.stopPolling()
         }
       },
 
@@ -270,6 +384,9 @@ export const useStore = create<AppState>()(
         }
 
         try {
+          // Start progress monitoring
+          progressService.startPolling()
+
           const response = await sdnextApi.img2img(apiParams)
           const newImage = {
             src: `data:image/png;base64,${response.images[0]}`,
@@ -278,11 +395,13 @@ export const useStore = create<AppState>()(
             id: `img-${Date.now()}`,
           }
           get().addImage(newImage)
+          set({ isLoading: false })
         } catch (error) {
           console.error('Failed to generate inpaint:', error)
           alert('Failed to generate inpaint. Check console for details.')
-        } finally {
           set({ isLoading: false })
+        } finally {
+          progressService.stopPolling()
         }
       },
 
@@ -356,6 +475,21 @@ export const useStore = create<AppState>()(
     {
       name: 'sdnextnewui-store',
       storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        // Only persist these specific fields
+        prompt: state.prompt,
+        negativePrompt: state.negativePrompt,
+        sampler: state.sampler,
+        seed: state.seed,
+        steps: state.steps,
+        cfgScale: state.cfgScale,
+        width: state.width,
+        height: state.height,
+        apiSettings: state.apiSettings,
+        // Explicitly exclude isLoading
+        // isLoading: state.isLoading, // DO NOT PERSIST
+        // images: state.images, // DO NOT PERSIST - too large for localStorage
+      }),
     }
   )
 )

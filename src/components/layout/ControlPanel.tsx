@@ -8,6 +8,7 @@ import { Dropdown } from '../common/Dropdown'
 import { BatchSettingsPanel } from '../panels/BatchSettingsPanel'
 import { HistoryPanel } from '../panels/HistoryPanel'
 import { QueuePanel } from '../panels/QueuePanel'
+import { SettingsPanel } from '../panels/SettingsPanel'
 
 import { Tabs } from './Tabs'
 import './ControlPanel.css'
@@ -49,6 +50,7 @@ export function ControlPanel() {
       {activeTab === 'img2img' && <Img2ImgPanel />}
       {activeTab === 'inpaint' && <InpaintPanel />}
 
+      <SettingsPanel />
       <BatchSettingsPanel />
       <QueuePanel />
       <HistoryPanel />

@@ -29,6 +29,7 @@ export function Txt2ImgPanel() {
     fetchSamplers,
     generateTxt2Img,
     isLoading,
+    setIsLoading,
   } = useStore()
 
   useEffect(() => {
@@ -40,6 +41,11 @@ export function Txt2ImgPanel() {
     if (!isLoading) {
       generateTxt2Img()
     }
+  }
+
+  const handleCancel = () => {
+    // Emergency cancel button
+    setIsLoading(false)
   }
 
   return (
@@ -120,10 +126,20 @@ export function Txt2ImgPanel() {
         </div>
 
         <Tooltip content="Ctrl/Cmd + Enter">
-        <button type="submit" class="generate-btn" disabled={isLoading}>
-          {isLoading ? 'Generating...' : 'Generate'}
-        </button>
+          <button type="submit" class="generate-btn" disabled={isLoading}>
+            {isLoading ? 'Generating...' : 'Generate'}
+          </button>
         </Tooltip>
+        
+        {isLoading && (
+          <button 
+            type="button" 
+            class="cancel-btn" 
+            onPointerDown={(e) => { e.preventDefault(); handleCancel() }}
+          >
+            Cancel
+          </button>
+        )}
       </form>
     </>
   )

@@ -8,7 +8,7 @@ import { useStore } from './store/store'
 import './styles/main.css'
 
 export function App() {
-  const { generateTxt2Img } = useStore()
+  const { generateTxt2Img, testConnection } = useStore()
 
   // Global keyboard shortcuts
   useKeyboardShortcuts({
@@ -17,6 +17,15 @@ export function App() {
       generateTxt2Img()
     },
   })
+
+  // Test connection on mount
+  useEffect(() => {
+    testConnection().then((connected) => {
+      if (!connected) {
+        console.warn('Failed to connect to SD.Next API. Please check your API settings.')
+      }
+    })
+  }, [testConnection])
 
   return (
     <div class="app-layout">
