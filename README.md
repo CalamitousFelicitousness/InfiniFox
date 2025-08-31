@@ -1,4 +1,4 @@
-# SD.Next New UI
+# InfiniFox
 
 A modern, professional web interface for SD.Next with an infinite canvas powered by Konva.js. Features universal input support for mouse, touch, and stylus devices with pressure sensitivity.
 
