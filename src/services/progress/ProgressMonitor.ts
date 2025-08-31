@@ -2,8 +2,12 @@ export interface ProgressMessage {
   current: number
   total: number
   status: string
+  phase: 'waiting' | 'sampling' | 'vae' | 'postprocessing' | 'completed' | 'error'
   preview?: string
   eta?: number
+  job?: string
+  jobCount?: number
+  jobNo?: number
 }
 
 export type ProgressHandler = (message: ProgressMessage) => void

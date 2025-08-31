@@ -6,11 +6,15 @@ export class RestPollingMonitor extends BaseProgressMonitor {
   private pollDelay = 500 // Poll every 500ms when active
   private isPolling = false
   private lastJobId: string | null = null
-  private noJobCount = 0 // Track consecutive polls with no job
-  private hasSeenJob = false // Track if we've seen a job start
+  private generationStarted = false // Track if we've seen generation start
+  private lastPhase: string = '' // Track last phase to detect changes
   private lastStep = -1 // Track last step to avoid duplicate messages
   private lastJob = '' // Track last job status
   private lastPreviewHash = '' // Track last preview to avoid duplicates
+  private vaeStarted = false // Track if VAE phase has started
+  private completionCheckCount = 0 // Count checks after VAE/final phase
+  private maxCompletionChecks = 6 // Wait up to 3 seconds (6 * 500ms) after VAE for final image
+  private lastActiveState: any = null // Store last active state for debugging
 
   constructor() {
     super()
@@ -71,10 +75,12 @@ export class RestPollingMonitor extends BaseProgressMonitor {
     console.log('Starting REST polling...')
     if (this.isPolling) return
 
-    this.noJobCount = 0
-    this.hasSeenJob = false
     this.isPolling = true
+    this.generationStarted = false
+    this.vaeStarted = false
+    this.completionCheckCount = 0
     this.lastJobId = jobId || null
+    this.lastPhase = ''
 
     const poll = async () => {
       if (!this.isPolling || !this.connected) {
@@ -93,73 +99,110 @@ export class RestPollingMonitor extends BaseProgressMonitor {
 
         if (response.ok) {
           const data = await response.json()
-          // Only log when state changes to reduce console spam
-          if (data.state?.sampling_step !== this.lastStep || data.state?.job !== this.lastJob) {
-            console.log('Progress response:', JSON.stringify(data, null, 2))
-          }
-
-          // Check if there's actually a job running or if progress is 0
-          const hasActiveJob = data.state && data.state.job_count > 0
+          
+          // Determine current phase
+          let phase: ProgressMessage['phase'] = 'waiting'
+          let shouldNotify = false
+          
+          const hasActiveJob = data.state && (data.state.job_count > 0 || data.state.job)
           const hasProgress = data.progress > 0
+          const currentJob = data.state?.job || ''
+          const currentStep = data.state?.sampling_step || 0
+          const totalSteps = data.state?.sampling_steps || 0
 
-          if (!hasActiveJob && !hasProgress) {
-            this.noJobCount++
+          // Phase detection logic
+          if (hasActiveJob || hasProgress) {
+            this.generationStarted = true
+            this.lastActiveState = data.state
+            
+            // Detect phase based on job name
+            if (currentJob.toLowerCase().includes('vae') || 
+                currentJob.toLowerCase().includes('decode') ||
+                (currentStep === totalSteps && totalSteps > 0 && !this.vaeStarted)) {
+              phase = 'vae'
+              this.vaeStarted = true
+              shouldNotify = phase !== this.lastPhase
+            } else if (currentJob.toLowerCase().includes('postprocess')) {
+              phase = 'postprocessing'
+              shouldNotify = phase !== this.lastPhase
+            } else if (totalSteps > 0) {
+              phase = 'sampling'
+              // Notify on step changes during sampling
+              shouldNotify = currentStep !== this.lastStep || phase !== this.lastPhase
+            } else {
+              phase = 'waiting'
+            }
 
-            // Only stop if we've seen a job before (completed) or waited long enough for one to start
-            if (this.hasSeenJob) {
-              // Job finished - send completion and stop
-              console.log('Job completed, stopping polling')
-              this.stopPolling()
-              const message: ProgressMessage = {
-                current: 1,
-                total: 1,
-                status: 'completed',
-              }
+            // Log phase transitions
+            if (phase !== this.lastPhase) {
+              console.log(`Progress phase transition: ${this.lastPhase || 'none'} -> ${phase}`)
+            }
+
+            // Create progress message
+            const message: ProgressMessage = {
+              current: currentStep,
+              total: totalSteps || 1,
+              status: currentJob || phase,
+              phase: phase,
+              preview: data.current_image,
+              eta: data.eta_relative,
+              job: currentJob,
+              jobCount: data.state?.job_count,
+              jobNo: data.state?.job_no
+            }
+
+            // Update tracking variables
+            this.lastStep = currentStep
+            this.lastJob = currentJob
+            this.lastPhase = phase
+            
+            // Notify if needed
+            if (shouldNotify) {
+              console.log('Progress update:', {
+                phase,
+                step: `${currentStep}/${totalSteps}`,
+                job: currentJob
+              })
               this.notifyHandlers(message)
-              return
-            } else if (this.noJobCount >= 10) {
-              // Waited 5 seconds (10 * 500ms) for job to start, give up
+            }
+            
+            // Reset completion check counter when we see activity
+            this.completionCheckCount = 0
+            
+          } else {
+            // No active job - check if this is completion or still waiting
+            if (this.generationStarted) {
+              // We had a job before, now it's gone - might be complete
+              this.completionCheckCount++
+              
+              // If we've seen VAE phase or completed all steps, and no job for a few checks, we're done
+              if ((this.vaeStarted || this.lastStep >= 1) && this.completionCheckCount >= 2) {
+                console.log('Generation completed - no active job after processing')
+                phase = 'completed'
+                
+                const message: ProgressMessage = {
+                  current: 1,
+                  total: 1,
+                  status: 'completed',
+                  phase: 'completed',
+                  preview: data.current_image
+                }
+                
+                this.notifyHandlers(message)
+                this.stopPolling()
+                return
+              }
+              
+              // Still waiting for potential final processing
+              console.log(`Waiting for completion confirmation (${this.completionCheckCount}/2)`)
+              
+            } else if (this.completionCheckCount >= 10) {
+              // Waited 5 seconds for job to start, give up
               console.log('No job started after 5 seconds, stopping polling')
               this.stopPolling()
               return
-            }
-            // Otherwise keep polling for job to start
-          } else {
-            // Reset counter if we see a job
-            this.noJobCount = 0
-            this.hasSeenJob = true
-
-            // SD.Next provides sampling_step directly
-            if (data.state && data.state.sampling_steps !== undefined) {
-              const currentStep = data.state.sampling_step || 0
-              const totalSteps = data.state.sampling_steps || 1
-
-              const message: ProgressMessage = {
-                current: currentStep,
-                total: totalSteps,
-                status: data.state.job || 'processing',
-                preview: data.current_image,
-                eta: data.eta_relative,
-              }
-
-              // Create a simple hash of the preview (first 20 chars) to detect changes
-              const previewHash = data.current_image ? data.current_image.substring(0, 20) : ''
-
-              // Send progress updates if:
-              // 1. Step changed from last time
-              // 2. Preview image changed (not just exists)
-              // 3. Job status changed
-              if (
-                currentStep !== this.lastStep ||
-                data.state.job !== this.lastJob ||
-                (previewHash && previewHash !== this.lastPreviewHash)
-              ) {
-                this.lastStep = currentStep
-                this.lastJob = data.state.job
-                this.lastPreviewHash = previewHash
-                console.log('Progress message:', message)
-                this.notifyHandlers(message)
-              }
+            } else {
+              this.completionCheckCount++
             }
           }
         }
@@ -176,11 +219,14 @@ export class RestPollingMonitor extends BaseProgressMonitor {
 
   stopPolling(): void {
     this.isPolling = false
-    this.noJobCount = 0
-    this.hasSeenJob = false
+    this.generationStarted = false
+    this.vaeStarted = false
+    this.completionCheckCount = 0
     this.lastStep = -1
     this.lastJob = ''
     this.lastPreviewHash = ''
+    this.lastPhase = ''
+    this.lastActiveState = null
     if (this.pollInterval !== null) {
       clearTimeout(this.pollInterval)
       this.pollInterval = null
