@@ -12,6 +12,7 @@ export class RestPollingMonitor extends BaseProgressMonitor {
   private lastJob = '' // Track last job status
   private lastPreviewHash = '' // Track last preview to avoid duplicates
   private vaeStarted = false // Track if VAE phase has started
+  private vaeCompleted = false // Track if VAE phase has completed
   private completionCheckCount = 0 // Count checks after VAE/final phase
   private maxCompletionChecks = 6 // Wait up to 3 seconds (6 * 500ms) after VAE for final image
   private lastActiveState: any = null // Store last active state for debugging
@@ -78,9 +79,11 @@ export class RestPollingMonitor extends BaseProgressMonitor {
     this.isPolling = true
     this.generationStarted = false
     this.vaeStarted = false
+    this.vaeCompleted = false
     this.completionCheckCount = 0
     this.lastJobId = jobId || null
     this.lastPhase = ''
+    this.lastStep = -1
 
     const poll = async () => {
       if (!this.isPolling || !this.connected) {
@@ -99,29 +102,44 @@ export class RestPollingMonitor extends BaseProgressMonitor {
 
         if (response.ok) {
           const data = await response.json()
-          
+
           // Determine current phase
           let phase: ProgressMessage['phase'] = 'waiting'
           let shouldNotify = false
-          
+
           const hasActiveJob = data.state && (data.state.job_count > 0 || data.state.job)
           const hasProgress = data.progress > 0
           const currentJob = data.state?.job || ''
           const currentStep = data.state?.sampling_step || 0
           const totalSteps = data.state?.sampling_steps || 0
 
+          // Log state changes for debugging
+          if (currentJob !== this.lastJob || this.lastPhase === '') {
+            console.log('Progress state:', {
+              job: currentJob,
+              hasActiveJob,
+              hasProgress,
+              step: `${currentStep}/${totalSteps}`,
+              phase: this.lastPhase,
+            })
+          }
+
           // Phase detection logic
           if (hasActiveJob || hasProgress) {
             this.generationStarted = true
             this.lastActiveState = data.state
-            
+
             // Detect phase based on job name
-            if (currentJob.toLowerCase().includes('vae') || 
-                currentJob.toLowerCase().includes('decode') ||
-                (currentStep === totalSteps && totalSteps > 0 && !this.vaeStarted)) {
+            if (
+              currentJob.toLowerCase().includes('vae') ||
+              currentJob.toLowerCase().includes('decode') ||
+              (currentStep === totalSteps && totalSteps > 0 && this.lastPhase === 'sampling')
+            ) {
               phase = 'vae'
               this.vaeStarted = true
+              this.vaeCompleted = false // Reset completion flag
               shouldNotify = phase !== this.lastPhase
+              console.log('VAE phase started')
             } else if (currentJob.toLowerCase().includes('postprocess')) {
               phase = 'postprocessing'
               shouldNotify = phase !== this.lastPhase
@@ -130,7 +148,8 @@ export class RestPollingMonitor extends BaseProgressMonitor {
               // Notify on step changes during sampling
               shouldNotify = currentStep !== this.lastStep || phase !== this.lastPhase
             } else {
-              phase = 'waiting'
+              // Job exists but no clear phase - could be transitioning
+              phase = this.lastPhase || 'waiting'
             }
 
             // Log phase transitions
@@ -148,54 +167,69 @@ export class RestPollingMonitor extends BaseProgressMonitor {
               eta: data.eta_relative,
               job: currentJob,
               jobCount: data.state?.job_count,
-              jobNo: data.state?.job_no
+              jobNo: data.state?.job_no,
             }
 
             // Update tracking variables
             this.lastStep = currentStep
             this.lastJob = currentJob
             this.lastPhase = phase
-            
+
             // Notify if needed
             if (shouldNotify) {
-              console.log('Progress update:', {
-                phase,
-                step: `${currentStep}/${totalSteps}`,
-                job: currentJob
-              })
               this.notifyHandlers(message)
             }
-            
+
             // Reset completion check counter when we see activity
             this.completionCheckCount = 0
-            
           } else {
             // No active job - check if this is completion or still waiting
             if (this.generationStarted) {
-              // We had a job before, now it's gone - might be complete
-              this.completionCheckCount++
-              
-              // If we've seen VAE phase or completed all steps, and no job for a few checks, we're done
-              if ((this.vaeStarted || this.lastStep >= 1) && this.completionCheckCount >= 2) {
-                console.log('Generation completed - no active job after processing')
+              // We had a job before, now it's gone
+
+              // Check if we were in VAE phase - if so, we're done immediately
+              if (this.lastPhase === 'vae' && !this.vaeCompleted) {
+                console.log('VAE completed - generation finished')
+                this.vaeCompleted = true
                 phase = 'completed'
-                
+
                 const message: ProgressMessage = {
                   current: 1,
                   total: 1,
                   status: 'completed',
                   phase: 'completed',
-                  preview: data.current_image
+                  preview: data.current_image,
                 }
-                
+
                 this.notifyHandlers(message)
                 this.stopPolling()
                 return
               }
-              
-              // Still waiting for potential final processing
-              console.log(`Waiting for completion confirmation (${this.completionCheckCount}/2)`)
-              
+
+              // If we finished sampling (reached total steps) but haven't seen VAE yet
+              if (this.lastStep >= 1 && !this.vaeStarted) {
+                this.completionCheckCount++
+
+                // Give it a moment for VAE to start, otherwise assume no VAE needed
+                if (this.completionCheckCount >= 3) {
+                  console.log('Generation completed without explicit VAE phase')
+                  phase = 'completed'
+
+                  const message: ProgressMessage = {
+                    current: 1,
+                    total: 1,
+                    status: 'completed',
+                    phase: 'completed',
+                    preview: data.current_image,
+                  }
+
+                  this.notifyHandlers(message)
+                  this.stopPolling()
+                  return
+                }
+
+                console.log(`Waiting for VAE or completion (${this.completionCheckCount}/3)`)
+              }
             } else if (this.completionCheckCount >= 10) {
               // Waited 5 seconds for job to start, give up
               console.log('No job started after 5 seconds, stopping polling')
@@ -221,6 +255,7 @@ export class RestPollingMonitor extends BaseProgressMonitor {
     this.isPolling = false
     this.generationStarted = false
     this.vaeStarted = false
+    this.vaeCompleted = false
     this.completionCheckCount = 0
     this.lastStep = -1
     this.lastJob = ''
