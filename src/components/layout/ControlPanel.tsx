@@ -9,6 +9,7 @@ import { BatchSettingsPanel } from '../panels/BatchSettingsPanel'
 import { HistoryPanel } from '../panels/HistoryPanel'
 import { QueuePanel } from '../panels/QueuePanel'
 import { SettingsPanel } from '../panels/SettingsPanel'
+import { StorageStats } from '../panels/StorageStats'
 
 import { Tabs } from './Tabs'
 import './ControlPanel.css'
@@ -37,7 +38,7 @@ export function ControlPanel() {
   return (
     <aside class="control-panel">
       <div class="panel-header">
-        <h2>SD.Next</h2>
+        <h2>InfiniFox</h2>
         <Dropdown
           label=""
           value={sdModel}
@@ -51,6 +52,7 @@ export function ControlPanel() {
       {activeTab === 'inpaint' && <InpaintPanel />}
 
       <SettingsPanel />
+      <StorageStats />
       <BatchSettingsPanel />
       <QueuePanel />
       <HistoryPanel />

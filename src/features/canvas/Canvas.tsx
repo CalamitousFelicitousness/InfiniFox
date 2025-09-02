@@ -29,7 +29,7 @@ export function Canvas() {
     duplicateImage, 
     setImageAsInput, 
     activeImageRoles, 
-    addImage,
+    uploadImageToCanvas,
     canvasSelectionMode,
     cancelCanvasSelection,
     setImageRole
@@ -147,12 +147,23 @@ export function Canvas() {
     },
   })
 
+  // Load images as Konva-compatible format
   useEffect(() => {
     const imagePromises = images.map((imgData) => {
-      return new Promise((resolve) => {
+      return new Promise<KonvaImageData>((resolve) => {
         const img = new window.Image()
         img.src = imgData.src
-        img.onload = () => resolve({ ...imgData, image: img })
+        img.onload = () => resolve({ 
+          id: imgData.id,
+          src: imgData.src,
+          x: imgData.x,
+          y: imgData.y,
+          image: img 
+        })
+        img.onerror = () => {
+          console.error(`Failed to load image ${imgData.id}`)
+          // Still resolve but with a placeholder or skip
+        }
       })
     })
 
@@ -239,9 +250,11 @@ export function Canvas() {
           imageId: null, // null indicates empty space
         })
         // Store the canvas position for image placement
+        const canvasX = (pointer.x - position.x) / scale
+        const canvasY = (pointer.y - position.y) / scale
         setCanvasState({
           ...canvasState,
-          uploadPosition: { x: pointer.x / scale - position.x / scale, y: pointer.y / scale - position.y / scale }
+          uploadPosition: { x: canvasX, y: canvasY }
         })
       }
     }
@@ -351,44 +364,22 @@ export function Canvas() {
     setContextMenu({ ...contextMenu, visible: false })
   }
 
-  const handleImageFile = (file: File, x: number, y: number) => {
+  const handleImageFile = async (file: File, x: number, y: number) => {
     if (!file.type.startsWith('image/')) {
       alert('Please select an image file')
       return
     }
 
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const base64 = e.target?.result as string
-      
-      // Create new image at the clicked position
-      const img = new Image()
-      img.onload = () => {
-        const newImage = {
-          id: `img-${Date.now()}-uploaded`,
-          src: base64,
-          x: x,
-          y: y,
-          width: img.width,
-          height: img.height,
-          metadata: {
-            type: 'uploaded' as const,
-            usedIn: new Set<'img2img' | 'inpaint' | 'controlnet'>()
-          }
-        }
-        addImage(newImage)
-      }
-      img.src = base64
-    }
-    reader.readAsDataURL(file)
+    // Use the new uploadImageToCanvas function from the store
+    await uploadImageToCanvas(file, x, y)
   }
 
-  const handleFileSelect = (e: Event) => {
+  const handleFileSelect = async (e: Event) => {
     const input = e.target as HTMLInputElement
     const file = input.files?.[0]
     if (!file) return
     
-    handleImageFile(file, canvasState.uploadPosition.x, canvasState.uploadPosition.y)
+    await handleImageFile(file, canvasState.uploadPosition.x, canvasState.uploadPosition.y)
     
     // Reset file input
     if (input) {

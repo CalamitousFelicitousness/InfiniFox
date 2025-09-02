@@ -2,18 +2,28 @@ import type { StateCreator } from 'zustand'
 import type { Sampler, SdModel } from '../types/sdnext'
 import type { ProgressMethod } from '../services/progress/ProgressService'
 
-// Image related types
+// Updated Image type to use Object URLs
 export interface ImageData {
   id: string
-  src: string
+  src: string  // This will now be an Object URL instead of base64
   x: number
   y: number
   width?: number
   height?: number
   metadata?: {
     type: 'generated' | 'uploaded' | 'reference'
+    prompt?: string
+    negativePrompt?: string
+    seed?: number
+    steps?: number
+    cfgScale?: number
+    sampler?: string
+    denoisingStrength?: number
     usedIn?: Set<'img2img' | 'inpaint' | 'controlnet'>
   }
+  // New fields for storage management
+  blobId?: string  // Reference to blob in storage service
+  isTemporary?: boolean  // Flag for images not yet persisted
 }
 
 export interface ImageRole {
@@ -72,6 +82,13 @@ export interface AppState {
   // API
   apiSettings: ApiSettings
   isLoading: boolean
+  
+  // Storage management
+  storageStats?: {
+    imageCount: number
+    totalSize: number
+    memoryUrls: number
+  }
   
   // All actions from slices will be added here
   [key: string]: any

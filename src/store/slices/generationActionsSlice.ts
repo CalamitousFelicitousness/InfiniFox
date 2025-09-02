@@ -1,5 +1,6 @@
 import { sdnextApi } from '../../api/sdnextApi'
 import { progressService } from '../../services/progress/ProgressService'
+import { imageStorage } from '../../services/storage'
 import { useQueueStore } from '../queueStore'
 import type { InpaintParams, SliceCreator } from '../types'
 
@@ -8,6 +9,8 @@ export interface GenerationActionsSlice {
   generateTxt2Img: () => Promise<void>
   generateImg2Img: (baseImage: string, denoisingStrength: number) => Promise<void>
   generateInpaint: (params: InpaintParams) => Promise<void>
+  loadImagesFromStorage: () => Promise<void>
+  updateStorageStats: () => Promise<void>
 }
 
 export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> = (set, get) => ({
@@ -46,17 +49,44 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       const response = await sdnextApi.txt2img(params)
       console.log('Generation response received:', response)
 
+      // Create unique ID for the image
+      const imageId = `img-${Date.now()}`
+      
+      // Convert base64 to blob and create object URL
+      const storedImage = await imageStorage.createFromBase64(
+        imageId,
+        response.images[0],
+        {
+          type: 'generated',
+          prompt,
+          negativePrompt,
+          seed,
+          steps,
+          cfgScale,
+          width,
+          height,
+          sampler,
+          usedIn: new Set()
+        }
+      )
+
+      // Add image to canvas with object URL instead of base64
       const newImage = {
-        src: `data:image/png;base64,${response.images[0]}`,
+        id: imageId,
+        src: storedImage.objectUrl,  // Use object URL instead of base64
         x: Math.random() * (window.innerWidth - 200),
         y: Math.random() * (window.innerHeight - 200),
-        id: `img-${Date.now()}`,
-        metadata: {
-          type: 'generated' as const,
-          usedIn: new Set<'img2img' | 'inpaint' | 'controlnet'>(),
-        },
+        width,
+        height,
+        metadata: storedImage.metadata,
+        blobId: imageId,  // Reference to stored blob
+        isTemporary: false
       }
+      
       get().addImage(newImage)
+      
+      // Update storage stats
+      await get().updateStorageStats()
       
       // Force complete the progress indicator since we have the image
       progressService.stopPolling(true)
@@ -111,17 +141,46 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       progressService.startPolling()
 
       const response = await sdnextApi.img2img(params)
+      
+      // Create unique ID for the image
+      const imageId = `img-${Date.now()}`
+      
+      // Convert base64 to blob and create object URL
+      const storedImage = await imageStorage.createFromBase64(
+        imageId,
+        response.images[0],
+        {
+          type: 'generated',
+          prompt,
+          negativePrompt,
+          seed,
+          steps,
+          cfgScale,
+          width,
+          height,
+          sampler,
+          denoisingStrength,
+          usedIn: new Set()
+        }
+      )
+
+      // Add image to canvas with object URL
       const newImage = {
-        src: `data:image/png;base64,${response.images[0]}`,
+        id: imageId,
+        src: storedImage.objectUrl,
         x: Math.random() * (window.innerWidth - 200),
         y: Math.random() * (window.innerHeight - 200),
-        id: `img-${Date.now()}`,
-        metadata: {
-          type: 'generated' as const,
-          usedIn: new Set<'img2img' | 'inpaint' | 'controlnet'>(),
-        },
+        width,
+        height,
+        metadata: storedImage.metadata,
+        blobId: imageId,
+        isTemporary: false
       }
+      
       get().addImage(newImage)
+      
+      // Update storage stats
+      await get().updateStorageStats()
       
       // Force complete the progress indicator since we have the image
       progressService.stopPolling(true)
@@ -183,17 +242,46 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       progressService.startPolling()
 
       const response = await sdnextApi.img2img(apiParams)
+      
+      // Create unique ID for the image
+      const imageId = `img-${Date.now()}`
+      
+      // Convert base64 to blob and create object URL
+      const storedImage = await imageStorage.createFromBase64(
+        imageId,
+        response.images[0],
+        {
+          type: 'generated',
+          prompt,
+          negativePrompt,
+          seed,
+          steps,
+          cfgScale,
+          width,
+          height,
+          sampler,
+          denoisingStrength: params.denoisingStrength,
+          usedIn: new Set()
+        }
+      )
+
+      // Add image to canvas with object URL
       const newImage = {
-        src: `data:image/png;base64,${response.images[0]}`,
+        id: imageId,
+        src: storedImage.objectUrl,
         x: Math.random() * (window.innerWidth - 200),
         y: Math.random() * (window.innerHeight - 200),
-        id: `img-${Date.now()}`,
-        metadata: {
-          type: 'generated' as const,
-          usedIn: new Set<'img2img' | 'inpaint' | 'controlnet'>(),
-        },
+        width,
+        height,
+        metadata: storedImage.metadata,
+        blobId: imageId,
+        isTemporary: false
       }
+      
       get().addImage(newImage)
+      
+      // Update storage stats
+      await get().updateStorageStats()
       
       // Force complete the progress indicator since we have the image
       progressService.stopPolling(true)
@@ -206,4 +294,46 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       set({ isLoading: false })
     }
   },
+  
+  /**
+   * Load images from IndexedDB on app start
+   */
+  loadImagesFromStorage: async () => {
+    try {
+      console.log('Loading images from storage...')
+      const storedImages = await imageStorage.loadAllFromIndexedDB()
+      
+      const images = storedImages.map(stored => ({
+        id: stored.id,
+        src: stored.objectUrl,
+        x: Math.random() * (window.innerWidth - 400),
+        y: Math.random() * (window.innerHeight - 200),
+        width: stored.metadata.width,
+        height: stored.metadata.height,
+        metadata: stored.metadata,
+        blobId: stored.id,
+        isTemporary: false
+      }))
+      
+      set({ images })
+      console.log(`Loaded ${images.length} images from storage`)
+      
+      // Update storage stats
+      await get().updateStorageStats()
+    } catch (error) {
+      console.error('Failed to load images from storage:', error)
+    }
+  },
+  
+  /**
+   * Update storage statistics
+   */
+  updateStorageStats: async () => {
+    try {
+      const stats = await imageStorage.getStorageStats()
+      set({ storageStats: stats })
+    } catch (error) {
+      console.error('Failed to update storage stats:', error)
+    }
+  }
 })

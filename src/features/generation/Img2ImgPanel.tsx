@@ -30,15 +30,18 @@ export function Img2ImgPanel() {
     generateImg2Img,
     isLoading,
     startCanvasSelection,
+    exportImageAsBase64,
     images,
   } = useStore()
 
   const [baseImage, setBaseImage] = useState<string>('')
   const [denoisingStrength, setDenoisingStrength] = useState(0.75)
   const [selectionMode, setSelectionMode] = useState<'upload' | 'canvas'>('upload')
+  const [selectedImageId, setSelectedImageId] = useState<string | null>(null)
 
   const handleImageSelect = (base64: string, imgWidth: number, imgHeight: number) => {
     setBaseImage(base64)
+    setSelectedImageId(null) // Clear canvas selection
     if (imgWidth && imgHeight) {
       // Optionally update dimensions to match source image
       setWidth(imgWidth)
@@ -48,32 +51,52 @@ export function Img2ImgPanel() {
 
   const handleSelectFromCanvas = () => {
     setSelectionMode('canvas')
-    startCanvasSelection('img2img', (imageId: string, imageSrc: string) => {
-      // Remove data URL prefix if present
-      const base64 = imageSrc.includes('base64,') 
-        ? imageSrc.split(',')[1] 
-        : imageSrc
-      
-      // Get image dimensions
-      const img = new Image()
-      img.onload = () => {
-        setBaseImage(base64)
-        setWidth(img.width)
-        setHeight(img.height)
+    startCanvasSelection('img2img', async (imageId: string, imageSrc: string) => {
+      try {
+        // Export the image as base64 for API usage
+        const base64 = await exportImageAsBase64(imageId)
+        
+        // Get image dimensions from the canvas image
+        const selectedImage = images.find(img => img.id === imageId)
+        if (selectedImage) {
+          setBaseImage(base64)
+          setSelectedImageId(imageId)
+          if (selectedImage.width && selectedImage.height) {
+            setWidth(selectedImage.width)
+            setHeight(selectedImage.height)
+          }
+        }
+        
         setSelectionMode('upload')
+      } catch (error) {
+        console.error('Failed to export image:', error)
+        alert('Failed to export image for img2img')
       }
-      img.src = imageSrc.includes('data:image') ? imageSrc : `data:image/png;base64,${imageSrc}`
     })
   }
 
-  const handleGenerate = (e: Event) => {
+  const handleGenerate = async (e: Event) => {
     e.preventDefault()
-    if (!baseImage) {
+    
+    // If we have a selected canvas image, export it fresh
+    let finalBase64 = baseImage
+    if (selectedImageId) {
+      try {
+        finalBase64 = await exportImageAsBase64(selectedImageId)
+      } catch (error) {
+        console.error('Failed to export image:', error)
+        alert('Failed to export image')
+        return
+      }
+    }
+    
+    if (!finalBase64) {
       alert('Please upload an image first')
       return
     }
+    
     if (!isLoading) {
-      generateImg2Img(baseImage, denoisingStrength)
+      generateImg2Img(finalBase64, denoisingStrength)
     }
   }
 
@@ -105,7 +128,17 @@ export function Img2ImgPanel() {
             </div>
           )}
           
-          <ImageUpload onImageSelect={handleImageSelect} currentImage={baseImage ? `data:image/png;base64,${baseImage}` : undefined} disabled={isLoading} />
+          {selectedImageId && (
+            <div class="selected-image-info">
+              Selected: {selectedImageId}
+            </div>
+          )}
+          
+          <ImageUpload 
+            onImageSelect={handleImageSelect} 
+            currentImage={baseImage ? `data:image/png;base64,${baseImage}` : undefined} 
+            disabled={isLoading} 
+          />
         </div>
 
         <label>Prompt</label>
