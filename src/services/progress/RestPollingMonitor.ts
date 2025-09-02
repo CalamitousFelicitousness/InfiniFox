@@ -187,7 +187,9 @@ export class RestPollingMonitor extends BaseProgressMonitor {
             if (this.generationStarted) {
               // We had a job before, now it's gone
 
-              // Check if we were in VAE phase - if so, we're done immediately
+              this.completionCheckCount++
+
+              // Quick completion if we were in VAE phase
               if (this.lastPhase === 'vae' && !this.vaeCompleted) {
                 console.log('VAE completed - generation finished')
                 this.vaeCompleted = true
@@ -206,30 +208,43 @@ export class RestPollingMonitor extends BaseProgressMonitor {
                 return
               }
 
-              // If we finished sampling (reached total steps) but haven't seen VAE yet
-              if (this.lastStep >= 1 && !this.vaeStarted) {
-                this.completionCheckCount++
+              // If we've been through sampling or any significant phase
+              if ((this.lastPhase === 'sampling' || this.lastPhase === 'postprocessing' || this.vaeStarted) && this.completionCheckCount >= 2) {
+                console.log(`Generation likely completed (was in ${this.lastPhase}, no job for ${this.completionCheckCount} checks)`)
+                phase = 'completed'
 
-                // Give it a moment for VAE to start, otherwise assume no VAE needed
-                if (this.completionCheckCount >= 3) {
-                  console.log('Generation completed without explicit VAE phase')
-                  phase = 'completed'
-
-                  const message: ProgressMessage = {
-                    current: 1,
-                    total: 1,
-                    status: 'completed',
-                    phase: 'completed',
-                    preview: data.current_image,
-                  }
-
-                  this.notifyHandlers(message)
-                  this.stopPolling()
-                  return
+                const message: ProgressMessage = {
+                  current: 1,
+                  total: 1,
+                  status: 'completed',
+                  phase: 'completed',
+                  preview: data.current_image,
                 }
 
-                console.log(`Waiting for VAE or completion (${this.completionCheckCount}/3)`)
+                this.notifyHandlers(message)
+                this.stopPolling()
+                return
               }
+
+              // For simple generations that may not show clear phases
+              if (this.completionCheckCount >= 4) {
+                console.log('Generation completed (no active job after 4 checks)')
+                phase = 'completed'
+
+                const message: ProgressMessage = {
+                  current: 1,
+                  total: 1,
+                  status: 'completed',
+                  phase: 'completed',
+                  preview: data.current_image,
+                }
+
+                this.notifyHandlers(message)
+                this.stopPolling()
+                return
+              }
+
+              console.log(`Waiting for completion confirmation (${this.completionCheckCount} checks)`)
             } else if (this.completionCheckCount >= 10) {
               // Waited 5 seconds for job to start, give up
               console.log('No job started after 5 seconds, stopping polling')
@@ -251,7 +266,20 @@ export class RestPollingMonitor extends BaseProgressMonitor {
     poll()
   }
 
-  stopPolling(): void {
+  stopPolling(forceComplete: boolean = false): void {
+    // If we're stopping after a generation and we were actively monitoring, send completion
+    if (forceComplete && this.generationStarted && this.lastPhase !== 'completed') {
+      console.log('Force completing progress indicator')
+      const message: ProgressMessage = {
+        current: 1,
+        total: 1,
+        status: 'completed',
+        phase: 'completed',
+        preview: undefined,
+      }
+      this.notifyHandlers(message)
+    }
+
     this.isPolling = false
     this.generationStarted = false
     this.vaeStarted = false

@@ -1,0 +1,209 @@
+import { sdnextApi } from '../../api/sdnextApi'
+import { progressService } from '../../services/progress/ProgressService'
+import { useQueueStore } from '../queueStore'
+import type { InpaintParams, SliceCreator } from '../types'
+
+export interface GenerationActionsSlice {
+  // Actions
+  generateTxt2Img: () => Promise<void>
+  generateImg2Img: (baseImage: string, denoisingStrength: number) => Promise<void>
+  generateInpaint: (params: InpaintParams) => Promise<void>
+}
+
+export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> = (set, get) => ({
+  generateTxt2Img: async () => {
+    const { prompt, negativePrompt, sampler, seed, steps, cfgScale, width, height } = get()
+
+    if (!prompt) {
+      alert('Please enter a prompt.')
+      return
+    }
+    set({ isLoading: true })
+
+    const params = {
+      prompt,
+      negative_prompt: negativePrompt,
+      sampler_name: sampler,
+      seed,
+      steps,
+      cfg_scale: cfgScale,
+      width,
+      height,
+    }
+
+    // Check if batch mode is enabled
+    const { batchSettings } = useQueueStore.getState()
+    if (batchSettings.enabled) {
+      useQueueStore.getState().addBatch(params, 'txt2img')
+      set({ isLoading: false })
+      return
+    }
+
+    try {
+      // Start progress monitoring before making the request
+      progressService.startPolling()
+
+      const response = await sdnextApi.txt2img(params)
+      console.log('Generation response received:', response)
+
+      const newImage = {
+        src: `data:image/png;base64,${response.images[0]}`,
+        x: Math.random() * (window.innerWidth - 200),
+        y: Math.random() * (window.innerHeight - 200),
+        id: `img-${Date.now()}`,
+        metadata: {
+          type: 'generated' as const,
+          usedIn: new Set<'img2img' | 'inpaint' | 'controlnet'>(),
+        },
+      }
+      get().addImage(newImage)
+      
+      // Force complete the progress indicator since we have the image
+      progressService.stopPolling(true)
+    } catch (error) {
+      console.error('Failed to generate image:', error)
+      alert('Failed to generate image. Check console for details.')
+      // Don't force complete on error
+      progressService.stopPolling(false)
+    } finally {
+      set({ isLoading: false })
+      console.log('Generation finished, loading state cleared')
+    }
+  },
+
+  generateImg2Img: async (baseImage: string, denoisingStrength: number) => {
+    const { prompt, negativePrompt, sampler, seed, steps, cfgScale, width, height } = get()
+
+    if (!prompt) {
+      alert('Please enter a prompt.')
+      return
+    }
+
+    if (!baseImage) {
+      alert('Please upload an image.')
+      return
+    }
+
+    set({ isLoading: true })
+    const params = {
+      init_images: [baseImage],
+      prompt,
+      negative_prompt: negativePrompt,
+      sampler_name: sampler,
+      seed,
+      steps,
+      cfg_scale: cfgScale,
+      width,
+      height,
+      denoising_strength: denoisingStrength,
+    }
+
+    // Check if batch mode is enabled
+    const { batchSettings } = useQueueStore.getState()
+    if (batchSettings.enabled) {
+      useQueueStore.getState().addBatch(params, 'img2img')
+      set({ isLoading: false })
+      return
+    }
+
+    try {
+      // Start progress monitoring
+      progressService.startPolling()
+
+      const response = await sdnextApi.img2img(params)
+      const newImage = {
+        src: `data:image/png;base64,${response.images[0]}`,
+        x: Math.random() * (window.innerWidth - 200),
+        y: Math.random() * (window.innerHeight - 200),
+        id: `img-${Date.now()}`,
+        metadata: {
+          type: 'generated' as const,
+          usedIn: new Set<'img2img' | 'inpaint' | 'controlnet'>(),
+        },
+      }
+      get().addImage(newImage)
+      
+      // Force complete the progress indicator since we have the image
+      progressService.stopPolling(true)
+      set({ isLoading: false })
+    } catch (error) {
+      console.error('Failed to generate image:', error)
+      alert('Failed to generate image. Check console for details.')
+      // Don't force complete on error
+      progressService.stopPolling(false)
+      set({ isLoading: false })
+    }
+  },
+
+  generateInpaint: async (params: InpaintParams) => {
+    const { prompt, negativePrompt, sampler, seed, steps, cfgScale, width, height } = get()
+
+    if (!prompt) {
+      alert('Please enter a prompt.')
+      return
+    }
+
+    set({ isLoading: true })
+
+    const apiParams = {
+      init_images: [params.baseImage],
+      mask: params.maskImage,
+      prompt,
+      negative_prompt: negativePrompt,
+      sampler_name: sampler,
+      seed,
+      steps,
+      cfg_scale: cfgScale,
+      width,
+      height,
+      denoising_strength: params.denoisingStrength,
+      mask_blur: params.maskBlur,
+      inpainting_fill:
+        params.inpaintingFill === 'fill'
+          ? 0
+          : params.inpaintingFill === 'original'
+            ? 1
+            : params.inpaintingFill === 'latent_noise'
+              ? 2
+              : 3,
+      inpaint_full_res: params.inpaintFullRes,
+      inpaint_full_res_padding: params.inpaintFullResPadding,
+    }
+
+    // Check if batch mode is enabled
+    const { batchSettings } = useQueueStore.getState()
+    if (batchSettings.enabled) {
+      useQueueStore.getState().addBatch(apiParams, 'inpaint')
+      set({ isLoading: false })
+      return
+    }
+
+    try {
+      // Start progress monitoring
+      progressService.startPolling()
+
+      const response = await sdnextApi.img2img(apiParams)
+      const newImage = {
+        src: `data:image/png;base64,${response.images[0]}`,
+        x: Math.random() * (window.innerWidth - 200),
+        y: Math.random() * (window.innerHeight - 200),
+        id: `img-${Date.now()}`,
+        metadata: {
+          type: 'generated' as const,
+          usedIn: new Set<'img2img' | 'inpaint' | 'controlnet'>(),
+        },
+      }
+      get().addImage(newImage)
+      
+      // Force complete the progress indicator since we have the image
+      progressService.stopPolling(true)
+      set({ isLoading: false })
+    } catch (error) {
+      console.error('Failed to generate inpaint:', error)
+      alert('Failed to generate inpaint. Check console for details.')
+      // Don't force complete on error
+      progressService.stopPolling(false)
+      set({ isLoading: false })
+    }
+  },
+})

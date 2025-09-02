@@ -187,9 +187,9 @@ export class ProgressService {
   }
 
   // Stop polling for REST-based progress
-  stopPolling(): void {
+  stopPolling(forceComplete: boolean = false): void {
     if (this.activeMonitor && 'stopPolling' in this.activeMonitor) {
-      ;(this.activeMonitor as any).stopPolling()
+      ;(this.activeMonitor as any).stopPolling(forceComplete)
     }
   }
 }
