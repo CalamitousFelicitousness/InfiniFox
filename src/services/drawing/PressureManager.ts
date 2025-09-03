@@ -3,7 +3,8 @@
  * Integrates with existing pointer events and provides enhanced pressure detection
  */
 
-import { getPointerInfo, supportsPressure, PointerInfo } from '../../utils/pointerEvents'
+import { getPointerInfo, supportsPressure } from '../../utils/pointerEvents'
+import type { PointerInfo } from '../../utils/pointerEvents'
 
 export interface PressureState {
   current: number // 0.0 to 1.0
@@ -51,6 +52,31 @@ export class PressureManager {
       this.config = { ...this.config, ...config }
     }
     this.detectSupport()
+  }
+  
+  /**
+   * Initialize the pressure manager
+   */
+  initialize(): void {
+    this.detectSupport()
+    this.reset()
+  }
+  
+  /**
+   * Cleanup the pressure manager
+   */
+  cleanup(): void {
+    this.stopPolyfill()
+    this.listeners.clear()
+    this.reset()
+  }
+  
+  /**
+   * Get current pressure value (0-1)
+   * Alias for getPressure for compatibility
+   */
+  getCurrentPressure(): number {
+    return this.state.current
   }
   
   /**

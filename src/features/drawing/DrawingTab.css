@@ -1,0 +1,429 @@
+/* DrawingTab.css - Compact drawing panel for ControlPanel integration */
+
+/* Drawing Mode Section */
+.drawing-mode-section {
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.drawing-mode-toggle {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, var(--secondary-bg-color), var(--tertiary-bg-color));
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--primary-text-color);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.drawing-mode-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(100, 108, 255, 0.2);
+  border-color: var(--accent-color);
+}
+
+.drawing-mode-toggle.active {
+  background: linear-gradient(135deg, var(--accent-color), #7c84ff);
+  color: white;
+  border-color: var(--accent-color);
+  box-shadow: 0 4px 16px rgba(100, 108, 255, 0.4);
+}
+
+.drawing-mode-hint {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--accent-color);
+  font-style: italic;
+}
+
+/* Drawing Stats */
+.drawing-stats {
+  margin-top: 0.75rem;
+  padding: 0.5rem;
+  background: var(--tertiary-bg-color);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: var(--secondary-text-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.drawing-active {
+  color: var(--accent-color);
+  font-weight: 600;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Disabled state styles */
+.drawing-tab button:disabled,
+.drawing-tab input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.drawing-tab .slider-row input:disabled {
+  opacity: 0.5;
+}
+
+/* Main Tab Container */
+.drawing-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+/* Compact Toolbar */
+.drawing-toolbar-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Tool Row */
+.tool-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tool-group {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.tool-btn-compact {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background-color: var(--primary-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--primary-text-color);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tool-btn-compact:hover {
+  background-color: var(--secondary-bg-color);
+  transform: translateY(-1px);
+}
+
+.tool-btn-compact.active {
+  background-color: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+  box-shadow: 0 2px 8px rgba(100, 108, 255, 0.3);
+}
+
+/* Action Buttons */
+.action-btn-compact {
+  padding: 0.4rem 0.75rem;
+  background-color: var(--primary-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--primary-text-color);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.action-btn-compact:hover {
+  background-color: var(--secondary-bg-color);
+}
+
+.action-btn-full {
+  width: 100%;
+  padding: 0.5rem;
+  background-color: var(--primary-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--primary-text-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-btn-full:hover {
+  background-color: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+}
+
+/* Preset Row */
+.preset-row {
+  display: flex;
+  gap: 0.25rem;
+  justify-content: space-between;
+}
+
+.preset-btn-compact {
+  flex: 1;
+  height: 32px;
+  padding: 0;
+  background-color: var(--primary-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--secondary-text-color);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.preset-btn-compact:hover {
+  background-color: var(--secondary-bg-color);
+}
+
+.preset-btn-compact.active {
+  background-color: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+}
+
+/* Slider Row */
+.slider-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 40px;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.slider-row label {
+  color: var(--secondary-text-color);
+  font-size: 0.85rem;
+}
+
+.slider-row .value-label {
+  text-align: right;
+  color: var(--secondary-text-color);
+  font-size: 0.85rem;
+  font-family: monospace;
+}
+
+/* Color Section */
+.color-section-compact {
+  padding: 0.5rem;
+  background-color: var(--primary-bg-color);
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+.current-color-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.color-input-compact {
+  width: 50px;
+  height: 36px;
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.color-input-compact:hover {
+  border-color: var(--accent-color);
+}
+
+.color-hex {
+  color: var(--secondary-text-color);
+  font-family: monospace;
+  font-size: 0.9rem;
+  flex: 1;
+}
+
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.5rem;
+}
+
+.color-swatch-compact {
+  aspect-ratio: 1;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  min-height: 28px;
+}
+
+.color-swatch-compact:hover {
+  transform: scale(1.1);
+  border-color: var(--accent-color);
+}
+
+.color-swatch-compact.active {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(100, 108, 255, 0.2);
+}
+
+.color-swatch-compact.active::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Expanded Tools */
+.expanded-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background-color: var(--primary-bg-color);
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 200px;
+  }
+}
+
+.pressure-info {
+  text-align: center;
+  color: var(--secondary-text-color);
+  font-size: 0.85rem;
+  padding: 0.25rem;
+  background-color: var(--secondary-bg-color);
+  border-radius: 4px;
+}
+
+/* Canvas Area */
+.drawing-canvas-compact {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.drawing-canvas-compact canvas {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s ease;
+}
+
+.drawing-canvas-compact canvas:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 480px) {
+  .drawing-tab {
+    padding: 0.25rem 0;
+  }
+  
+  .tool-btn-compact {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+  
+  .preset-row {
+    flex-wrap: wrap;
+  }
+  
+  .color-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .drawing-canvas-compact canvas {
+    background-color: #f5f5f5;
+  }
+}
+
+/* Touch-friendly adjustments */
+@media (pointer: coarse) {
+  .tool-btn-compact,
+  .preset-btn-compact,
+  .action-btn-compact {
+    min-height: 44px;
+  }
+  
+  .color-swatch-compact {
+    min-height: 44px;
+  }
+}
+
+/* Animation for tool transitions */
+.tool-btn-compact,
+.preset-btn-compact,
+.action-btn-compact,
+.color-swatch-compact {
+  position: relative;
+  overflow: hidden;
+}
+
+.tool-btn-compact::before,
+.preset-btn-compact::before,
+.action-btn-compact::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translate(-50%, -50%);
+  transition: width 0.4s, height 0.4s;
+}
+
+.tool-btn-compact:active::before,
+.preset-btn-compact:active::before,
+.action-btn-compact:active::before {
+  width: 100%;
+  height: 100%;
+}
+
+/* Loading state */
+.drawing-tab.loading {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.drawing-tab.loading::after {
+  content: 'Loading...';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--secondary-text-color);
+}

@@ -1,10 +1,13 @@
 import Konva from 'konva'
 import { useEffect, useState, useRef } from 'preact/hooks'
-import { Stage, Layer, Image as KonvaImage, Transformer } from 'react-konva'
+import { Stage, Layer, Image as KonvaImage, Transformer, Line, Circle } from 'react-konva'
 
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
 import { useStore } from '../../store/store'
 import { preventDefaultTouch } from '../../utils/pointerEvents'
+import { PerfectFreehandService, BRUSH_PRESETS } from '../../services/drawing/PerfectFreehandService'
+import { PressureManager } from '../../services/drawing/PressureManager'
+import { LazyBrush } from '../../services/drawing/LazyBrush'
 
 import { CanvasContextMenu } from './CanvasContextMenu'
 import './Canvas.css'
@@ -32,8 +35,27 @@ export function Canvas() {
     uploadImageToCanvas,
     canvasSelectionMode,
     cancelCanvasSelection,
-    setImageRole
+    setImageRole,
+    // Drawing state from store
+    isDrawingMode,
+    isDrawingActive,
+    drawingTool,
+    brushSize,
+    brushOpacity,
+    brushColor,
+    brushPreset,
+    smoothing,
+    drawingStrokes,
+    currentStroke,
+    drawingLayerVisible,
+    drawingLayerOpacity,
+    // Drawing actions from store
+    setDrawingActive,
+    startDrawingStroke,
+    updateCurrentStroke,
+    endDrawingStroke
   } = useStore()
+  
   const [konvaImages, setKonvaImages] = useState<KonvaImageData[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [scale, setScale] = useState(1)
@@ -53,12 +75,57 @@ export function Canvas() {
     y: 0,
     imageId: null,
   })
+  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 })
+  const [showDrawingCursor, setShowDrawingCursor] = useState(false)
+  const [currentPressure, setCurrentPressure] = useState(0.5)
+  const strokePointsRef = useRef<{ x: number, y: number, pressure: number }[]>([])
+  
   const stageRef = useRef<Konva.Stage>(null)
   const transformerRef = useRef<Konva.Transformer>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDraggingFile, setIsDraggingFile] = useState(false)
-
+  
+  // Drawing services
+  const perfectFreehandRef = useRef<PerfectFreehandService | null>(null)
+  const pressureManagerRef = useRef<PressureManager | null>(null)
+  const lazyBrushRef = useRef<LazyBrush | null>(null)
+  
+  // Initialize drawing services
+  useEffect(() => {
+    const preset = BRUSH_PRESETS[brushPreset as keyof typeof BRUSH_PRESETS] || BRUSH_PRESETS.soft
+    perfectFreehandRef.current = new PerfectFreehandService({
+      ...preset,
+      size: brushSize
+    })
+    pressureManagerRef.current = new PressureManager()
+    lazyBrushRef.current = new LazyBrush({ radius: smoothing, enabled: true })
+    
+    pressureManagerRef.current.initialize()
+    
+    return () => {
+      pressureManagerRef.current?.cleanup()
+    }
+  }, [])
+  
+  // Update drawing services when settings change
+  useEffect(() => {
+    if (perfectFreehandRef.current) {
+      const preset = BRUSH_PRESETS[brushPreset as keyof typeof BRUSH_PRESETS] || BRUSH_PRESETS.soft
+      perfectFreehandRef.current.setOptions({
+        ...preset,
+        size: brushSize, // Use the actual brush size from state
+        smoothing: smoothing / 100
+      })
+    }
+  }, [brushSize, brushPreset, smoothing])
+  
+  useEffect(() => {
+    if (lazyBrushRef.current) {
+      lazyBrushRef.current.configure({ radius: smoothing })
+    }
+  }, [smoothing])
+  
   // Prevent default touch behaviors on canvas
   useEffect(() => {
     const container = containerRef.current
@@ -95,13 +162,12 @@ export function Canvas() {
       const files = Array.from(e.dataTransfer?.files || [])
       const imageFile = files.find(f => f.type.startsWith('image/'))
       
-      if (imageFile) {
-        // Calculate drop position relative to canvas
+      if (imageFile && stageRef.current) {
         const stage = stageRef.current
-        if (stage) {
-          const containerRect = container.getBoundingClientRect()
-          const x = (e.clientX - containerRect.left - position.x) / scale
-          const y = (e.clientY - containerRect.top - position.y) / scale
+        const pointer = stage.getPointerPosition()
+        if (pointer) {
+          const x = (pointer.x - position.x) / scale
+          const y = (pointer.y - position.y) / scale
           handleImageFile(imageFile, x, y)
         }
       }
@@ -110,7 +176,7 @@ export function Canvas() {
     container.addEventListener('dragover', handleDragOver)
     container.addEventListener('dragleave', handleDragLeave)
     container.addEventListener('drop', handleDrop)
-
+    
     return () => {
       container.removeEventListener('dragover', handleDragOver)
       container.removeEventListener('dragleave', handleDragLeave)
@@ -118,18 +184,18 @@ export function Canvas() {
     }
   }, [position, scale])
 
-  // Get border color based on image role
   const getImageBorderColor = (imageId: string) => {
     const role = activeImageRoles.find(r => r.imageId === imageId)
-    if (role) {
-      switch (role.role) {
-        case 'img2img': return '#4ade80' // green
-        case 'inpaint': return '#a78bfa' // purple
-        case 'controlnet': return '#fbbf24' // yellow
-        default: return '#646cff' // default blue
-      }
+    if (!role) return selectedId === imageId ? '#646cff' : 'transparent'
+    
+    switch (role.role) {
+      case 'img2img_init':
+        return '#00ff00'
+      case 'inpaint_image':
+        return '#ff00ff'
+      default:
+        return selectedId === imageId ? '#646cff' : 'transparent'
     }
-    return selectedId === imageId ? '#646cff' : 'transparent'
   }
 
   // Setup keyboard shortcuts
@@ -258,6 +324,47 @@ export function Canvas() {
   const handleStagePointerDown = (
     e: Konva.KonvaEventObject<PointerEvent | MouseEvent | TouchEvent>
   ) => {
+    // If we're in drawing mode, handle drawing
+    if (isDrawingMode && !isDrawingActive) {
+      const stage = stageRef.current
+      if (!stage) return
+      
+      const pointer = stage.getPointerPosition()
+      if (!pointer) return
+      
+      // Convert to canvas coordinates
+      const canvasX = (pointer.x - position.x) / scale
+      const canvasY = (pointer.y - position.y) / scale
+      
+      // Initialize drawing
+      if (lazyBrushRef.current) {
+        lazyBrushRef.current.initializePositions({ x: canvasX, y: canvasY })
+      }
+      
+      // Get pressure from pointer event if available
+      const evt = e.evt as any
+      const pressure = (evt && 'pressure' in evt) ? evt.pressure : 0.5
+      setCurrentPressure(pressure)
+      
+      // Initialize stroke points
+      strokePointsRef.current = [{ x: canvasX, y: canvasY, pressure }]
+      
+      if (perfectFreehandRef.current) {
+        perfectFreehandRef.current.startStroke({ x: canvasX, y: canvasY, pressure })
+      }
+      
+      startDrawingStroke({
+        tool: drawingTool,
+        points: [canvasX, canvasY],
+        color: brushColor,
+        opacity: brushOpacity / 100,
+        strokeWidth: brushSize,
+        globalCompositeOperation: drawingTool === 'eraser' ? 'destination-out' : 'source-over'
+      })
+      
+      return
+    }
+    
     // If we're in selection mode and clicked on an image
     if (canvasSelectionMode.active && e.target !== e.target.getStage()) {
       const clickedImage = konvaImages.find(img => img.id === e.target.id())
@@ -277,11 +384,90 @@ export function Canvas() {
     // Handle all pointer types (mouse, touch, pen)
     // Deselect if clicking/tapping on empty area
     const clickedOnEmpty = e.target === e.target.getStage()
-    if (clickedOnEmpty) {
+    if (clickedOnEmpty && !isDrawingMode) {
       setSelectedId(null)
     }
     // Hide context menu
     setContextMenu({ ...contextMenu, visible: false })
+  }
+  
+  const handleStagePointerMove = (e: Konva.KonvaEventObject<PointerEvent>) => {
+    const stage = stageRef.current
+    if (!stage) return
+    
+    const pointer = stage.getPointerPosition()
+    if (!pointer) return
+    
+    // Convert to canvas coordinates
+    const canvasX = (pointer.x - position.x) / scale
+    const canvasY = (pointer.y - position.y) / scale
+    
+    setCursorPos({ x: canvasX, y: canvasY })
+    
+    // Handle drawing
+    if (isDrawingMode && isDrawingActive) {
+      // Get pressure from pointer event if available
+      const evt = e.evt as any
+      const pressure = (evt && 'pressure' in evt) ? evt.pressure : 0.5
+      setCurrentPressure(pressure)
+      
+      if (lazyBrushRef.current) {
+        lazyBrushRef.current.update({ x: canvasX, y: canvasY })
+        const smoothed = lazyBrushRef.current.getBrushCoordinates()
+        
+        // Add to stroke points with pressure
+        strokePointsRef.current.push({ x: smoothed.x, y: smoothed.y, pressure })
+        
+        if (perfectFreehandRef.current) {
+          perfectFreehandRef.current.addPoint({ x: smoothed.x, y: smoothed.y, pressure })
+        }
+        
+        // Update current stroke points and generate outline
+        if (currentStroke) {
+          const newPoints = [...currentStroke.points, smoothed.x, smoothed.y]
+          
+          // Generate stroke outline using PerfectFreehand with actual pressure values
+          const outline = perfectFreehandRef.current?.generateStrokeOutline(strokePointsRef.current) || null
+          
+          updateCurrentStroke(newPoints, outline || undefined)
+        }
+      }
+    }
+  }
+  
+  const handleStagePointerUp = () => {
+    if (isDrawingMode && isDrawingActive) {
+      if (perfectFreehandRef.current) {
+        const finalOutline = perfectFreehandRef.current.endStroke()
+        if (finalOutline && currentStroke) {
+          // Update with final outline before ending
+          updateCurrentStroke(currentStroke.points, finalOutline)
+        }
+      }
+      // Clear stroke points reference
+      strokePointsRef.current = []
+      endDrawingStroke()
+    }
+  }
+  
+  const handleStagePointerEnter = () => {
+    if (isDrawingMode) {
+      setShowDrawingCursor(true)
+    }
+  }
+  
+  const handleStagePointerLeave = () => {
+    setShowDrawingCursor(false)
+    if (isDrawingActive) {
+      if (perfectFreehandRef.current) {
+        const finalOutline = perfectFreehandRef.current.endStroke()
+        if (finalOutline && currentStroke) {
+          updateCurrentStroke(currentStroke.points, finalOutline)
+        }
+      }
+      strokePointsRef.current = []
+      endDrawingStroke()
+    }
   }
 
   const handleStageDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
@@ -381,14 +567,18 @@ export function Canvas() {
       input.value = ''
     }
   }
+  
+  // Get cursor radius for drawing
+  const getCursorRadius = () => {
+    // Show actual brush size as cursor
+    return brushSize / 2
+  }
 
   return (
     <div 
-      class={`canvas-container ${isDraggingFile ? 'dragging-file' : ''} ${canvasSelectionMode.active ? 'selection-mode' : ''}`} 
+      class={`canvas-container ${isDraggingFile ? 'dragging-file' : ''} ${canvasSelectionMode.active ? 'selection-mode' : ''} ${isDrawingMode ? 'drawing-mode' : ''}`} 
       ref={containerRef}
     >
-
-      
       {canvasSelectionMode.active && (
         <div class="selection-mode-overlay">
           <div class="selection-mode-header">
@@ -403,6 +593,13 @@ export function Canvas() {
           <div class="selection-mode-hint">
             Click on any image to select it
           </div>
+        </div>
+      )}
+      
+      {isDrawingMode && (
+        <div class="drawing-mode-indicator">
+          <span class="drawing-mode-badge">✏️ Drawing Mode Active</span>
+          <span class="drawing-tool-info">Tool: {drawingTool} | Size: {brushSize}px</span>
         </div>
       )}
 
@@ -432,9 +629,13 @@ export function Canvas() {
         ref={stageRef}
         width={window.innerWidth - 400}
         height={window.innerHeight}
-        draggable
+        draggable={!isDrawingMode} // Disable stage dragging in drawing mode
         onWheel={handleWheel}
         onPointerDown={handleStagePointerDown}
+        onPointerMove={handleStagePointerMove}
+        onPointerUp={handleStagePointerUp}
+        onPointerEnter={handleStagePointerEnter}
+        onPointerLeave={handleStagePointerLeave}
         onTouchStart={handleStagePointerDown}
         onContextMenu={handleStageContextMenu}
         onDragMove={handleStageDragMove}
@@ -444,6 +645,7 @@ export function Canvas() {
         x={position.x}
         y={position.y}
       >
+        {/* Images Layer */}
         <Layer>
           {konvaImages.map((img) => (
             <KonvaImage
@@ -452,9 +654,9 @@ export function Canvas() {
               image={img.image}
               x={img.x}
               y={img.y}
-              draggable
-              onPointerDown={() => setSelectedId(img.id)}
-              onTap={() => setSelectedId(img.id)}
+              draggable={!isDrawingMode} // Disable image dragging in drawing mode
+              onPointerDown={() => !isDrawingMode && setSelectedId(img.id)}
+              onTap={() => !isDrawingMode && setSelectedId(img.id)}
               onContextMenu={(e) => handleContextMenu(e, img.id)}
               onDragMove={() => {/* Position handled internally by Konva during drag */}}
               onDragEnd={(e) => handleDragEnd(e, img.id)}
@@ -463,26 +665,123 @@ export function Canvas() {
               shadowBlur={selectedId === img.id ? 10 : 0}
               shadowColor={getImageBorderColor(img.id)}
               shadowOpacity={0.5}
-              opacity={canvasSelectionMode.active ? 0.7 : 1}
-              onMouseEnter={(e) => canvasSelectionMode.active && (e.target.opacity(1))}
-              onMouseLeave={(e) => canvasSelectionMode.active && (e.target.opacity(0.7))}
+              opacity={canvasSelectionMode.active ? 
+                (activeImageRoles.some(r => r.imageId === img.id) ? 1 : 0.5) : 1
+              }
             />
           ))}
-          <Transformer ref={transformerRef} />
+          <Transformer
+            ref={transformerRef}
+            boundBoxFunc={(oldBox, newBox) => {
+              // Limit resize to prevent negative values
+              if (newBox.width < 5 || newBox.height < 5) {
+                return oldBox
+              }
+              return newBox
+            }}
+          />
+        </Layer>
+        
+        {/* Drawing Layer */}
+        <Layer 
+          listening={isDrawingMode}
+          visible={drawingLayerVisible}
+          opacity={drawingLayerOpacity}
+        >
+          {/* Render completed strokes */}
+          {drawingStrokes.map((stroke) => {
+            // If we have an outline from PerfectFreehand, render as filled polygon
+            if (stroke.outline && stroke.outline.length > 0) {
+              const flatPoints = stroke.outline.flat()
+              return (
+                <Line
+                  key={stroke.id}
+                  points={flatPoints}
+                  fill={stroke.color}
+                  closed={true}
+                  globalCompositeOperation={stroke.globalCompositeOperation}
+                  opacity={stroke.opacity}
+                  listening={false}
+                />
+              )
+            }
+            // Fallback to regular line if no outline
+            return (
+              <Line
+                key={stroke.id}
+                points={stroke.points}
+                stroke={stroke.color}
+                strokeWidth={stroke.strokeWidth}
+                tension={0.5}
+                lineCap="round"
+                lineJoin="round"
+                globalCompositeOperation={stroke.globalCompositeOperation}
+                opacity={stroke.opacity}
+                listening={false}
+              />
+            )
+          })}
+          
+          {/* Render current stroke being drawn */}
+          {currentStroke && (
+            currentStroke.outline && currentStroke.outline.length > 0 ? (
+              <Line
+                points={currentStroke.outline.flat()}
+                fill={currentStroke.color}
+                closed={true}
+                globalCompositeOperation={currentStroke.globalCompositeOperation}
+                opacity={currentStroke.opacity}
+                listening={false}
+              />
+            ) : (
+              <Line
+                points={currentStroke.points}
+                stroke={currentStroke.color}
+                strokeWidth={currentStroke.strokeWidth}
+                tension={0.5}
+                lineCap="round"
+                lineJoin="round"
+                globalCompositeOperation={currentStroke.globalCompositeOperation}
+                opacity={currentStroke.opacity}
+                listening={false}
+              />
+            )
+          )}
+          
+          {/* Drawing Cursor */}
+          {isDrawingMode && showDrawingCursor && !isDrawingActive && (
+            <Circle
+              x={cursorPos.x}
+              y={cursorPos.y}
+              radius={getCursorRadius()}
+              stroke={drawingTool === 'eraser' ? '#ff0000' : brushColor}
+              strokeWidth={1}
+              fill="transparent"
+              opacity={0.5}
+              listening={false}
+            />
+          )}
         </Layer>
       </Stage>
 
       <CanvasContextMenu
-        visible={contextMenu.visible}
-        x={contextMenu.x}
-        y={contextMenu.y}
-        imageId={contextMenu.imageId}
+        contextMenu={contextMenu}
+        onClose={() => setContextMenu({ ...contextMenu, visible: false })}
         onDelete={handleDelete}
         onDuplicate={handleDuplicate}
         onSendToImg2Img={handleSendToImg2Img}
+        onInpaint={() => {
+          if (contextMenu.imageId) {
+            const image = konvaImages.find((img) => img.id === contextMenu.imageId)
+            if (image) {
+              setImageRole(contextMenu.imageId, 'inpaint_image')
+              // Navigate to inpaint tab would go here
+              setContextMenu({ ...contextMenu, visible: false })
+            }
+          }
+        }}
         onDownload={handleDownload}
-        onUploadImage={handleUploadImage}
-        onClose={() => setContextMenu({ ...contextMenu, visible: false })}
+        onUpload={handleUploadImage}
       />
     </div>
   )

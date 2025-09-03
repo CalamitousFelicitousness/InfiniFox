@@ -166,3 +166,78 @@ textarea {
     background-color: inherit;
   }
 }
+
+/* Floating Action Button for Drawing Panel */
+.drawing-fab {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  box-shadow: 
+    0 4px 12px rgba(102, 126, 234, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.drawing-fab:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 
+    0 8px 20px rgba(102, 126, 234, 0.5),
+    0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.drawing-fab:active {
+  transform: translateY(-2px) scale(0.98);
+}
+
+/* Pulse animation for attention */
+@keyframes pulse {
+  0% {
+    box-shadow: 
+      0 4px 12px rgba(102, 126, 234, 0.4),
+      0 2px 4px rgba(0, 0, 0, 0.2),
+      0 0 0 0 rgba(102, 126, 234, 0.4);
+  }
+  70% {
+    box-shadow: 
+      0 4px 12px rgba(102, 126, 234, 0.4),
+      0 2px 4px rgba(0, 0, 0, 0.2),
+      0 0 0 10px rgba(102, 126, 234, 0);
+  }
+  100% {
+    box-shadow: 
+      0 4px 12px rgba(102, 126, 234, 0.4),
+      0 2px 4px rgba(0, 0, 0, 0.2),
+      0 0 0 0 rgba(102, 126, 234, 0);
+  }
+}
+
+.drawing-fab {
+  animation: pulse 2s infinite;
+}
+
+.drawing-fab:hover {
+  animation: none;
+}
+
+/* Responsive adjustment for mobile */
+@media (max-width: 768px) {
+  .drawing-fab {
+    bottom: 1rem;
+    right: 1rem;
+    width: 48px;
+    height: 48px;
+    font-size: 1.2rem;
+  }
+}

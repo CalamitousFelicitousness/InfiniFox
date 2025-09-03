@@ -3,9 +3,10 @@ import { useRef, useState, useEffect } from 'preact/hooks'
 import './Slider.css'
 
 interface SliderProps {
-  label: string
+  label?: string
   value: number
-  onInput: (value: number) => void
+  onChange?: (value: number) => void
+  onInput?: (value: number) => void // Support both for compatibility
   min?: number
   max?: number
   step?: number
@@ -15,12 +16,15 @@ interface SliderProps {
 export function Slider({
   label,
   value,
+  onChange,
   onInput,
   min = 0,
   max = 100,
   step = 1,
   disabled = false,
 }: SliderProps) {
+  // Use onChange if provided, otherwise fallback to onInput
+  const handleChange = onChange || onInput || (() => {});
   const sliderRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -38,7 +42,7 @@ export function Slider({
     const steppedValue = Math.round(newValue / step) * step
     const clampedValue = Math.max(min, Math.min(max, steppedValue))
     
-    onInput(clampedValue)
+    handleChange(clampedValue)
   }
 
   useEffect(() => {
@@ -83,9 +87,11 @@ export function Slider({
 
   return (
     <div class="slider-group" ref={sliderRef}>
-      <label>
-        {label}: {value}
-      </label>
+      {label && (
+        <label>
+          {label}: {value}
+        </label>
+      )}
       <div 
         class="slider-track" 
         ref={trackRef}
@@ -112,7 +118,7 @@ export function Slider({
         max={max}
         step={step}
         value={value}
-        onInput={(e) => onInput(parseFloat(e.currentTarget.value))}
+        onInput={(e) => handleChange(parseFloat(e.currentTarget.value))}
         disabled={disabled}
         style={{ display: 'none' }}
         aria-label={label}

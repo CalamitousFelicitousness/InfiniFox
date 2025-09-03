@@ -3,7 +3,7 @@
  * Handles stroke generation with pressure sensitivity and smoothing
  */
 
-import { getStroke, getStrokePoints, getStrokeOutlinePoints, StrokeOptions } from 'perfect-freehand'
+import { getStroke, getStrokePoints, getStrokeOutlinePoints } from 'perfect-freehand'
 
 export interface StrokePoint {
   x: number
@@ -11,7 +11,8 @@ export interface StrokePoint {
   pressure?: number
 }
 
-export interface DrawingStrokeOptions extends Partial<StrokeOptions> {
+// StrokeOptions type definition based on perfect-freehand library
+export interface DrawingStrokeOptions {
   // Override some defaults for better drawing experience
   size?: number
   thinning?: number

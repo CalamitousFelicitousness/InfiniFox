@@ -106,3 +106,41 @@
 .canvas-container.selection-mode .konvajs-content {
   cursor: pointer !important;
 }
+
+/* Drawing mode styles */
+.canvas-container.drawing-mode {
+  cursor: crosshair;
+}
+
+.canvas-container.drawing-mode .konvajs-content {
+  cursor: crosshair !important;
+}
+
+.drawing-mode-indicator {
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background-color: var(--secondary-bg-color);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--accent-color);
+  box-shadow: 0 2px 10px rgba(100, 108, 255, 0.3);
+}
+
+.drawing-mode-badge {
+  color: var(--accent-color);
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.drawing-tool-info {
+  color: var(--secondary-text-color);
+  font-size: 0.85rem;
+  padding-left: 1rem;
+  border-left: 1px solid var(--border-color);
+}

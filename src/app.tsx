@@ -1,8 +1,9 @@
-import { useEffect } from 'preact/hooks'
+import { useEffect, useState } from 'preact/hooks'
 
 import { ProgressIndicator } from './components/common/ProgressIndicator'
 import { ControlPanel } from './components/layout/ControlPanel'
 import { Canvas } from './features/canvas/Canvas'
+import { DrawingModal } from './features/drawing'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { imageStorage } from './services/storage'
 import { useStore } from './store/store'
@@ -10,6 +11,7 @@ import './styles/main.css'
 
 export function App() {
   const { generateTxt2Img, testConnection, loadImagesFromStorage, updateStorageStats } = useStore()
+  const [showDrawingModal, setShowDrawingModal] = useState(false)
 
   // Global keyboard shortcuts
   useKeyboardShortcuts({
@@ -66,6 +68,21 @@ export function App() {
       <ProgressIndicator />
       <ControlPanel />
       <Canvas />
+      
+      {/* Floating Action Button for Full Drawing Panel */}
+      <button 
+        class="drawing-fab"
+        onClick={() => setShowDrawingModal(true)}
+        title="Open Advanced Drawing Panel"
+      >
+        🎨
+      </button>
+      
+      {/* Drawing Modal */}
+      <DrawingModal 
+        isOpen={showDrawingModal} 
+        onClose={() => setShowDrawingModal(false)} 
+      />
     </div>
   )
 }
