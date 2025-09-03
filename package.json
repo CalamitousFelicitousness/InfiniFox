@@ -19,6 +19,7 @@
   "dependencies": {
     "@preact/compat": "^18.3.1",
     "konva": "^9.3.22",
+    "perfect-freehand": "^1.2.0",
     "preact": "^10.27.0",
     "preact-reconciler": "0.2.3",
     "react": "npm:@preact/compat@18.3.1",
