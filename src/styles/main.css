@@ -3,7 +3,9 @@
   --secondary-bg-color: #2a2a2a;
   --primary-text-color: #ffffff;
   --secondary-text-color: #a0a0a0;
+  --text-color: #ffffff;
   --accent-color: #646cff;
+  --accent-color-dark: #535bf2;
   --border-color: #444444;
   --font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
 }
