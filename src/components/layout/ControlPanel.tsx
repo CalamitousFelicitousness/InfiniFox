@@ -16,7 +16,7 @@ import './ControlPanel.css'
 
 export function ControlPanel() {
   const [activeTab, setActiveTab] = useState('txt2img')
-  const { sdModel, setSdModel, sdModels, fetchSdModels } = useStore()
+  const { sdModel, setSdModel, sdModels, fetchSdModels, isModelLoading } = useStore()
 
   useEffect(() => {
     fetchSdModels()
@@ -28,13 +28,6 @@ export function ControlPanel() {
     { id: 'inpaint', label: 'Inpainting' },
   ]
 
-  const handleModelChange = (modelName: string) => {
-    const model = sdModels.find((m) => m.model_name === modelName)
-    if (model) {
-      setSdModel(model.title)
-    }
-  }
-
   return (
     <aside class="control-panel">
       <div class="panel-header">
@@ -42,8 +35,10 @@ export function ControlPanel() {
         <Dropdown
           label=""
           value={sdModel}
-          onInput={handleModelChange}
+          onInput={setSdModel}
           options={sdModels.map((m) => m.model_name)}
+          disabled={isModelLoading}
+          isLoading={isModelLoading}
         />
       </div>
       <Tabs tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />

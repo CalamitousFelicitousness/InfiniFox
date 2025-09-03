@@ -50,45 +50,7 @@
   z-index: 1000;
 }
 
-.drop-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(0, 0, 0, 0.7);
-  z-index: 1001;
-  pointer-events: none;
-}
 
-.drop-message {
-  text-align: center;
-  color: white;
-}
-
-.drop-message svg {
-  margin: 0 auto 1rem;
-  opacity: 0.9;
-  animation: bounce 1s infinite;
-}
-
-.drop-message p {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0;
-}
-
-.drop-coords {
-  display: block;
-  margin-top: 0.5rem;
-  font-size: 0.9rem;
-  opacity: 0.7;
-}
-
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
 
 /* Selection mode overlay */
 .canvas-container.selection-mode {

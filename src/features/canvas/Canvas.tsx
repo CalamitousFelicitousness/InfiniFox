@@ -58,7 +58,6 @@ export function Canvas() {
   const containerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDraggingFile, setIsDraggingFile] = useState(false)
-  const [dropPosition, setDropPosition] = useState<{ x: number; y: number } | null>(null)
 
   // Prevent default touch behaviors on canvas
   useEffect(() => {
@@ -77,15 +76,6 @@ export function Canvas() {
       e.preventDefault()
       e.stopPropagation()
       setIsDraggingFile(true)
-      
-      // Calculate drop position relative to canvas
-      const stage = stageRef.current
-      if (stage) {
-        const containerRect = container.getBoundingClientRect()
-        const x = (e.clientX - containerRect.left - position.x) / scale
-        const y = (e.clientY - containerRect.top - position.y) / scale
-        setDropPosition({ x, y })
-      }
     }
 
     const handleDragLeave = (e: DragEvent) => {
@@ -94,7 +84,6 @@ export function Canvas() {
       // Only set to false if we're leaving the container entirely
       if (e.target === container) {
         setIsDraggingFile(false)
-        setDropPosition(null)
       }
     }
 
@@ -106,10 +95,16 @@ export function Canvas() {
       const files = Array.from(e.dataTransfer?.files || [])
       const imageFile = files.find(f => f.type.startsWith('image/'))
       
-      if (imageFile && dropPosition) {
-        handleImageFile(imageFile, dropPosition.x, dropPosition.y)
+      if (imageFile) {
+        // Calculate drop position relative to canvas
+        const stage = stageRef.current
+        if (stage) {
+          const containerRect = container.getBoundingClientRect()
+          const x = (e.clientX - containerRect.left - position.x) / scale
+          const y = (e.clientY - containerRect.top - position.y) / scale
+          handleImageFile(imageFile, x, y)
+        }
       }
-      setDropPosition(null)
     }
 
     container.addEventListener('dragover', handleDragOver)
@@ -392,21 +387,7 @@ export function Canvas() {
       class={`canvas-container ${isDraggingFile ? 'dragging-file' : ''} ${canvasSelectionMode.active ? 'selection-mode' : ''}`} 
       ref={containerRef}
     >
-      {isDraggingFile && (
-        <div class="drop-overlay">
-          <div class="drop-message">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            <p>Drop image here</p>
-            {dropPosition && (
-              <span class="drop-coords">Position: {Math.round(dropPosition.x)}, {Math.round(dropPosition.y)}</span>
-            )}
-          </div>
-        </div>
-      )}
+
       
       {canvasSelectionMode.active && (
         <div class="selection-mode-overlay">

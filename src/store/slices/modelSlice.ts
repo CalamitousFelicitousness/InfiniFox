@@ -8,6 +8,7 @@ export interface ModelSlice {
   samplers: Sampler[]
   sdModel: string
   sdModels: SdModel[]
+  isModelLoading: boolean
   
   // Actions
   setSampler: (sampler: string) => void
@@ -22,16 +23,36 @@ export const createModelSlice: SliceCreator<ModelSlice> = (set, get) => ({
   samplers: [],
   sdModel: '',
   sdModels: [],
+  isModelLoading: false,
   
   // Actions
   setSampler: (sampler) => set({ sampler }),
   
-  setSdModel: async (model) => {
+  setSdModel: async (modelName) => {
+    // Store the previous model in case we need to revert
+    const previousModel = get().sdModel
+    
+    // Optimistically update the UI immediately
+    set({ sdModel: modelName, isModelLoading: true })
+    
     try {
-      await sdnextApi.setOptions({ sd_model_checkpoint: model })
-      set({ sdModel: model })
+      // Find the model to get its title for the API
+      const { sdModels } = get()
+      const model = sdModels.find(m => m.model_name === modelName)
+      if (model) {
+        await sdnextApi.setOptions({ sd_model_checkpoint: model.title })
+        // Success - just clear the loading state (model is already set)
+        set({ isModelLoading: false })
+      } else {
+        // Model not found, revert
+        console.error('Model not found:', modelName)
+        set({ sdModel: previousModel, isModelLoading: false })
+        alert('Selected model not found')
+      }
     } catch (error) {
       console.error('Failed to set model:', error)
+      // Revert to previous model on error
+      set({ sdModel: previousModel, isModelLoading: false })
       alert('Failed to set model. See console for details.')
     }
   },
@@ -40,8 +61,19 @@ export const createModelSlice: SliceCreator<ModelSlice> = (set, get) => ({
     try {
       const models = await sdnextApi.getSdModels()
       set({ sdModels: models })
-      if (models.length > 0 && !get().sdModel) {
-        set({ sdModel: models[0].title })
+      
+      const currentModel = get().sdModel
+      if (currentModel) {
+        // Check if we have an old title stored instead of model_name
+        const modelByTitle = models.find(m => m.title === currentModel)
+        if (modelByTitle && !models.find(m => m.model_name === currentModel)) {
+          // Migrate from title to model_name
+          console.log('Migrating model selection from title to model_name')
+          set({ sdModel: modelByTitle.model_name })
+        }
+      } else if (models.length > 0) {
+        // No model selected, use first one
+        set({ sdModel: models[0].model_name })
       }
     } catch (error) {
       console.error('Failed to fetch models:', error)

@@ -8,9 +8,10 @@ interface DropdownProps {
   onInput: (value: string) => void
   options: string[]
   disabled?: boolean
+  isLoading?: boolean
 }
 
-export function Dropdown({ label, value, onInput, options, disabled = false }: DropdownProps) {
+export function Dropdown({ label, value, onInput, options, disabled = false, isLoading = false }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -80,7 +81,10 @@ export function Dropdown({ label, value, onInput, options, disabled = false }: D
           aria-haspopup="listbox"
           aria-expanded={isOpen}
         >
-          <span>{value}</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+            {value}
+            {isLoading && <span class="dropdown-spinner" />}
+          </span>
           <span class="dropdown-arrow">▼</span>
         </button>
         

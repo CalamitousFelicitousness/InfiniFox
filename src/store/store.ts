@@ -45,6 +45,7 @@ export const useStore = create<AppState>()(
         prompt: state.prompt,
         negativePrompt: state.negativePrompt,
         sampler: state.sampler,
+        sdModel: state.sdModel, // Persist selected model
         seed: state.seed,
         steps: state.steps,
         cfgScale: state.cfgScale,
@@ -54,7 +55,7 @@ export const useStore = create<AppState>()(
         // Explicitly exclude:
         // isLoading: state.isLoading, // DO NOT PERSIST
         // images: state.images, // DO NOT PERSIST - too large for localStorage
-        // samplers, sdModels - fetched on load
+        // samplers, sdModels arrays - fetched on load
       }),
     }
   )

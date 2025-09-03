@@ -38,6 +38,23 @@
   cursor: not-allowed;
 }
 
+/* Inline spinner for loading state */
+.dropdown-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--accent-color);
+  border-radius: 50%;
+  animation: dropdown-spin 0.8s linear infinite;
+}
+
+@keyframes dropdown-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .dropdown-arrow {
   transition: transform 0.2s;
   font-size: 0.7rem;
