@@ -245,11 +245,9 @@ export function MaskEditor({ baseImage, onMaskUpdate, disabled = false }: MaskEd
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}  // Handle pointer cancel events
           onPointerEnter={handlePointerEnter}
           onPointerLeave={handlePointerLeave}
-          onTouchStart={handlePointerDown}
-          onTouchMove={handlePointerMove}
-          onTouchEnd={handlePointerUp}
           style={{ cursor: disabled ? 'not-allowed' : 'none' }}
         >
           <Layer>

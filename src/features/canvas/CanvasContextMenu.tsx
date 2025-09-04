@@ -12,6 +12,7 @@ interface CanvasContextMenuProps {
   onDelete: () => void
   onDuplicate: () => void
   onSendToImg2Img: () => void
+  onInpaint: () => void
   onDownload: () => void
   onUploadImage: () => void
   onClose: () => void
@@ -25,6 +26,7 @@ export function CanvasContextMenu({
   onDelete,
   onDuplicate,
   onSendToImg2Img,
+  onInpaint,
   onDownload,
   onUploadImage,
   onClose,
@@ -61,8 +63,17 @@ export function CanvasContextMenu({
 
   const handleSendToImg2Img = () => {
     if (imageId) {
-      setImageRole(imageId, 'img2img')
+      setImageRole(imageId, 'img2img_init')
       onSendToImg2Img()
+      onClose()  // Close menu after setting role
+    }
+  }
+
+  const handleSendToInpaint = () => {
+    if (imageId) {
+      setImageRole(imageId, 'inpaint_image')
+      onInpaint()
+      onClose()  // Close menu after setting role
     }
   }
 
@@ -82,7 +93,11 @@ export function CanvasContextMenu({
       {imageId === null ? (
         // Context menu for empty canvas space
         <>
-          <button onPointerDown={(e) => { e.preventDefault(); onUploadImage() }}>
+          <button onPointerDown={(e) => { 
+            e.preventDefault(); 
+            onUploadImage();
+            onClose()
+          }}>
             Upload Image
           </button>
           <hr />
@@ -94,28 +109,44 @@ export function CanvasContextMenu({
         // Context menu for image
         <>
       <button onPointerDown={(e) => { e.preventDefault(); handleSendToImg2Img() }}>
-        Send to img2img{currentRole === 'img2img' ? ' ✓' : ''}
+        Send to img2img{currentRole === 'img2img_init' ? ' ✓' : ''}
       </button>
-      <button onPointerDown={(e) => { e.preventDefault(); /* TODO: Send to inpaint */ }} disabled>
-        Send to Inpaint{currentRole === 'inpaint' ? ' ✓' : ''} (Coming Soon)
+      <button onPointerDown={(e) => { e.preventDefault(); handleSendToInpaint() }}>
+        Send to Inpaint{currentRole === 'inpaint_image' ? ' ✓' : ''}
       </button>
       <hr />
       {currentRole && (
         <>
-          <button onPointerDown={(e) => { e.preventDefault(); setImageRole(imageId, null) }}>
+          <button onPointerDown={(e) => { 
+            e.preventDefault(); 
+            setImageRole(imageId, null);
+            onClose()  // Close menu after clearing role
+          }}>
             Clear Role{roleIndicator}
           </button>
           <hr />
         </>
       )}
-      <button onPointerDown={(e) => { e.preventDefault(); onDuplicate() }}>
+      <button onPointerDown={(e) => { 
+        e.preventDefault(); 
+        onDuplicate();
+        onClose()
+      }}>
         Duplicate
       </button>
-      <button onPointerDown={(e) => { e.preventDefault(); onDownload() }}>
+      <button onPointerDown={(e) => { 
+        e.preventDefault(); 
+        onDownload();
+        onClose()
+      }}>
         Download
       </button>
       <hr />
-      <button onPointerDown={(e) => { e.preventDefault(); onDelete() }} class="delete-option">
+      <button onPointerDown={(e) => { 
+        e.preventDefault(); 
+        onDelete();
+        onClose()
+      }} class="delete-option">
         Delete
       </button>
         </>

@@ -1,6 +1,11 @@
 /**
  * PressureManager - Unified pressure API for all input devices
  * Integrates with existing pointer events and provides enhanced pressure detection
+ * 
+ * NOTE ON TOUCH REFERENCES:
+ * This service contains 'ontouchstart' feature detection (NOT event handlers).
+ * It's used only to check device capabilities for pressure support, not to
+ * handle touch events. All actual event handling uses Pointer Events API.
  */
 
 import { getPointerInfo, supportsPressure } from '../../utils/pointerEvents'
@@ -88,6 +93,11 @@ export class PressureManager {
       // We'll determine actual support when we get the first event
       this.state.isSupported = true
     } else if ('ontouchstart' in window) {
+      // VALID TOUCH EVENT EXCEPTION:
+      // This is NOT a touch event handler - it's only feature detection.
+      // We're checking if the browser/device supports touch to determine
+      // if we should check for force/pressure capabilities (iOS 3D Touch).
+      // No actual touch event listeners are added here.
       // Check for touch force support (iOS 3D Touch)
       this.state.isSupported = 'force' in Touch.prototype
     } else {

@@ -49,10 +49,12 @@ export function NumberInput({
       document.body.style.cursor = ''
       document.removeEventListener('pointermove', handlePointerMove)
       document.removeEventListener('pointerup', handlePointerUp)
+      document.removeEventListener('pointercancel', handlePointerUp)  // Clean up pointercancel listener
     }
     
     document.addEventListener('pointermove', handlePointerMove)
     document.addEventListener('pointerup', handlePointerUp)
+    document.addEventListener('pointercancel', handlePointerUp)  // Handle pointer cancel events
   }
 
   const handleWheel = (e: WheelEvent) => {

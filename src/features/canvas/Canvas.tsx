@@ -151,10 +151,23 @@ export function Canvas() {
     }
   }, [smoothing])
   
-  // Update cursor visibility based on tool
+  // Set initial stage position and scale
+  useEffect(() => {
+    if (stageRef.current) {
+      stageRef.current.position(position)
+      stageRef.current.scale({ x: scale, y: scale })
+    }
+  }, [])
+  
+  // Update cursor visibility based on tool and manage stage draggability
   useEffect(() => {
     const isDrawingTool = currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER
     setShowDrawingCursor(isDrawingTool)
+    
+    // Update stage draggability based on current tool
+    if (stageRef.current) {
+      stageRef.current.draggable(currentTool === CanvasTool.PAN)
+    }
   }, [currentTool])
   
   // Prevent default touch behaviors on canvas
@@ -164,6 +177,17 @@ export function Canvas() {
       preventDefaultTouch(container)
     }
   }, [])
+
+  // Handle image file upload - define before use in drag-drop handlers
+  const handleImageFile = async (file: File, x: number, y: number) => {
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file')
+      return
+    }
+
+    // Use the new uploadImageToCanvas function from the store
+    await uploadImageToCanvas(file, x, y)
+  }
 
   // Setup drag and drop handlers
   useEffect(() => {
@@ -197,8 +221,9 @@ export function Canvas() {
         const stage = stageRef.current
         const pointer = stage.getPointerPosition()
         if (pointer) {
-          const x = (pointer.x - position.x) / scale
-          const y = (pointer.y - position.y) / scale
+          const stagePos = stage.position()
+          const x = (pointer.x - stagePos.x) / scale
+          const y = (pointer.y - stagePos.y) / scale
           handleImageFile(imageFile, x, y)
         }
       }
@@ -213,7 +238,7 @@ export function Canvas() {
       container.removeEventListener('dragleave', handleDragLeave)
       container.removeEventListener('drop', handleDrop)
     }
-  }, [position, scale])
+  }, [scale])
 
   const getImageBorderColor = (imageId: string) => {
     const role = activeImageRoles.find(r => r.imageId === imageId)
@@ -300,10 +325,13 @@ export function Canvas() {
     const oldScale = scale
     const pointer = stage.getPointerPosition()
     if (!pointer) return
+    
+    // Get current position from the stage itself
+    const stagePos = stage.position()
 
     const mousePointTo = {
-      x: (pointer.x - position.x) / oldScale,
-      y: (pointer.y - position.y) / oldScale,
+      x: (pointer.x - stagePos.x) / oldScale,
+      y: (pointer.y - stagePos.y) / oldScale,
     }
 
     const direction = e.evt.deltaY > 0 ? -1 : 1
@@ -311,10 +339,19 @@ export function Canvas() {
     const clampedScale = Math.max(0.1, Math.min(5, newScale))
 
     setScale(clampedScale)
-    setPosition({
+    
+    // Directly update stage position and scale
+    const newPos = {
       x: pointer.x - mousePointTo.x * clampedScale,
       y: pointer.y - mousePointTo.y * clampedScale,
-    })
+    }
+    
+    stage.scale({ x: clampedScale, y: clampedScale })
+    stage.position(newPos)
+    stage.batchDraw()
+    
+    // Update position state for reference
+    setPosition(newPos)
   }
 
   const handleContextMenu = (
@@ -323,8 +360,8 @@ export function Canvas() {
   ) => {
     e.evt.preventDefault()
     
-    // Only show context menu in SELECT mode
-    if (currentTool !== CanvasTool.SELECT) return
+    // Context menu works in all modes except drawing modes and active panning
+    if (currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER || isPanning) return
     
     const stage = stageRef.current
     if (!stage) return
@@ -341,8 +378,8 @@ export function Canvas() {
   const handleStageContextMenu = (e: Konva.KonvaEventObject<PointerEvent | MouseEvent>) => {
     e.evt.preventDefault()
     
-    // Only show context menu in SELECT mode
-    if (currentTool !== CanvasTool.SELECT) return
+    // Context menu works in all modes except drawing modes and active panning
+    if (currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER || isPanning) return
     
     const stage = stageRef.current
     if (!stage) return
@@ -362,8 +399,9 @@ export function Canvas() {
           imageId: null, // null indicates empty space
         })
         // Store the canvas position for image placement
-        const canvasX = (pointer.x - position.x) / scale
-        const canvasY = (pointer.y - position.y) / scale
+        const stagePos = stage.position()
+        const canvasX = (pointer.x - stagePos.x) / scale
+        const canvasY = (pointer.y - stagePos.y) / scale
         setCanvasState({
           ...canvasState,
           uploadPosition: { x: canvasX, y: canvasY }
@@ -382,8 +420,9 @@ export function Canvas() {
     if (!pointer) return
     
     // Convert to canvas coordinates
-    const canvasX = (pointer.x - position.x) / scale
-    const canvasY = (pointer.y - position.y) / scale
+    const stagePos = stage.position()
+    const canvasX = (pointer.x - stagePos.x) / scale
+    const canvasY = (pointer.y - stagePos.y) / scale
     
     // Handle different tools
     switch (currentTool) {
@@ -448,7 +487,7 @@ export function Canvas() {
         break
         
       case CanvasTool.PAN:
-        setIsPanning(true)
+        // isPanning will be set by handleStageDragStart when actual dragging begins
         break
     }
     
@@ -464,8 +503,9 @@ export function Canvas() {
     if (!pointer) return
     
     // Convert to canvas coordinates
-    const canvasX = (pointer.x - position.x) / scale
-    const canvasY = (pointer.y - position.y) / scale
+    const stagePos = stage.position()
+    const canvasX = (pointer.x - stagePos.x) / scale
+    const canvasY = (pointer.y - stagePos.y) / scale
     
     // Only update cursor position when in drawing mode to reduce re-renders
     if (currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER) {
@@ -503,7 +543,7 @@ export function Canvas() {
     }
   }
   
-  const handleStagePointerUp = () => {
+  const handleStagePointerUp = (e?: Konva.KonvaEventObject<PointerEvent | MouseEvent | TouchEvent>) => {
     // Handle drawing tools
     if ((currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER) && isDrawingActive) {
       if (perfectFreehandRef.current) {
@@ -545,31 +585,33 @@ export function Canvas() {
       endDrawingStroke()
     }
     
-    // Stop panning
+    // Stop panning if we were panning
     if (isPanning) {
       setIsPanning(false)
     }
   }
 
+  const handleStageDragStart = (e: Konva.KonvaEventObject<DragEvent>) => {
+    // Only handle stage dragging
+    if (e.target === e.target.getStage()) {
+      setIsPanning(true)
+    }
+  }
+
   const handleStageDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
     // Only update position if we're dragging the stage itself (not an image)
-    if (e.target !== e.target.getStage()) {
-      return
+    if (e.target === e.target.getStage()) {
+      setPosition({
+        x: e.target.x(),
+        y: e.target.y(),
+      })
+      setIsPanning(false)
     }
-    
-    // Update position state after dragging the stage
-    setPosition({
-      x: e.target.x(),
-      y: e.target.y(),
-    })
   }
 
   const handleStageDragMove = () => {
-    // Position is handled internally by Konva during drag
+    // Position is handled internally by Konva for smoother dragging
   }
-
-
-  // Removed as we're setting selectedId directly in event handlers
 
   const handleDelete = () => {
     if (contextMenu.imageId) {
@@ -614,16 +656,6 @@ export function Canvas() {
     setContextMenu({ ...contextMenu, visible: false })
   }
 
-  const handleImageFile = async (file: File, x: number, y: number) => {
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file')
-      return
-    }
-
-    // Use the new uploadImageToCanvas function from the store
-    await uploadImageToCanvas(file, x, y)
-  }
-
   const handleFileSelect = async (e: Event) => {
     const input = e.target as HTMLInputElement
     const file = input.files?.[0]
@@ -641,16 +673,10 @@ export function Canvas() {
   const getCursorRadius = () => {
     return brushSize / 2
   }
-  
-  // Helper function to determine stage draggability
-  const isStageDraggable = () => {
-    // Stage is only draggable in PAN mode
-    return currentTool === CanvasTool.PAN
-  }
 
   return (
     <div 
-      class={`canvas-container ${isDraggingFile ? 'dragging-file' : ''} ${canvasSelectionMode.active ? 'selection-mode' : ''} ${currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER ? 'drawing-mode' : ''}`} 
+      class={`canvas-container ${isDraggingFile ? 'dragging-file' : ''} ${canvasSelectionMode.active ? 'selection-mode' : ''} ${currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER ? 'drawing-mode' : ''} ${currentTool === CanvasTool.PAN ? 'pan-mode' : ''} ${isPanning ? 'panning' : ''}`} 
       ref={containerRef}
     >
       {canvasSelectionMode.active && (
@@ -713,12 +739,33 @@ export function Canvas() {
       </div>
 
       <div class="canvas-controls">
-        <button onClick={() => setScale(scale * 1.2)}>Zoom In</button>
-        <button onClick={() => setScale(scale / 1.2)}>Zoom Out</button>
+        <button onClick={() => {
+          const newScale = scale * 1.2
+          const clampedScale = Math.max(0.1, Math.min(5, newScale))
+          setScale(clampedScale)
+          if (stageRef.current) {
+            stageRef.current.scale({ x: clampedScale, y: clampedScale })
+            stageRef.current.batchDraw()
+          }
+        }}>Zoom In</button>
+        <button onClick={() => {
+          const newScale = scale / 1.2
+          const clampedScale = Math.max(0.1, Math.min(5, newScale))
+          setScale(clampedScale)
+          if (stageRef.current) {
+            stageRef.current.scale({ x: clampedScale, y: clampedScale })
+            stageRef.current.batchDraw()
+          }
+        }}>Zoom Out</button>
         <button
           onClick={() => {
             setScale(1)
             setPosition({ x: 0, y: 0 })
+            // Directly set stage position
+            if (stageRef.current) {
+              stageRef.current.position({ x: 0, y: 0 })
+              stageRef.current.scale({ x: 1, y: 1 })
+            }
           }}
         >
           Reset
@@ -738,21 +785,19 @@ export function Canvas() {
         ref={stageRef}
         width={window.innerWidth - 400}
         height={window.innerHeight}
-        draggable={isStageDraggable()}
+        draggable={false}  // We control this programmatically
         onWheel={handleWheel}
+        onMouseDown={handleStagePointerDown}
         onPointerDown={handleStagePointerDown}
         onPointerMove={handleStagePointerMove}
         onPointerUp={handleStagePointerUp}
+        onPointerCancel={handleStagePointerUp}  // Handle pointer cancel events
         onPointerEnter={handleStagePointerEnter}
         onPointerLeave={handleStagePointerLeave}
-        onTouchStart={handleStagePointerDown}
         onContextMenu={handleStageContextMenu}
+        onDragStart={handleStageDragStart}
         onDragMove={handleStageDragMove}
         onDragEnd={handleStageDragEnd}
-        scaleX={scale}
-        scaleY={scale}
-        x={position.x}
-        y={position.y}
       >
         {/* Images Layer */}
         <Layer>
@@ -964,23 +1009,21 @@ export function Canvas() {
       </Stage>
 
       <CanvasContextMenu
-        contextMenu={contextMenu}
+        visible={contextMenu.visible}
+        x={contextMenu.x}
+        y={contextMenu.y}
+        imageId={contextMenu.imageId}
         onClose={() => setContextMenu({ ...contextMenu, visible: false })}
         onDelete={handleDelete}
         onDuplicate={handleDuplicate}
         onSendToImg2Img={handleSendToImg2Img}
         onInpaint={() => {
-          if (contextMenu.imageId) {
-            const image = konvaImages.find((img) => img.id === contextMenu.imageId)
-            if (image) {
-              setImageRole(contextMenu.imageId, 'inpaint_image')
-              // Navigate to inpaint tab would go here
-              setContextMenu({ ...contextMenu, visible: false })
-            }
-          }
+          // Role is set in CanvasContextMenu component
+          // TODO: Navigate to inpaint tab
+          setContextMenu({ ...contextMenu, visible: false })
         }}
         onDownload={handleDownload}
-        onUpload={handleUploadImage}
+        onUploadImage={handleUploadImage}
       />
     </div>
   )

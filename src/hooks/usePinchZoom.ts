@@ -1,5 +1,15 @@
 import { useEffect, useRef } from 'preact/hooks'
 
+/**
+ * VALID TOUCH EVENT EXCEPTION:
+ * This hook uses touch events instead of pointer events because pinch-to-zoom
+ * requires tracking multiple simultaneous touch points for gesture recognition.
+ * The Pointer Events API doesn't provide a direct way to handle multi-touch
+ * gestures like pinch, so touch events are necessary here.
+ * 
+ * This is an intentional exception to our pointer-events-only approach and
+ * does not conflict with the pointer events used elsewhere in the application.
+ */
 interface PinchZoomOptions {
   minScale?: number
   maxScale?: number
@@ -42,6 +52,7 @@ export function usePinchZoom(
     }
 
     const handleTouchStart = (e: TouchEvent) => {
+      // NOTE: Using touch events here for multi-touch gesture detection
       // Store all touches
       touchesRef.current.clear()
       Array.from(e.touches).forEach(touch => {
@@ -55,6 +66,7 @@ export function usePinchZoom(
     }
 
     const handleTouchMove = (e: TouchEvent) => {
+      // NOTE: Touch events needed to track multiple touch points simultaneously
       if (e.touches.length === 2) {
         e.preventDefault()
 
@@ -83,6 +95,8 @@ export function usePinchZoom(
       lastDistanceRef.current = 0
     }
 
+    // Touch event listeners are required here for multi-touch gesture support
+    // Pointer events cannot track multiple simultaneous touch points needed for pinch-to-zoom
     element.addEventListener('touchstart', handleTouchStart, { passive: false })
     element.addEventListener('touchmove', handleTouchMove, { passive: false })
     element.addEventListener('touchend', handleTouchEnd)

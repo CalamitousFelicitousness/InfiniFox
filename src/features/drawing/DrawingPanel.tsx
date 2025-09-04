@@ -537,6 +537,7 @@ export function DrawingPanel() {
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}  // Handle pointer cancel events
           onPointerEnter={handlePointerEnter}
           onPointerLeave={handlePointerLeave}
           style={{

@@ -22,9 +22,18 @@ export function Dropdown({ label, value, onInput, options, disabled = false, isL
         setIsOpen(false)
       }
     }
+    
+    const handleGlobalPointerCancel = () => {
+      setIsOpen(false)
+      setHighlightedIndex(-1)
+    }
 
     document.addEventListener('pointerdown', handlePointerDown)
-    return () => document.removeEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('pointercancel', handleGlobalPointerCancel)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('pointercancel', handleGlobalPointerCancel)
+    }
   }, [])
 
   const handleSelect = (option: string) => {

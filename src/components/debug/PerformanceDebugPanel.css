@@ -1,0 +1,159 @@
+.performance-debug-panel {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.9);
+  color: #00ff00;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 99999;
+  min-width: 180px;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0, 255, 0, 0.2);
+}
+
+.performance-debug-panel.minimized {
+  min-width: 120px;
+}
+
+.performance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid rgba(0, 255, 0, 0.2);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px 8px 0 0;
+}
+
+.performance-header:hover {
+  background: rgba(0, 255, 0, 0.05);
+}
+
+.performance-title {
+  font-weight: bold;
+  color: #00ff00;
+}
+
+.performance-toggle {
+  color: #00ff00;
+  font-size: 10px;
+}
+
+.performance-content {
+  padding: 12px;
+}
+
+.performance-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.performance-metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 0;
+}
+
+.metric-label {
+  color: #888;
+  margin-right: 10px;
+}
+
+.metric-value {
+  font-weight: bold;
+  text-align: right;
+  flex: 1;
+}
+
+.performance-details-toggle {
+  width: 100%;
+  padding: 4px;
+  background: rgba(0, 255, 0, 0.1);
+  border: 1px solid rgba(0, 255, 0, 0.3);
+  color: #00ff00;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 11px;
+  transition: all 0.2s ease;
+}
+
+.performance-details-toggle:hover {
+  background: rgba(0, 255, 0, 0.2);
+  border-color: #00ff00;
+}
+
+.performance-details {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0, 255, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.performance-target {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(0, 255, 0, 0.1);
+}
+
+.target-label {
+  color: #666;
+  font-size: 10px;
+  text-align: center;
+}
+
+.performance-bar {
+  margin-top: 8px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.performance-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 2px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .performance-debug-panel {
+    top: auto;
+    bottom: 10px;
+    right: 10px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .performance-debug-panel {
+    background: rgba(0, 0, 0, 0.95);
+    border-color: rgba(0, 255, 0, 0.3);
+  }
+}
+
+/* Animation for smooth appearance */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.performance-debug-panel {
+  animation: slideIn 0.3s ease-out;
+}

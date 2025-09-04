@@ -19,7 +19,7 @@ export interface ImageData {
     cfgScale?: number
     sampler?: string
     denoisingStrength?: number
-    usedIn?: Set<'img2img' | 'inpaint' | 'controlnet'>
+    usedIn?: Set<'img2img_init' | 'inpaint_image' | 'controlnet'>
   }
   // New fields for storage management
   blobId?: string  // Reference to blob in storage service
@@ -28,12 +28,12 @@ export interface ImageData {
 
 export interface ImageRole {
   imageId: string
-  role: 'img2img' | 'inpaint' | 'controlnet'
+  role: 'img2img_init' | 'inpaint_image' | 'controlnet'
 }
 
 export interface CanvasSelectionMode {
   active: boolean
-  mode: 'img2img' | 'inpaint' | 'controlnet' | null
+  mode: 'img2img_init' | 'inpaint_image' | 'controlnet' | null
   callback?: (imageId: string, imageSrc: string) => void
 }
 

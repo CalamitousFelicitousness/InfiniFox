@@ -213,3 +213,21 @@
   color: var(--text-color);
   text-transform: capitalize;
 }
+
+/* Pan mode styles */
+.canvas-container.pan-mode {
+  cursor: grab !important;
+}
+
+.canvas-container.pan-mode .konvajs-content {
+  cursor: grab !important;
+}
+
+/* When actively panning */
+.canvas-container.pan-mode.panning {
+  cursor: grabbing !important;
+}
+
+.canvas-container.pan-mode.panning .konvajs-content {
+  cursor: grabbing !important;
+}

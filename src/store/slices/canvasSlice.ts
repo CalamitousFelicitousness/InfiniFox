@@ -27,12 +27,12 @@ export interface CanvasSlice {
   duplicateImage: (id: string) => void
   updateImagePosition: (id: string, x: number, y: number) => void
   updateImagePositionDirect: (id: string, x: number, y: number) => void
-  setImageRole: (imageId: string, role: 'img2img' | 'inpaint' | 'controlnet' | null) => void
+  setImageRole: (imageId: string, role: 'img2img_init' | 'inpaint_image' | 'controlnet' | null) => void
   getImageRole: (imageId: string) => string | null
   clearImageRoles: () => void
   setImageAsInput: (src: string) => void
   startCanvasSelection: (
-    mode: 'img2img' | 'inpaint' | 'controlnet',
+    mode: 'img2img_init' | 'inpaint_image' | 'controlnet',
     callback: (imageId: string, imageSrc: string) => void
   ) => void
   cancelCanvasSelection: () => void
@@ -159,9 +159,12 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
     }
   },
   
-  setImageRole: (imageId: string, role: 'img2img' | 'inpaint' | 'controlnet' | null) => {
+  setImageRole: (imageId: string, role: 'img2img_init' | 'inpaint_image' | 'controlnet' | null) => {
     set((state) => {
-      const newRoles = state.activeImageRoles.filter((r) => r.role !== role)
+      // Remove any existing role for this specific image
+      const newRoles = state.activeImageRoles.filter((r) => r.imageId !== imageId)
+      
+      // Add the new role if one was specified (not null)
       if (role && imageId) {
         newRoles.push({ imageId, role })
       }
@@ -197,12 +200,12 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
     // Find image by src and set its role
     const image = get().images.find((img) => img.src === src)
     if (image) {
-      get().setImageRole(image.id, 'img2img')
+      get().setImageRole(image.id, 'img2img_init')
     }
   },
   
   startCanvasSelection: (
-    mode: 'img2img' | 'inpaint' | 'controlnet',
+    mode: 'img2img_init' | 'inpaint_image' | 'controlnet',
     callback: (imageId: string, imageSrc: string) => void
   ) => {
     set({
