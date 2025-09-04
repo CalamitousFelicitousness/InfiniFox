@@ -13,6 +13,7 @@ import { CanvasContextMenu } from './CanvasContextMenu'
 import { FloatingDrawingPanel } from './FloatingDrawingPanel'
 import { DraggableZoomControls } from './DraggableZoomControls'
 import { DraggableCanvasToolbar } from './DraggableCanvasToolbar'
+import { CanvasMinimap } from './CanvasMinimap'
 import './Canvas.css'
 
 // Tool types enum for better mode management
@@ -674,6 +675,17 @@ export function Canvas() {
     }
   }
   
+  // Handle viewport change from minimap
+  const handleViewportChange = (x: number, y: number, newScale: number) => {
+    if (stageRef.current) {
+      setPosition({ x, y })
+      setScale(newScale)
+      stageRef.current.position({ x, y })
+      stageRef.current.scale({ x: newScale, y: newScale })
+      stageRef.current.batchDraw()
+    }
+  }
+  
   // Get cursor radius for drawing
   const getCursorRadius = () => {
     return brushSize / 2
@@ -974,6 +986,23 @@ export function Canvas() {
           )}
         </Layer>
       </Stage>
+
+      {/* Minimap */}
+      <CanvasMinimap
+        stageRef={stageRef}
+        scale={scale}
+        position={position}
+        images={konvaImages.map(img => ({
+          id: img.id,
+          x: img.x,
+          y: img.y,
+          src: img.src,
+          width: img.image?.naturalWidth,
+          height: img.image?.naturalHeight,
+          borderColor: getImageBorderColor(img.id)  // Pass the color based on role/selection
+        }))}
+        onViewportChange={handleViewportChange}
+      />
 
       {/* Floating Drawing Panel - shown when drawing tools are active */}
       <FloatingDrawingPanel 
