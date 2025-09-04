@@ -13,11 +13,17 @@ export const setStoreRef = (store: any) => {
   storeRef = store
 }
 
+export interface CanvasViewport {
+  scale: number
+  position: { x: number; y: number }
+}
+
 export interface CanvasSlice {
   // State
   images: ImageData[]
   activeImageRoles: ImageRole[]
   canvasSelectionMode: CanvasSelectionMode
+  canvasViewport: CanvasViewport
   
   // Actions
   addImage: (image: ImageData) => void
@@ -39,6 +45,7 @@ export interface CanvasSlice {
   clearCanvas: () => void
   exportImageAsBase64: (id: string) => Promise<string>
   uploadImageToCanvas: (file: File, x?: number, y?: number) => Promise<void>
+  updateCanvasViewport: (scale: number, position: { x: number; y: number }) => void
 }
 
 export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
@@ -49,6 +56,10 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
     active: false,
     mode: null,
     callback: undefined,
+  },
+  canvasViewport: {
+    scale: 1,
+    position: { x: 0, y: 0 }
   },
   
   // Actions
@@ -176,19 +187,37 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
   
   setImageRole: (imageId: string, role: 'img2img_init' | 'inpaint_image' | 'controlnet' | null) => {
     set((state) => {
-      // Remove any existing role for this specific image
-      const newRoles = state.activeImageRoles.filter((r) => r.imageId !== imageId)
+      let newRoles = [...state.activeImageRoles]
       
-      // Add the new role if one was specified (not null)
-      if (role && imageId) {
+      if (role) {
+        // Check if another image already has this role
+        const existingRole = newRoles.find((r) => r.role === role)
+        if (existingRole && existingRole.imageId !== imageId) {
+          console.log(`Transferring ${role} role from image ${existingRole.imageId} to ${imageId}`)
+        }
+        
+        // Remove any existing image with this same role (only one image per role)
+        newRoles = newRoles.filter((r) => r.role !== role)
+        // Remove any existing role for this specific image
+        newRoles = newRoles.filter((r) => r.imageId !== imageId)
+        // Add the new role
         newRoles.push({ imageId, role })
+      } else {
+        // Remove role from this image (clearing role)
+        newRoles = newRoles.filter((r) => r.imageId !== imageId)
       }
 
       // Update image metadata
       const images = state.images.map((img) => {
+        // Clear metadata for any image that previously had this role
+        if (role && img.id !== imageId && img.metadata?.usedIn?.has(role)) {
+          img.metadata.usedIn.delete(role)
+        }
+        // Update metadata for the target image
         if (img.id === imageId && img.metadata) {
           if (role) {
-            img.metadata.usedIn?.add(role)
+            img.metadata.usedIn = img.metadata.usedIn || new Set()
+            img.metadata.usedIn.add(role)
           } else {
             img.metadata.usedIn?.clear()
           }
@@ -206,7 +235,20 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
   },
   
   clearImageRoles: () => {
-    set({ activeImageRoles: [] })
+    set((state) => {
+      // Clear all metadata usedIn sets
+      const images = state.images.map((img) => {
+        if (img.metadata?.usedIn) {
+          img.metadata.usedIn.clear()
+        }
+        return img
+      })
+      
+      return { 
+        activeImageRoles: [],
+        images 
+      }
+    })
   },
   
   setImageAsInput: (src: string) => {
@@ -321,5 +363,14 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
       console.error('Failed to upload image:', error)
       alert('Failed to upload image')
     }
+  },
+  
+  /**
+   * Update canvas viewport (zoom and pan position)
+   */
+  updateCanvasViewport: (scale: number, position: { x: number; y: number }) => {
+    set({ 
+      canvasViewport: { scale, position } 
+    })
   }
 })

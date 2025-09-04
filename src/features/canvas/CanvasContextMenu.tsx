@@ -32,7 +32,7 @@ export function CanvasContextMenu({
   onClose,
 }: CanvasContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
-  const { setImageRole, getImageRole } = useStore()
+  const { setImageRole, getImageRole, clearImageRoles, activeImageRoles } = useStore()
 
   useEffect(() => {
     const handlePointerDown = (e: PointerEvent) => {
@@ -100,6 +100,18 @@ export function CanvasContextMenu({
           }}>
             Upload Image
           </button>
+          {activeImageRoles.length > 0 && (
+            <>
+              <hr />
+              <button onPointerDown={(e) => { 
+                e.preventDefault(); 
+                clearImageRoles();
+                onClose()
+              }}>
+                Clear All Image Roles ({activeImageRoles.length} active)
+              </button>
+            </>
+          )}
           <hr />
           <button onPointerDown={(e) => { e.preventDefault(); /* TODO: Quick generate */ }} disabled>
             Generate Here (Coming Soon)

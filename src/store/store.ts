@@ -56,6 +56,7 @@ export const useStore = create<AppState>()(
         width: state.width,
         height: state.height,
         apiSettings: state.apiSettings,
+        canvasViewport: state.canvasViewport, // Persist canvas zoom/pan
         // Explicitly exclude:
         // isLoading: state.isLoading, // DO NOT PERSIST
         // images: state.images, // DO NOT PERSIST - too large for localStorage

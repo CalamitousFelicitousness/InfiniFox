@@ -5,6 +5,7 @@ import { Stage, Layer, Image as KonvaImage, Transformer, Line, Circle } from 're
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
 import { useStore } from '../../store/store'
 import { preventDefaultTouch } from '../../utils/pointerEvents'
+import { debounce } from '../../utils/helpers'
 import { PerfectFreehandService, BRUSH_PRESETS } from '../../services/drawing/PerfectFreehandService'
 import { PressureManager } from '../../services/drawing/PressureManager'
 import { LazyBrush } from '../../services/drawing/LazyBrush'
@@ -48,6 +49,8 @@ export function Canvas() {
     canvasSelectionMode,
     cancelCanvasSelection,
     setImageRole,
+    canvasViewport,
+    updateCanvasViewport,
     // Drawing state from store
     isDrawingMode,
     isDrawingActive,
@@ -86,8 +89,8 @@ export function Canvas() {
   
   const [konvaImages, setKonvaImages] = useState<KonvaImageData[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [scale, setScale] = useState(1)
-  const [position, setPosition] = useState({ x: 0, y: 0 })
+  const [scale, setScale] = useState(canvasViewport.scale)
+  const [position, setPosition] = useState(canvasViewport.position)
   const [canvasState, setCanvasState] = useState<CanvasState>({
     showUploadMenu: false,
     uploadPosition: { x: 0, y: 0 }
@@ -119,6 +122,13 @@ export function Canvas() {
   const perfectFreehandRef = useRef<PerfectFreehandService | null>(null)
   const pressureManagerRef = useRef<PressureManager | null>(null)
   const lazyBrushRef = useRef<LazyBrush | null>(null)
+  
+  // Create debounced viewport update to prevent excessive localStorage writes
+  const debouncedUpdateViewport = useRef(
+    debounce((scale: number, position: { x: number; y: number }) => {
+      updateCanvasViewport(scale, position)
+    }, 250) // Debounce for 250ms
+  ).current
   
   // Initialize drawing services
   useEffect(() => {
@@ -342,7 +352,7 @@ export function Canvas() {
 
     const direction = e.evt.deltaY > 0 ? -1 : 1
     const newScale = direction > 0 ? oldScale * 1.1 : oldScale / 1.1
-    const clampedScale = Math.max(0.1, Math.min(5, newScale))
+    const clampedScale = Math.max(0.05, Math.min(10, newScale))  // Allow more zoom out (0.05x) and zoom in (10x)
 
     setScale(clampedScale)
     
@@ -358,6 +368,9 @@ export function Canvas() {
     
     // Update position state for reference
     setPosition(newPos)
+    
+    // Save viewport to persistent storage (debounced for wheel events)
+    debouncedUpdateViewport(clampedScale, newPos)
   }
 
   const handleContextMenu = (
@@ -607,16 +620,28 @@ export function Canvas() {
   const handleStageDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
     // Only update position if we're dragging the stage itself (not an image)
     if (e.target === e.target.getStage()) {
-      setPosition({
+      const newPos = {
         x: e.target.x(),
         y: e.target.y(),
-      })
+      }
+      setPosition(newPos)
       setIsPanning(false)
+      
+      // Save viewport to persistent storage
+      updateCanvasViewport(scale, newPos)
     }
   }
 
-  const handleStageDragMove = () => {
+  const handleStageDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
     // Position is handled internally by Konva for smoother dragging
+    // Update position state for minimap during drag
+    if (e.target === e.target.getStage()) {
+      const stage = e.target
+      setPosition({
+        x: stage.x(),
+        y: stage.y(),
+      })
+    }
   }
 
   const handleDelete = () => {
@@ -683,6 +708,9 @@ export function Canvas() {
       stageRef.current.position({ x, y })
       stageRef.current.scale({ x: newScale, y: newScale })
       stageRef.current.batchDraw()
+      
+      // Save viewport to persistent storage
+      updateCanvasViewport(newScale, { x, y })
     }
   }
   
@@ -724,21 +752,25 @@ export function Canvas() {
         scale={scale}
         onZoomIn={() => {
           const newScale = scale * 1.2
-          const clampedScale = Math.max(0.1, Math.min(5, newScale))
+          const clampedScale = Math.max(0.05, Math.min(10, newScale))
           setScale(clampedScale)
           if (stageRef.current) {
             stageRef.current.scale({ x: clampedScale, y: clampedScale })
             stageRef.current.batchDraw()
           }
+          // Save viewport to persistent storage
+          updateCanvasViewport(clampedScale, position)
         }}
         onZoomOut={() => {
           const newScale = scale / 1.2
-          const clampedScale = Math.max(0.1, Math.min(5, newScale))
+          const clampedScale = Math.max(0.05, Math.min(10, newScale))
           setScale(clampedScale)
           if (stageRef.current) {
             stageRef.current.scale({ x: clampedScale, y: clampedScale })
             stageRef.current.batchDraw()
           }
+          // Save viewport to persistent storage
+          updateCanvasViewport(clampedScale, position)
         }}
         onReset={() => {
           setScale(1)
@@ -749,6 +781,8 @@ export function Canvas() {
             stageRef.current.scale({ x: 1, y: 1 })
             stageRef.current.batchDraw()
           }
+          // Save viewport to persistent storage
+          updateCanvasViewport(1, { x: 0, y: 0 })
         }}
       />
 

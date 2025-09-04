@@ -42,7 +42,7 @@ export function CanvasMinimap({ stageRef, scale, position, images, onViewportCha
   
   // Constants for performance
   const MINIMAP_ZOOM = 0.3 // Zoom out factor (0.3 provides good balance)
-  const UPDATE_THROTTLE = 100 // ms between updates
+  const UPDATE_THROTTLE = 32 // ms between updates (roughly 30fps)
   const lastUpdateTime = useRef(0)
   
   // Load saved position and size from localStorage
@@ -102,12 +102,12 @@ export function CanvasMinimap({ stageRef, scale, position, images, onViewportCha
   }, [minimapSize])
   
   // Throttled render function
-  const renderMinimap = useCallback(() => {
+  const renderMinimap = useCallback((forceUpdate = false) => {
     // Early exit if minimized - no processing at all
     if (isMinimized) return
     
     const now = Date.now()
-    if (now - lastUpdateTime.current < UPDATE_THROTTLE) {
+    if (!forceUpdate && now - lastUpdateTime.current < UPDATE_THROTTLE) {
       return
     }
     lastUpdateTime.current = now
@@ -306,18 +306,35 @@ export function CanvasMinimap({ stageRef, scale, position, images, onViewportCha
       return
     }
     
+    // Render immediately on mount or when dependencies change
+    // Force update when position or scale changes for responsive minimap
+    renderMinimap(true)
+    
+    // Then continue with animation frame for future updates
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current)
     }
     
-    animationFrameRef.current = requestAnimationFrame(renderMinimap)
+    animationFrameRef.current = requestAnimationFrame(() => renderMinimap())
     
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current)
       }
     }
-  }, [renderMinimap, isMinimized])
+  }, [renderMinimap, isMinimized, position, scale]) // Add position and scale as direct dependencies
+  
+  // Force initial render with restored viewport values
+  useEffect(() => {
+    // Give Konva stage a moment to initialize, then render minimap
+    const timer = setTimeout(() => {
+      if (!isMinimized && stageRef?.current) {
+        renderMinimap(true) // Force update on initial render
+      }
+    }, 100) // Small delay to ensure stage is ready
+    
+    return () => clearTimeout(timer)
+  }, []) // Only on mount
   
   // Handle minimap click for navigation
   const handleMinimapClick = (e: MouseEvent) => {
