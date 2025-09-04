@@ -167,7 +167,7 @@ class ImageStorageService {
   /**
    * Save image to IndexedDB for persistence
    */
-  private async saveToIndexedDB(image: StoredImage): Promise<void> {
+  private async saveToIndexedDB(image: StoredImage, position?: { x: number; y: number }): Promise<void> {
     if (!this.db) {
       await this.initDB()
     }
@@ -185,13 +185,14 @@ class ImageStorageService {
         id: image.id,
         blob: image.blob,
         metadata: image.metadata,
-        timestamp: image.timestamp
+        timestamp: image.timestamp,
+        position: position // Save position if provided
       }
       
       const request = store.put(persistedImage)
       
       request.onsuccess = () => {
-        console.log(`Image ${image.id} saved to IndexedDB`)
+        console.log(`Image ${image.id} saved to IndexedDB${position ? ' with position' : ''}`)
         resolve()
       }
       
@@ -203,9 +204,52 @@ class ImageStorageService {
   }
   
   /**
+   * Update image position in IndexedDB
+   */
+  async updateImagePosition(id: string, x: number, y: number): Promise<void> {
+    if (!this.db) {
+      await this.initDB()
+    }
+    
+    return new Promise((resolve, reject) => {
+      if (!this.db) {
+        reject(new Error('Database not initialized'))
+        return
+      }
+      
+      const transaction = this.db.transaction(['images'], 'readwrite')
+      const store = transaction.objectStore('images')
+      const getRequest = store.get(id)
+      
+      getRequest.onsuccess = () => {
+        const result = getRequest.result as PersistedImage | undefined
+        if (result) {
+          result.position = { x, y }
+          const putRequest = store.put(result)
+          
+          putRequest.onsuccess = () => {
+            console.log(`Updated position for image ${id}: x=${x}, y=${y}`)
+            resolve()
+          }
+          
+          putRequest.onerror = () => {
+            reject(putRequest.error)
+          }
+        } else {
+          reject(new Error(`Image ${id} not found in IndexedDB`))
+        }
+      }
+      
+      getRequest.onerror = () => {
+        reject(getRequest.error)
+      }
+    })
+  }
+  
+  /**
    * Load image from IndexedDB
    */
-  async loadFromIndexedDB(id: string): Promise<StoredImage | null> {
+  async loadFromIndexedDB(id: string): Promise<(StoredImage & { position?: { x: number; y: number } }) | null> {
     if (!this.db) {
       await this.initDB()
     }
@@ -232,7 +276,8 @@ class ImageStorageService {
             objectUrl,
             blob: result.blob,
             metadata: result.metadata,
-            timestamp: result.timestamp
+            timestamp: result.timestamp,
+            position: result.position // Include position in return
           })
         } else {
           resolve(null)
@@ -249,7 +294,7 @@ class ImageStorageService {
   /**
    * Load all images from IndexedDB
    */
-  async loadAllFromIndexedDB(): Promise<StoredImage[]> {
+  async loadAllFromIndexedDB(): Promise<(StoredImage & { position?: { x: number; y: number } })[]> {
     if (!this.db) {
       await this.initDB()
     }
@@ -276,7 +321,8 @@ class ImageStorageService {
             objectUrl,
             blob: result.blob,
             metadata: result.metadata,
-            timestamp: result.timestamp
+            timestamp: result.timestamp,
+            position: result.position // Include position in return
           }
         })
         

@@ -63,6 +63,13 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
   
   addImageDirect: (image: ImageData) => {
     set((state) => ({ images: [...state.images, image] }))
+    
+    // Save initial position to IndexedDB if image has a blobId
+    if (image.blobId) {
+      imageStorage.updateImagePosition(image.blobId, image.x, image.y).catch(error => {
+        console.error('Failed to persist initial image position:', error)
+      })
+    }
   },
   
   removeImage: (id: string) => {
@@ -122,6 +129,7 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
             }
             
             get().addImage(newImage)
+            // Position will be saved by addImageDirect
             storeRef?.getState().updateStorageStats?.()
           }
         } catch (error) {
@@ -156,6 +164,13 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
       set((state) => ({
         images: state.images.map((img) => (img.id === id ? { ...img, x, y } : img)),
       }))
+      
+      // Save position to IndexedDB if image has a blobId
+      if (currentImage.blobId) {
+        imageStorage.updateImagePosition(currentImage.blobId, x, y).catch(error => {
+          console.error('Failed to persist image position:', error)
+        })
+      }
     }
   },
   

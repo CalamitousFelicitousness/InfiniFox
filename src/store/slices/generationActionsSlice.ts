@@ -306,8 +306,9 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       const images = storedImages.map(stored => ({
         id: stored.id,
         src: stored.objectUrl,
-        x: Math.random() * (window.innerWidth - 400),
-        y: Math.random() * (window.innerHeight - 200),
+        // Use saved position if available, otherwise use random position
+        x: stored.position?.x ?? Math.random() * (window.innerWidth - 400),
+        y: stored.position?.y ?? Math.random() * (window.innerHeight - 200),
         width: stored.metadata.width,
         height: stored.metadata.height,
         metadata: stored.metadata,
@@ -316,7 +317,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       }))
       
       set({ images })
-      console.log(`Loaded ${images.length} images from storage`)
+      console.log(`Loaded ${images.length} images from storage with positions`)
       
       // Update storage stats
       await get().updateStorageStats()
