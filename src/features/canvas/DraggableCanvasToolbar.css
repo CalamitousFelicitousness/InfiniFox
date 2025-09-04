@@ -1,0 +1,130 @@
+.draggable-canvas-toolbar {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: rgba(42, 42, 42, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 0.5rem;
+  padding-left: 0.25rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease;
+  user-select: none;
+}
+
+.draggable-canvas-toolbar.dragging {
+  opacity: 0.85;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  cursor: move;
+}
+
+.toolbar-grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 36px;
+  cursor: move;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 12px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  margin-right: 0.25rem;
+  padding: 0 4px;
+  transition: color 0.2s ease;
+}
+
+.toolbar-grip:hover {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.toolbar-tools {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.toolbar-tool-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.75rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.toolbar-tool-btn:hover {
+  background-color: rgba(100, 108, 255, 0.2);
+  border-color: rgba(100, 108, 255, 0.5);
+  color: #ffffff;
+  transform: scale(1.02);
+}
+
+.toolbar-tool-btn:active {
+  transform: scale(0.98);
+}
+
+.toolbar-tool-btn.active {
+  background-color: rgba(100, 108, 255, 0.3);
+  border-color: #646cff;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(100, 108, 255, 0.3);
+}
+
+.toolbar-tool-btn.active:hover {
+  background-color: rgba(100, 108, 255, 0.4);
+  border-color: #646cff;
+}
+
+.tool-icon {
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.tool-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Keyboard focus styles */
+.toolbar-tool-btn:focus-visible {
+  outline: 2px solid #646cff;
+  outline-offset: 2px;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .draggable-canvas-toolbar {
+    gap: 0.25rem;
+    padding: 0.35rem;
+  }
+  
+  .toolbar-tool-btn {
+    padding: 0.4rem 0.6rem;
+  }
+  
+  .tool-icon {
+    font-size: 14px;
+  }
+  
+  .tool-label {
+    display: none; /* Hide labels on mobile to save space */
+  }
+}
+
+/* Compact mode for very small screens */
+@media (max-width: 480px) {
+  .toolbar-tool-btn {
+    padding: 0.35rem 0.5rem;
+    font-size: 12px;
+  }
+}

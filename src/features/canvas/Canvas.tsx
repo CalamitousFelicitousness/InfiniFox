@@ -12,6 +12,7 @@ import { LazyBrush } from '../../services/drawing/LazyBrush'
 import { CanvasContextMenu } from './CanvasContextMenu'
 import { FloatingDrawingPanel } from './FloatingDrawingPanel'
 import { DraggableZoomControls } from './DraggableZoomControls'
+import { DraggableCanvasToolbar } from './DraggableCanvasToolbar'
 import './Canvas.css'
 
 // Tool types enum for better mode management
@@ -700,39 +701,11 @@ export function Canvas() {
         </div>
       )}
       
-      {/* Tool Selection Bar */}
-      <div class="canvas-toolbar">
-        <button 
-          class={`tool-btn ${currentTool === CanvasTool.SELECT ? 'active' : ''}`}
-          onClick={() => setCurrentTool(CanvasTool.SELECT)}
-          title="Selection Tool (V)"
-        >
-          🔲 Select
-        </button>
-        <button 
-          class={`tool-btn ${currentTool === CanvasTool.BRUSH ? 'active' : ''}`}
-          onClick={() => setCurrentTool(CanvasTool.BRUSH)}
-          title="Brush Tool (B)"
-        >
-          ✏️ Brush
-        </button>
-        <button 
-          class={`tool-btn ${currentTool === CanvasTool.ERASER ? 'active' : ''}`}
-          onClick={() => setCurrentTool(CanvasTool.ERASER)}
-          title="Eraser Tool (E)"
-        >
-          🧹 Eraser
-        </button>
-        <button 
-          class={`tool-btn ${currentTool === CanvasTool.PAN ? 'active' : ''}`}
-          onClick={() => setCurrentTool(CanvasTool.PAN)}
-          title="Pan Tool (H)"
-        >
-          ✋ Pan
-        </button>
-        
-
-      </div>
+      {/* Draggable Canvas Toolbar */}
+      <DraggableCanvasToolbar
+        currentTool={currentTool}
+        onToolChange={setCurrentTool}
+      />
 
       {/* Draggable Zoom Controls */}
       <DraggableZoomControls

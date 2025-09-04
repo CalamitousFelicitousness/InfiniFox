@@ -89,9 +89,9 @@ export function FloatingDrawingPanel({ visible, tool }: FloatingDrawingPanelProp
   
   // Handle panel dragging
   const handlePointerDown = (e: PointerEvent) => {
-    // Only drag from the header
+    // Only drag from the grip or header
     const target = e.target as HTMLElement
-    if (!target.closest('.panel-header')) return
+    if (!target.closest('.panel-grip') && !target.closest('.panel-header')) return
     
     setIsDragging(true)
     const rect = panelRef.current?.getBoundingClientRect()
@@ -159,6 +159,9 @@ export function FloatingDrawingPanel({ visible, tool }: FloatingDrawingPanelProp
       onPointerDown={handlePointerDown}
     >
       <div class="panel-header">
+        <div class="panel-grip" title="Drag to move">
+          <span class="grip-icon">⋮⋮</span>
+        </div>
         <span class="panel-title">
           {tool === 'eraser' ? '🧹 Eraser' : '🖌️ Brush'} Settings
         </span>
