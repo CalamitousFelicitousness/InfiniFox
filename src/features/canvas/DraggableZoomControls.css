@@ -1,0 +1,122 @@
+.draggable-zoom-controls {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: rgba(42, 42, 42, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 0.5rem;
+  padding-left: 0.25rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease;
+  user-select: none;
+}
+
+.draggable-zoom-controls.dragging {
+  opacity: 0.85;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  cursor: move;
+}
+
+.zoom-controls-grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 32px;
+  cursor: move;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 12px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  margin-right: 0.25rem;
+  padding: 0 4px;
+  transition: color 0.2s ease;
+}
+
+.zoom-controls-grip:hover {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.grip-icon {
+  letter-spacing: -2px;
+  font-weight: bold;
+}
+
+.zoom-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.zoom-btn:hover {
+  background-color: rgba(100, 108, 255, 0.2);
+  border-color: rgba(100, 108, 255, 0.5);
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+.zoom-btn:active {
+  transform: scale(0.95);
+}
+
+.reset-btn {
+  width: auto;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.zoom-level {
+  display: flex;
+  align-items: center;
+  padding: 0 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 50px;
+  justify-content: center;
+}
+
+/* Keyboard focus styles */
+.zoom-btn:focus-visible {
+  outline: 2px solid #646cff;
+  outline-offset: 2px;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .draggable-zoom-controls {
+    gap: 0.35rem;
+    padding: 0.35rem;
+  }
+  
+  .zoom-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+  
+  .reset-btn {
+    padding: 0 8px;
+    font-size: 12px;
+  }
+  
+  .zoom-level {
+    font-size: 12px;
+    padding: 0 0.5rem;
+  }
+}

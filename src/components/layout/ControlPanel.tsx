@@ -3,7 +3,7 @@ import { useState, useEffect } from 'preact/hooks'
 import { Img2ImgPanel } from '../../features/generation/Img2ImgPanel'
 import { Txt2ImgPanel } from '../../features/generation/Txt2ImgPanel'
 import { InpaintPanel } from '../../features/inpaint/InpaintPanel'
-import { DrawingTab } from '../../features/drawing'
+
 import { useStore } from '../../store/store'
 import { Dropdown } from '../common/Dropdown'
 import { BatchSettingsPanel } from '../panels/BatchSettingsPanel'
@@ -27,7 +27,6 @@ export function ControlPanel() {
     { id: 'txt2img', label: 'Text to Image' },
     { id: 'img2img', label: 'Image to Image' },
     { id: 'inpaint', label: 'Inpainting' },
-    { id: 'drawing', label: 'Drawing' },
   ]
 
   return (
@@ -47,7 +46,6 @@ export function ControlPanel() {
       {activeTab === 'txt2img' && <Txt2ImgPanel />}
       {activeTab === 'img2img' && <Img2ImgPanel />}
       {activeTab === 'inpaint' && <InpaintPanel />}
-      {activeTab === 'drawing' && <DrawingTab />}
 
       <SettingsPanel />
       <StorageStats />

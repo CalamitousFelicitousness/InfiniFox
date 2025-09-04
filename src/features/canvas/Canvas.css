@@ -12,31 +12,7 @@
   background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
 }
 
-.canvas-controls {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 100;
-  display: flex;
-  gap: 0.5rem;
-  background-color: var(--secondary-bg-color);
-  padding: 0.5rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-}
-
-.canvas-controls button {
-  padding: 0.5rem 1rem;
-  font-size: 0.85rem;
-}
-
-.zoom-level {
-  display: flex;
-  align-items: center;
-  padding: 0 1rem;
-  color: var(--secondary-text-color);
-  font-size: 0.9rem;
-}
+/* Zoom controls moved to DraggableZoomControls component */
 
 /* Drag and drop overlay */
 .canvas-container.dragging-file::before {
@@ -191,27 +167,6 @@
 .tool-btn.active:hover {
   background-color: var(--accent-color-dark);
   border-color: var(--accent-color-dark);
-}
-
-.tool-separator {
-  width: 1px;
-  height: 24px;
-  background-color: var(--border-color);
-  margin: 0 0.5rem;
-}
-
-.tool-info {
-  color: var(--secondary-text-color);
-  font-size: 0.85rem;
-  padding-left: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.tool-info strong {
-  color: var(--text-color);
-  text-transform: capitalize;
 }
 
 /* Pan mode styles */

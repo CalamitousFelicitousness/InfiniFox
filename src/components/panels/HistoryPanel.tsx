@@ -8,12 +8,35 @@ export function HistoryPanel() {
   const history = getHistoryList()
   const listRef = useRef<HTMLDivElement>(null)
 
-  // Auto-scroll to current action
+  // Auto-scroll to current action only when navigating history, not when adding new items
   useEffect(() => {
     const currentIndex = history.findIndex(item => item.isCurrent)
     if (currentIndex >= 0 && listRef.current) {
-      const items = listRef.current.querySelectorAll('.history-item')
-      items[currentIndex]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      // Only scroll if we're not at the last item (new addition)
+      // or if the user has scrolled away from the bottom
+      const isAtBottom = listRef.current.scrollHeight - listRef.current.scrollTop <= listRef.current.clientHeight + 10
+      const isLastItem = currentIndex === history.length - 1
+      
+      // Only auto-scroll when navigating through history (undo/redo)
+      // not when adding new items
+      if (!isLastItem || !isAtBottom) {
+        const items = listRef.current.querySelectorAll('.history-item')
+        const targetItem = items[currentIndex]
+        if (targetItem) {
+          // Only scroll the history list, not the entire control panel
+          const listRect = listRef.current.getBoundingClientRect()
+          const itemRect = targetItem.getBoundingClientRect()
+          
+          // Check if item is already visible
+          const isVisible = itemRect.top >= listRect.top && itemRect.bottom <= listRect.bottom
+          
+          if (!isVisible) {
+            // Calculate the scroll position relative to the list container
+            const scrollTop = targetItem.offsetTop - listRef.current.offsetTop
+            listRef.current.scrollTop = scrollTop - (listRef.current.clientHeight / 2) + (targetItem.clientHeight / 2)
+          }
+        }
+      }
     }
   }, [history])
 

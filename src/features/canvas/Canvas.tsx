@@ -10,6 +10,8 @@ import { PressureManager } from '../../services/drawing/PressureManager'
 import { LazyBrush } from '../../services/drawing/LazyBrush'
 
 import { CanvasContextMenu } from './CanvasContextMenu'
+import { FloatingDrawingPanel } from './FloatingDrawingPanel'
+import { DraggableZoomControls } from './DraggableZoomControls'
 import './Canvas.css'
 
 // Tool types enum for better mode management
@@ -58,6 +60,8 @@ export function Canvas() {
     drawingLayerVisible,
     drawingLayerOpacity,
     // Drawing actions from store
+    setDrawingMode,
+    setDrawingTool,
     setDrawingActive,
     startDrawingStroke,
     updateCurrentStroke,
@@ -65,11 +69,18 @@ export function Canvas() {
   } = useStore()
   
   // Add tool state - default to SELECT tool
-  const [currentTool, setCurrentTool] = useState<CanvasTool>(
-    isDrawingMode ? 
-      (drawingTool === 'eraser' ? CanvasTool.ERASER : CanvasTool.BRUSH) : 
-      CanvasTool.SELECT
-  )
+  const [currentTool, setCurrentToolInternal] = useState<CanvasTool>(CanvasTool.SELECT)
+  
+  // Handle tool changes with automatic drawing mode management
+  const setCurrentTool = (tool: CanvasTool) => {
+    setCurrentToolInternal(tool)
+    // Automatically enable/disable drawing mode based on tool
+    const isDrawingTool = tool === CanvasTool.BRUSH || tool === CanvasTool.ERASER
+    setDrawingMode(isDrawingTool)
+    if (isDrawingTool) {
+      setDrawingTool(tool === CanvasTool.ERASER ? 'eraser' : 'brush')
+    }
+  }
   
   const [konvaImages, setKonvaImages] = useState<KonvaImageData[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -124,14 +135,7 @@ export function Canvas() {
     }
   }, [])
   
-  // Update tool when drawing mode changes from external source
-  useEffect(() => {
-    if (isDrawingMode && currentTool === CanvasTool.SELECT) {
-      setCurrentTool(drawingTool === 'eraser' ? CanvasTool.ERASER : CanvasTool.BRUSH)
-    } else if (!isDrawingMode && (currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER)) {
-      setCurrentTool(CanvasTool.SELECT)
-    }
-  }, [isDrawingMode, drawingTool])
+  // No longer needed - tool selection directly manages drawing mode
   
   // Update drawing services when settings change
   useEffect(() => {
@@ -727,19 +731,13 @@ export function Canvas() {
           ✋ Pan
         </button>
         
-        <div class="tool-separator"></div>
-        
-        {/* Current tool info */}
-        <span class="tool-info">
-          Current: <strong>{currentTool}</strong>
-          {(currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER) && (
-            <span> | Size: {brushSize}px</span>
-          )}
-        </span>
+
       </div>
 
-      <div class="canvas-controls">
-        <button onClick={() => {
+      {/* Draggable Zoom Controls */}
+      <DraggableZoomControls
+        scale={scale}
+        onZoomIn={() => {
           const newScale = scale * 1.2
           const clampedScale = Math.max(0.1, Math.min(5, newScale))
           setScale(clampedScale)
@@ -747,8 +745,8 @@ export function Canvas() {
             stageRef.current.scale({ x: clampedScale, y: clampedScale })
             stageRef.current.batchDraw()
           }
-        }}>Zoom In</button>
-        <button onClick={() => {
+        }}
+        onZoomOut={() => {
           const newScale = scale / 1.2
           const clampedScale = Math.max(0.1, Math.min(5, newScale))
           setScale(clampedScale)
@@ -756,22 +754,18 @@ export function Canvas() {
             stageRef.current.scale({ x: clampedScale, y: clampedScale })
             stageRef.current.batchDraw()
           }
-        }}>Zoom Out</button>
-        <button
-          onClick={() => {
-            setScale(1)
-            setPosition({ x: 0, y: 0 })
-            // Directly set stage position
-            if (stageRef.current) {
-              stageRef.current.position({ x: 0, y: 0 })
-              stageRef.current.scale({ x: 1, y: 1 })
-            }
-          }}
-        >
-          Reset
-        </button>
-        <span class="zoom-level">{Math.round(scale * 100)}%</span>
-      </div>
+        }}
+        onReset={() => {
+          setScale(1)
+          setPosition({ x: 0, y: 0 })
+          // Directly set stage position
+          if (stageRef.current) {
+            stageRef.current.position({ x: 0, y: 0 })
+            stageRef.current.scale({ x: 1, y: 1 })
+            stageRef.current.batchDraw()
+          }
+        }}
+      />
 
       <input
         ref={fileInputRef}
@@ -1007,6 +1001,12 @@ export function Canvas() {
           )}
         </Layer>
       </Stage>
+
+      {/* Floating Drawing Panel - shown when drawing tools are active */}
+      <FloatingDrawingPanel 
+        visible={currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER}
+        tool={currentTool === CanvasTool.ERASER ? 'eraser' : 'brush'}
+      />
 
       <CanvasContextMenu
         visible={contextMenu.visible}
