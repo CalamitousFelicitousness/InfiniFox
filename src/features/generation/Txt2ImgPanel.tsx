@@ -116,12 +116,18 @@ export function Txt2ImgPanel() {
             value={width}
             onInput={(val) => setWidth(val)}
             disabled={isLoading}
+            roundToMultiple={16}
+            min={64}
+            max={2048}
           />
           <NumberInput
             label="Height"
             value={height}
             onInput={(val) => setHeight(val)}
             disabled={isLoading}
+            roundToMultiple={16}
+            min={64}
+            max={2048}
           />
         </div>
 

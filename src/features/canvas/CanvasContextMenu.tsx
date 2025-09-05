@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'preact/hooks'
-
 import { useStore } from '../../store/store'
-
+import { CheckIcon } from '../../components/icons'
 import './CanvasContextMenu.css'
 
 interface CanvasContextMenuProps {
@@ -121,10 +120,12 @@ export function CanvasContextMenu({
         // Context menu for image
         <>
       <button onPointerDown={(e) => { e.preventDefault(); handleSendToImg2Img() }}>
-        Send to img2img{currentRole === 'img2img_init' ? ' ✓' : ''}
+        <span>Send to img2img</span>
+        {currentRole === 'img2img_init' && <CheckIcon size={14} />}
       </button>
       <button onPointerDown={(e) => { e.preventDefault(); handleSendToInpaint() }}>
-        Send to Inpaint{currentRole === 'inpaint_image' ? ' ✓' : ''}
+        <span>Send to Inpaint</span>
+        {currentRole === 'inpaint_image' && <CheckIcon size={14} />}
       </button>
       <hr />
       {currentRole && (

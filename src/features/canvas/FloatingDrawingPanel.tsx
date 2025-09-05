@@ -2,6 +2,17 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { useStore } from '../../store/store'
 import { BRUSH_PRESETS } from '../../services/drawing/PerfectFreehandService'
 import { Slider } from '../../components/common/Slider'
+import { 
+  BrushIcon,
+  EraserIcon,
+  GripIcon,
+  MinimizeIcon,
+  MaximizeIcon,
+  Eye,
+  EyeOff,
+  Trash2 as TrashIcon,
+  Download as DownloadIcon
+} from '../../components/icons'
 import './FloatingDrawingPanel.css'
 
 // Extended color palette - 48 colors organized by category
@@ -160,10 +171,14 @@ export function FloatingDrawingPanel({ visible, tool }: FloatingDrawingPanelProp
     >
       <div class="panel-header">
         <div class="panel-grip" title="Drag to move">
-          <span class="grip-icon">⋮⋮</span>
+          <GripIcon size={12} />
         </div>
         <span class="panel-title">
-          {tool === 'eraser' ? '🧹 Eraser' : '🖌️ Brush'} Settings
+          {tool === 'eraser' ? (
+            <><EraserIcon size={14} /> Eraser</>
+          ) : (
+            <><BrushIcon size={14} /> Brush</>
+          )} Settings
         </span>
         <div class="panel-controls">
           <button
@@ -171,7 +186,7 @@ export function FloatingDrawingPanel({ visible, tool }: FloatingDrawingPanelProp
             onClick={() => setIsMinimized(!isMinimized)}
             title={isMinimized ? 'Expand' : 'Minimize'}
           >
-            {isMinimized ? '□' : '─'}
+            {isMinimized ? <MaximizeIcon size={14} /> : <MinimizeIcon size={14} />}
           </button>
         </div>
       </div>
@@ -266,22 +281,26 @@ export function FloatingDrawingPanel({ visible, tool }: FloatingDrawingPanelProp
               class="action-btn"
               onClick={clearDrawingStrokes}
               disabled={drawingStrokes.length === 0}
+              title="Clear all strokes"
             >
-              Clear
+              <TrashIcon size={14} />
+              <span>Clear</span>
             </button>
             <button 
               class="action-btn"
               onClick={handleExport}
               disabled={drawingStrokes.length === 0}
+              title="Export drawing"
             >
-              Export
+              <DownloadIcon size={14} />
+              <span>Export</span>
             </button>
             <button 
               class={`action-btn ${drawingLayerVisible ? 'active' : ''}`}
               onClick={() => setDrawingLayerVisible(!drawingLayerVisible)}
               title={drawingLayerVisible ? 'Hide layer' : 'Show layer'}
             >
-              {drawingLayerVisible ? '👁️' : '👁️‍🗨️'}
+              {drawingLayerVisible ? <Eye size={16} /> : <EyeOff size={16} />}
             </button>
           </div>
           

@@ -1,0 +1,903 @@
+/**
+ * FilterPanel.css - Glass Morphism Styling for Filter Panel
+ * Professional, modern design with excellent UX
+ */
+
+.filter-panel {
+  width: 380px;
+  max-width: 90vw;
+  background: rgba(42, 42, 42, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.filter-panel.floating {
+  position: fixed;
+  resize: both;
+  min-width: 320px;
+  min-height: 400px;
+  max-width: 600px;
+  max-height: 80vh;
+}
+
+.filter-panel.dragging {
+  cursor: move;
+  opacity: 0.9;
+  transform: scale(0.98);
+  box-shadow: 
+    0 12px 48px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.filter-panel-header {
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: move;
+  user-select: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.filter-panel-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--primary-text-color);
+  letter-spacing: 0.5px;
+}
+
+.filter-panel-header .close-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--primary-text-color);
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.filter-panel-header .close-btn:hover {
+  background: rgba(255, 67, 54, 0.8);
+  border-color: rgba(255, 67, 54, 0.9);
+  transform: scale(1.1);
+}
+
+.filter-panel-content {
+  padding: 1.25rem;
+  overflow-y: auto;
+  max-height: calc(80vh - 60px);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Scrollbar styling */
+.filter-panel-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.filter-panel-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 3px;
+}
+
+.filter-panel-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.filter-panel-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Section styling */
+.filter-section {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.filter-section:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.filter-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.filter-section-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--secondary-text-color);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Filter Controls - Sliders */
+.filter-slider {
+  --slider-height: 6px;
+  --thumb-size: 18px;
+  position: relative;
+  margin: 0.75rem 0;
+}
+
+.filter-slider-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--secondary-text-color);
+}
+
+.filter-slider-label span {
+  font-weight: 500;
+}
+
+.filter-slider-value {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.8rem;
+  min-width: 45px;
+  text-align: center;
+}
+
+.filter-slider input[type="range"] {
+  width: 100%;
+  height: var(--slider-height);
+  background: linear-gradient(
+    90deg,
+    var(--accent-color) var(--progress, 0%),
+    rgba(255, 255, 255, 0.1) var(--progress, 0%)
+  );
+  border-radius: calc(var(--slider-height) / 2);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.filter-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: var(--thumb-size);
+  height: var(--thumb-size);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.filter-slider input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 
+    0 4px 12px rgba(102, 126, 234, 0.5),
+    0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.filter-slider input[type="range"]::-webkit-slider-thumb:active {
+  transform: scale(1.1);
+}
+
+/* Filter List */
+.filter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateX(2px);
+}
+
+.filter-item.selected {
+  background: rgba(102, 126, 234, 0.15);
+  border-color: rgba(102, 126, 234, 0.3);
+}
+
+.filter-item.disabled {
+  opacity: 0.5;
+}
+
+.filter-drag-handle {
+  cursor: move;
+  color: var(--secondary-text-color);
+  font-size: 1.2rem;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+.filter-item:hover .filter-drag-handle {
+  opacity: 1;
+}
+
+.filter-toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.filter-toggle.active {
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+}
+
+.filter-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.filter-toggle.active .filter-toggle-thumb {
+  transform: translateX(20px);
+}
+
+.filter-name {
+  flex: 1;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--primary-text-color);
+}
+
+.filter-opacity {
+  width: 60px;
+  font-size: 0.8rem;
+  color: var(--secondary-text-color);
+  text-align: right;
+}
+
+.filter-remove {
+  background: transparent;
+  border: none;
+  color: rgba(255, 67, 54, 0.8);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  opacity: 0;
+}
+
+.filter-item:hover .filter-remove {
+  opacity: 1;
+}
+
+.filter-remove:hover {
+  background: rgba(255, 67, 54, 0.2);
+  color: rgba(255, 67, 54, 1);
+  transform: scale(1.1);
+}
+
+/* Add Filter Button */
+.add-filter-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  border-radius: 8px;
+  color: var(--primary-text-color);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.add-filter-btn:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+  border-color: rgba(102, 126, 234, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+/* Preview Mode Selector */
+.preview-mode-selector {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+}
+
+.preview-mode-btn {
+  flex: 1;
+  padding: 0.5rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: var(--secondary-text-color);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.preview-mode-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--primary-text-color);
+}
+
+.preview-mode-btn.active {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+  border-color: rgba(102, 126, 234, 0.3);
+  color: var(--primary-text-color);
+}
+
+/* Action Buttons */
+.filter-actions {
+  display: flex;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.filter-actions button {
+  flex: 1;
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.apply-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
+}
+
+.apply-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.apply-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cancel-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--primary-text-color);
+}
+
+.cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* History Controls */
+.filter-history {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.history-btn {
+  flex: 1;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: var(--primary-text-color);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.history-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.history-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .filter-panel {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 0;
+    height: 100vh;
+  }
+  
+  .filter-panel.floating {
+    position: fixed;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0;
+    bottom: 0;
+    max-width: 100%;
+    max-height: 100vh;
+  }
+  
+  .filter-panel-content {
+    max-height: calc(100vh - 60px);
+  }
+}
+
+/* Touch-friendly adjustments */
+@media (pointer: coarse) {
+  .filter-slider input[type="range"] {
+    --slider-height: 8px;
+    --thumb-size: 24px;
+  }
+  
+  .filter-item {
+    padding: 1rem;
+  }
+  
+  .filter-actions button {
+    min-height: 48px;
+  }
+  
+  .preview-mode-btn {
+    min-height: 44px;
+  }
+}
+
+/* Loading state */
+.filter-panel.loading {
+  pointer-events: none;
+}
+
+.filter-panel.loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Animations */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.filter-panel {
+  animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Glow effect for active elements */
+@keyframes glow {
+  0% {
+    box-shadow: 0 0 5px rgba(102, 126, 234, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.8), 0 0 30px rgba(102, 126, 234, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 5px rgba(102, 126, 234, 0.5);
+  }
+}
+
+.filter-item.selected {
+  animation: glow 2s infinite;
+}
+
+/* Filter Add Menu */
+.filter-add-menu {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  margin-bottom: 0.5rem;
+  background: rgba(42, 42, 42, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.3);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.filter-add-menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.filter-add-menu-header button {
+  background: transparent;
+  border: none;
+  color: var(--secondary-text-color);
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.filter-add-list {
+  padding: 0.5rem;
+}
+
+.filter-add-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--primary-text-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.filter-add-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.filter-add-icon {
+  font-size: 1.2rem;
+}
+
+.filter-add-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.filter-add-desc {
+  font-size: 0.8rem;
+  color: var(--secondary-text-color);
+}
+
+.filter-add-empty {
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--secondary-text-color);
+  font-style: italic;
+}
+
+/* Filter Count Badge */
+.filter-count {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Filter Controls Additional Styles */
+.filter-select {
+  margin-bottom: 1rem;
+}
+
+.filter-select label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--secondary-text-color);
+  font-size: 0.85rem;
+}
+
+.filter-select select {
+  width: 100%;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: var(--primary-text-color);
+  cursor: pointer;
+}
+
+.filter-checkbox {
+  margin-bottom: 1rem;
+}
+
+.filter-checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: var(--primary-text-color);
+}
+
+.filter-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.filter-color {
+  margin-bottom: 1rem;
+}
+
+.filter-color label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--secondary-text-color);
+  font-size: 0.85rem;
+}
+
+.color-picker-placeholder input[type="color"] {
+  width: 100%;
+  height: 40px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.filter-no-controls {
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--secondary-text-color);
+  font-style: italic;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+}
+
+/* Preset Styles */
+.preset-categories {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.preset-category {
+  padding: 0.25rem 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  color: var(--secondary-text-color);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.preset-category:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--primary-text-color);
+}
+
+.preset-category.active {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+  border-color: rgba(102, 126, 234, 0.5);
+  color: var(--primary-text-color);
+}
+
+.preset-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.preset-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.preset-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateX(2px);
+}
+
+.preset-thumbnail {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.preset-thumbnail-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.preset-info {
+  flex: 1;
+}
+
+.preset-name {
+  font-weight: 500;
+  color: var(--primary-text-color);
+  margin-bottom: 0.25rem;
+}
+
+.preset-description {
+  font-size: 0.8rem;
+  color: var(--secondary-text-color);
+  margin-bottom: 0.25rem;
+}
+
+.preset-filters {
+  font-size: 0.75rem;
+  color: var(--secondary-text-color);
+}
+
+.preset-delete {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.preset-item:hover .preset-delete {
+  opacity: 0.7;
+}
+
+.preset-delete:hover {
+  opacity: 1 !important;
+}
+
+.preset-empty {
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--secondary-text-color);
+  font-style: italic;
+}
+
+.preset-save-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.preset-save-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Preset Save Dialog */
+.preset-save-dialog {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(42, 42, 42, 0.98);
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  z-index: 20;
+}
+
+.preset-save-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+.preset-save-input,
+.preset-save-textarea {
+  width: 100%;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: var(--primary-text-color);
+  margin-bottom: 0.75rem;
+}
+
+.preset-save-textarea {
+  min-height: 60px;
+  resize: vertical;
+}
+
+.preset-save-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.preset-save-confirm,
+.preset-save-cancel {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.preset-save-confirm {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
+}
+
+.preset-save-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.preset-save-cancel {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--primary-text-color);
+}

@@ -10,6 +10,7 @@ interface NumberInputProps {
   max?: number
   step?: number
   disabled?: boolean
+  roundToMultiple?: number  // When set, up/down buttons will round to nearest multiple
 }
 
 export function NumberInput({ 
@@ -19,7 +20,8 @@ export function NumberInput({
   min = -Infinity,
   max = Infinity,
   step = 1,
-  disabled = false 
+  disabled = false,
+  roundToMultiple 
 }: NumberInputProps) {
   const [isFocused, setIsFocused] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -94,7 +96,13 @@ export function NumberInput({
           type="button"
           onPointerDown={(e) => {
             e.stopPropagation()
-            onInput(Math.min(max, value + step))
+            if (roundToMultiple) {
+              // Round up to next multiple
+              const nextMultiple = Math.ceil((value + 1) / roundToMultiple) * roundToMultiple
+              onInput(Math.min(max, nextMultiple))
+            } else {
+              onInput(Math.min(max, value + step))
+            }
           }}
           disabled={disabled || value >= max}
           aria-label="Increase"
@@ -105,7 +113,13 @@ export function NumberInput({
           type="button"
           onPointerDown={(e) => {
             e.stopPropagation()
-            onInput(Math.max(min, value - step))
+            if (roundToMultiple) {
+              // Round down to previous multiple
+              const prevMultiple = Math.floor((value - 1) / roundToMultiple) * roundToMultiple
+              onInput(Math.max(min, prevMultiple))
+            } else {
+              onInput(Math.max(min, value - step))
+            }
           }}
           disabled={disabled || value <= min}
           aria-label="Decrease"

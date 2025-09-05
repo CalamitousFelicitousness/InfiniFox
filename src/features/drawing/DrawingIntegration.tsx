@@ -12,6 +12,15 @@
 
 import { useState } from 'preact/hooks'
 import { DrawingPanel } from './DrawingPanel'
+import {
+  X as CloseIcon,
+  ChevronUp,
+  ChevronDown,
+  Lock,
+  Unlock,
+  BrushIcon,
+  PaletteIcon
+} from '../../components/icons'
 import './DrawingIntegration.css'
 
 // Option 1: As a Tab in ControlPanel
@@ -30,7 +39,9 @@ export function DrawingModal({ isOpen, onClose }: { isOpen: boolean; onClose: ()
   return (
     <div class="drawing-modal-overlay" onClick={onClose}>
       <div class="drawing-modal" onClick={(e) => e.stopPropagation()}>
-        <button class="modal-close" onClick={onClose}>×</button>
+        <button class="drawing-modal-close" onClick={onClose} title="Close">
+          <CloseIcon size={20} />
+        </button>
         <DrawingPanel />
       </div>
     </div>
@@ -45,13 +56,22 @@ export function DockableDrawingPanel() {
   return (
     <div class={`dockable-drawing-panel ${isDocked ? 'docked' : 'floating'} ${isMinimized ? 'minimized' : ''}`}>
       <div class="panel-header">
-        <span>Drawing Tools</span>
+        <span>
+          <BrushIcon size={14} style="display: inline-block; margin-right: 6px; vertical-align: middle;" />
+          Drawing Tools
+        </span>
         <div class="panel-controls">
-          <button onClick={() => setIsMinimized(!isMinimized)}>
-            {isMinimized ? '🔼' : '🔽'}
+          <button 
+            onClick={() => setIsMinimized(!isMinimized)}
+            title={isMinimized ? 'Expand' : 'Minimize'}
+          >
+            {isMinimized ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
-          <button onClick={() => setIsDocked(!isDocked)}>
-            {isDocked ? '📌' : '🔓'}
+          <button 
+            onClick={() => setIsDocked(!isDocked)}
+            title={isDocked ? 'Undock panel' : 'Dock panel'}
+          >
+            {isDocked ? <Lock size={14} /> : <Unlock size={14} />}
           </button>
         </div>
       </div>
@@ -69,8 +89,10 @@ export function CanvasDrawingMode() {
       <button 
         class="drawing-mode-toggle"
         onClick={() => setIsDrawingMode(!isDrawingMode)}
+        title={isDrawingMode ? 'Exit drawing mode' : 'Enter drawing mode'}
       >
-        {isDrawingMode ? 'Exit Drawing Mode' : 'Enter Drawing Mode'}
+        <PaletteIcon size={16} style="display: inline-block; margin-right: 8px; vertical-align: middle;" />
+        <span>{isDrawingMode ? 'Exit Drawing Mode' : 'Enter Drawing Mode'}</span>
       </button>
       
       {isDrawingMode && (

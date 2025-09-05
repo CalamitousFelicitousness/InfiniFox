@@ -1,0 +1,150 @@
+/**
+ * Icon Styles for InfiniFox
+ * Global styles for Lucide icon integration
+ */
+
+/* Base icon styles */
+.lucide-icon {
+  display: inline-flex;
+  vertical-align: middle;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  pointer-events: none; /* Icons shouldn't interfere with button clicks */
+}
+
+/* Tool icon specific styles */
+.tool-icon .lucide-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Hover effects */
+.toolbar-tool-btn:hover .lucide-icon {
+  transform: scale(1.1);
+}
+
+/* Active state with glow effect */
+.toolbar-tool-btn.active .lucide-icon {
+  filter: drop-shadow(0 0 3px currentColor);
+}
+
+/* Disabled state */
+.toolbar-tool-btn:disabled .lucide-icon,
+.toolbar-tool-btn.disabled .lucide-icon {
+  opacity: 0.4;
+}
+
+/* Loading animation */
+.lucide-icon.spinning {
+  animation: spin 1s linear infinite;
+  pointer-events: all; /* Loading icons might need events */
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Pulse animation for alerts */
+.lucide-icon.pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Bounce animation for attention */
+.lucide-icon.bounce {
+  animation: bounce 0.5s ease-in-out;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+/* Color inheritance */
+.lucide-icon {
+  color: currentColor; /* Inherit from parent */
+}
+
+/* Specific color contexts */
+.toolbar-tool-btn .lucide-icon {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.toolbar-tool-btn:hover .lucide-icon {
+  color: #ffffff;
+}
+
+.toolbar-tool-btn.active .lucide-icon {
+  color: var(--accent-color, #646cff);
+}
+
+/* Size modifiers */
+.lucide-icon.icon-xs { width: 12px; height: 12px; }
+.lucide-icon.icon-sm { width: 14px; height: 14px; }
+.lucide-icon.icon-md { width: 16px; height: 16px; }
+.lucide-icon.icon-lg { width: 20px; height: 20px; }
+.lucide-icon.icon-xl { width: 24px; height: 24px; }
+.lucide-icon.icon-xxl { width: 32px; height: 32px; }
+
+/* Floating panel icons */
+.floating-panel .lucide-icon {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+/* Grip icon special styling */
+.toolbar-grip .lucide-icon {
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+.toolbar-grip:hover .lucide-icon {
+  opacity: 0.8;
+}
+
+/* Filter panel icons */
+.filter-control .lucide-icon {
+  margin-right: 0.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .tool-icon .lucide-icon {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .tool-icon .lucide-icon {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .lucide-icon {
+    stroke-width: 2.5;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .lucide-icon {
+    transition: none;
+    animation: none !important;
+  }
+}

@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { CanvasTool } from './Canvas'
+import { 
+  SelectIcon, 
+  BrushIcon, 
+  EraserIcon, 
+  PanIcon,
+  GripIcon 
+} from '../../components/icons'
 import './DraggableCanvasToolbar.css'
 
 interface DraggableCanvasToolbarProps {
@@ -100,10 +107,10 @@ export function DraggableCanvasToolbar({ currentTool, onToolChange }: DraggableC
   }, [isDragging, dragOffset])
   
   const tools = [
-    { id: CanvasTool.SELECT, icon: '🔲', label: 'Select', tooltip: 'Selection Tool (V)' },
-    { id: CanvasTool.BRUSH, icon: '✏️', label: 'Brush', tooltip: 'Brush Tool (B)' },
-    { id: CanvasTool.ERASER, icon: '🧹', label: 'Eraser', tooltip: 'Eraser Tool (E)' },
-    { id: CanvasTool.PAN, icon: '✋', label: 'Pan', tooltip: 'Pan Tool (H)' },
+    { id: CanvasTool.SELECT, icon: SelectIcon, label: 'Select', tooltip: 'Selection Tool (V)' },
+    { id: CanvasTool.BRUSH, icon: BrushIcon, label: 'Brush', tooltip: 'Brush Tool (B)' },
+    { id: CanvasTool.ERASER, icon: EraserIcon, label: 'Eraser', tooltip: 'Eraser Tool (E)' },
+    { id: CanvasTool.PAN, icon: PanIcon, label: 'Pan', tooltip: 'Pan Tool (H)' },
   ]
   
   return (
@@ -117,7 +124,7 @@ export function DraggableCanvasToolbar({ currentTool, onToolChange }: DraggableC
       onPointerDown={handlePointerDown}
     >
       <div class="toolbar-grip" title="Drag to move">
-        <span class="grip-icon">⋮⋮</span>
+        <GripIcon size={12} />
       </div>
       
       <div class="toolbar-tools">
@@ -128,7 +135,9 @@ export function DraggableCanvasToolbar({ currentTool, onToolChange }: DraggableC
             onClick={() => onToolChange(tool.id)}
             title={tool.tooltip}
           >
-            <span class="tool-icon">{tool.icon}</span>
+            <span class="tool-icon">
+              <tool.icon size={16} />
+            </span>
             <span class="tool-label">{tool.label}</span>
           </button>
         ))}

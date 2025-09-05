@@ -248,6 +248,27 @@ export function InpaintPanel() {
         <NumberInput label="Seed" value={seed} onInput={setSeed} disabled={isLoading} />
         <Slider label="Steps" value={steps} onInput={setSteps} min={1} max={100} disabled={isLoading} />
         <Slider label="CFG Scale" value={cfgScale} onInput={setCfgScale} min={1} max={30} step={0.5} disabled={isLoading} />
+        
+        <div class="size-inputs">
+          <NumberInput 
+            label="Width" 
+            value={width} 
+            onInput={setWidth} 
+            disabled={isLoading}
+            roundToMultiple={16}
+            min={64}
+            max={2048}
+          />
+          <NumberInput 
+            label="Height" 
+            value={height} 
+            onInput={setHeight} 
+            disabled={isLoading}
+            roundToMultiple={16}
+            min={64}
+            max={2048}
+          />
+        </div>
 
         <button type="submit" class="generate-btn" disabled={isLoading || !maskImage}>
           {isLoading ? 'Generating...' : 'Generate'}

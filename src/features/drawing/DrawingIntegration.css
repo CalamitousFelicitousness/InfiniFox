@@ -58,29 +58,41 @@
   }
 }
 
-.modal-close {
+.drawing-modal-close {
   position: absolute;
   top: 20px;
   right: 20px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  font-size: 24px;
-  cursor: pointer;
-  z-index: 10;
-  transition: all 0.3s ease;
+  width: 36px;
+  height: 36px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: bold;
+  transition: all 0.2s ease;
+  z-index: 10;
 }
 
-.modal-close:hover {
-  background: rgba(255, 50, 50, 0.3);
-  border-color: rgba(255, 50, 50, 0.5);
-  transform: rotate(90deg);
+.drawing-modal-close:hover {
+  background-color: rgba(255, 86, 86, 0.2);
+  border-color: rgba(255, 86, 86, 0.5);
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+.drawing-modal-close:active {
+  transform: scale(0.95);
+}
+
+.drawing-modal-close:focus-visible {
+  outline: 2px solid #646cff;
+  outline-offset: 2px;
 }
 
 /* Dockable Panel Integration */
@@ -143,18 +155,56 @@
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
+  color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  font-size: 12px;
+}
+
+.panel-controls button svg {
+  display: block;
+  width: 14px;
+  height: 14px;
 }
 
 .panel-controls button:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(100, 108, 255, 0.2);
+  border-color: rgba(100, 108, 255, 0.5);
+  color: #ffffff;
   transform: scale(1.1);
+}
+
+
+
+/* Drawing Mode Toggle Button */
+.drawing-mode-toggle {
+  padding: 0.5rem 1rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.drawing-mode-toggle:hover {
+  background-color: rgba(100, 108, 255, 0.2);
+  border-color: rgba(100, 108, 255, 0.5);
+  color: #ffffff;
+  transform: scale(1.02);
+}
+
+.drawing-mode-toggle svg {
+  display: block;
+  width: 16px;
+  height: 16px;
 }
 
 /* Canvas Drawing Mode Integration */
