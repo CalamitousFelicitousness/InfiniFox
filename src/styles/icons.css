@@ -1,0 +1,283 @@
+/**
+ * Global Icon Styles
+ * Consistent styling for lucide-preact icons throughout InfiniFox
+ */
+
+/* Base icon styling */
+.lucide-icon {
+  display: inline-flex;
+  vertical-align: middle;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  user-select: none;
+  pointer-events: none; /* Icons themselves don't capture pointer events */
+}
+
+/* Drawing FAB and Modal Close specific fixes */
+.drawing-fab .lucide-icon,
+.modal-close .lucide-icon {
+  stroke: currentColor;
+  fill: none;
+  color: inherit;
+}
+
+/* Icon within interactive elements */
+button .lucide-icon,
+a .lucide-icon,
+.clickable .lucide-icon {
+  pointer-events: none; /* Ensure parent handles events */
+}
+
+/* Tool icon specific sizing */
+.tool-icon .lucide-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Hover effects */
+.toolbar-tool-btn:hover .lucide-icon,
+.icon-button:hover .lucide-icon {
+  transform: scale(1.1);
+}
+
+/* Active state */
+.toolbar-tool-btn.active .lucide-icon,
+.icon-button.active .lucide-icon {
+  filter: drop-shadow(0 0 3px currentColor);
+  color: var(--accent-color, #646cff);
+}
+
+/* Disabled state */
+.toolbar-tool-btn:disabled .lucide-icon,
+.icon-button:disabled .lucide-icon,
+.icon-button.disabled .lucide-icon {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Icon animations */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.icon-spin {
+  animation: spin var(--animation-duration, 1s) linear infinite;
+}
+
+.icon-pulse {
+  animation: pulse var(--animation-duration, 2s) ease-in-out infinite;
+}
+
+.icon-bounce {
+  animation: bounce var(--animation-duration, 0.5s) ease-in-out infinite;
+}
+
+/* Loading state */
+.lucide-icon.spinning,
+.icon-loading {
+  animation: spin 1s linear infinite;
+}
+
+/* Color system integration */
+.lucide-icon {
+  color: currentColor; /* Inherit from parent by default */
+}
+
+/* Toolbar specific colors */
+.toolbar-tool-btn .lucide-icon {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.toolbar-tool-btn:hover .lucide-icon {
+  color: #ffffff;
+}
+
+.toolbar-tool-btn.active .lucide-icon {
+  color: var(--accent-color, #646cff);
+}
+
+/* Panel icons */
+.panel-header .lucide-icon {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.panel-header:hover .lucide-icon {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Icon button base styles */
+.icon-button {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.icon-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.icon-button:active {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.icon-button.active {
+  background-color: rgba(100, 108, 255, 0.2);
+}
+
+/* Icon with tooltip */
+.icon-with-tooltip {
+  position: relative;
+  display: inline-flex;
+}
+
+.icon-with-tooltip[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 1000;
+}
+
+.icon-with-tooltip[data-tooltip-position="top"]::after {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+.icon-with-tooltip[data-tooltip-position="bottom"]::after {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+}
+
+.icon-with-tooltip[data-tooltip-position="left"]::after {
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%) translateX(-4px);
+}
+
+.icon-with-tooltip[data-tooltip-position="right"]::after {
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%) translateX(4px);
+}
+
+.icon-with-tooltip:hover::after {
+  opacity: 1;
+}
+
+/* Size modifiers */
+.icon-xs .lucide-icon { width: 12px; height: 12px; }
+.icon-sm .lucide-icon { width: 14px; height: 14px; }
+.icon-md .lucide-icon { width: 16px; height: 16px; }
+.icon-lg .lucide-icon { width: 20px; height: 20px; }
+.icon-xl .lucide-icon { width: 24px; height: 24px; }
+.icon-xxl .lucide-icon { width: 32px; height: 32px; }
+
+/* Glass morphism integration */
+.glass-panel .lucide-icon {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+/* Draggable toolbar specific */
+.toolbar-grip .lucide-icon {
+  cursor: grab;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+.toolbar-grip:hover .lucide-icon {
+  opacity: 0.8;
+}
+
+.toolbar-grip:active .lucide-icon {
+  cursor: grabbing;
+  opacity: 1;
+}
+
+/* Floating panel icons */
+.floating-panel .lucide-icon {
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.2));
+}
+
+/* Context menu icons */
+.context-menu-item .lucide-icon {
+  margin-right: 8px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.context-menu-item:hover .lucide-icon {
+  color: rgba(255, 255, 255, 1);
+}
+
+/* Status icons */
+.status-success .lucide-icon { color: #4caf50; }
+.status-warning .lucide-icon { color: #ff9800; }
+.status-error .lucide-icon { color: #f44336; }
+.status-info .lucide-icon { color: #2196f3; }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .lucide-icon {
+    /* Slightly larger touch targets on mobile */
+    min-width: 20px;
+    min-height: 20px;
+  }
+  
+  .icon-button {
+    padding: 8px;
+  }
+}
+
+/* Dark mode optimizations (already using dark theme by default) */
+@media (prefers-color-scheme: light) {
+  .lucide-icon {
+    color: rgba(0, 0, 0, 0.8);
+  }
+  
+  .toolbar-tool-btn .lucide-icon {
+    color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .toolbar-tool-btn:hover .lucide-icon {
+    color: rgba(0, 0, 0, 0.9);
+  }
+}
+
+/* Print styles */
+@media print {
+  .lucide-icon {
+    color: black !important;
+    filter: none !important;
+  }
+}

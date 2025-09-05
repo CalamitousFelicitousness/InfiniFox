@@ -12,6 +12,8 @@
 
 import { useState } from 'preact/hooks'
 import { DrawingPanel } from './DrawingPanel'
+import { CloseIcon, ChevronDown, ChevronUp } from '../../components/icons'
+import { Pin, PinOff } from 'lucide-preact'
 import './DrawingIntegration.css'
 
 // Option 1: As a Tab in ControlPanel
@@ -30,7 +32,9 @@ export function DrawingModal({ isOpen, onClose }: { isOpen: boolean; onClose: ()
   return (
     <div class="drawing-modal-overlay" onClick={onClose}>
       <div class="drawing-modal" onClick={(e) => e.stopPropagation()}>
-        <button class="modal-close" onClick={onClose}>×</button>
+        <button class="modal-close" onClick={onClose} aria-label="Close">
+          <CloseIcon size={18} class="lucide-icon" />
+        </button>
         <DrawingPanel />
       </div>
     </div>
@@ -47,11 +51,11 @@ export function DockableDrawingPanel() {
       <div class="panel-header">
         <span>Drawing Tools</span>
         <div class="panel-controls">
-          <button onClick={() => setIsMinimized(!isMinimized)}>
-            {isMinimized ? '🔼' : '🔽'}
+          <button onClick={() => setIsMinimized(!isMinimized)} aria-label={isMinimized ? 'Expand' : 'Minimize'}>
+            {isMinimized ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
-          <button onClick={() => setIsDocked(!isDocked)}>
-            {isDocked ? '📌' : '🔓'}
+          <button onClick={() => setIsDocked(!isDocked)} aria-label={isDocked ? 'Undock' : 'Dock'}>
+            {isDocked ? <Pin size={14} /> : <PinOff size={14} />}
           </button>
         </div>
       </div>

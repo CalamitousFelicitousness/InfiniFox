@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { CanvasTool } from './Canvas'
+import { 
+  SelectIcon, 
+  BrushIcon, 
+  EraserIcon, 
+  PanIcon, 
+  GripIcon 
+} from '../../components/icons'
 import './DraggableCanvasToolbar.css'
 
 interface DraggableCanvasToolbarProps {
@@ -100,10 +107,10 @@ export function DraggableCanvasToolbar({ currentTool, onToolChange }: DraggableC
   }, [isDragging, dragOffset])
   
   const tools = [
-    { id: CanvasTool.SELECT, icon: '🔲', label: 'Select', tooltip: 'Selection Tool (V)' },
-    { id: CanvasTool.BRUSH, icon: '✏️', label: 'Brush', tooltip: 'Brush Tool (B)' },
-    { id: CanvasTool.ERASER, icon: '🧹', label: 'Eraser', tooltip: 'Eraser Tool (E)' },
-    { id: CanvasTool.PAN, icon: '✋', label: 'Pan', tooltip: 'Pan Tool (H)' },
+    { id: CanvasTool.SELECT, icon: SelectIcon, label: 'Select', tooltip: 'Selection Tool (V)' },
+    { id: CanvasTool.BRUSH, icon: BrushIcon, label: 'Brush', tooltip: 'Brush Tool (B)' },
+    { id: CanvasTool.ERASER, icon: EraserIcon, label: 'Eraser', tooltip: 'Eraser Tool (E)' },
+    { id: CanvasTool.PAN, icon: PanIcon, label: 'Pan', tooltip: 'Pan Tool (H)' },
   ]
   
   return (
@@ -117,21 +124,28 @@ export function DraggableCanvasToolbar({ currentTool, onToolChange }: DraggableC
       onPointerDown={handlePointerDown}
     >
       <div class="toolbar-grip" title="Drag to move">
-        <span class="grip-icon">⋮⋮</span>
+        <GripIcon size={12} class="grip-icon" />
       </div>
       
       <div class="toolbar-tools">
-        {tools.map(tool => (
-          <button
-            key={tool.id}
-            class={`toolbar-tool-btn ${currentTool === tool.id ? 'active' : ''}`}
-            onClick={() => onToolChange(tool.id)}
-            title={tool.tooltip}
-          >
-            <span class="tool-icon">{tool.icon}</span>
-            <span class="tool-label">{tool.label}</span>
-          </button>
-        ))}
+        {tools.map(tool => {
+          const IconComponent = tool.icon
+          return (
+            <button
+              key={tool.id}
+              class={`toolbar-tool-btn ${currentTool === tool.id ? 'active' : ''}`}
+              onClick={() => onToolChange(tool.id)}
+              title={tool.tooltip}
+              aria-label={tool.tooltip}
+              aria-pressed={currentTool === tool.id}
+            >
+              <span class="tool-icon">
+                <IconComponent size={16} />
+              </span>
+              <span class="tool-label">{tool.label}</span>
+            </button>
+          )
+        })}
       </div>
     </div>
   )

@@ -7,6 +7,7 @@ import { DrawingModal } from './features/drawing'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { imageStorage } from './services/storage'
 import { useStore } from './store/store'
+import { PaletteIcon } from './components/icons'
 import './styles/main.css'
 
 export function App() {
@@ -74,8 +75,9 @@ export function App() {
         class="drawing-fab"
         onClick={() => setShowDrawingModal(true)}
         title="Open Advanced Drawing Panel"
+        aria-label="Open Advanced Drawing Panel"
       >
-        🎨
+        <PaletteIcon size={20} class="lucide-icon" />
       </button>
       
       {/* Drawing Modal */}

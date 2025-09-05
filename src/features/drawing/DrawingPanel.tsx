@@ -5,6 +5,18 @@ import { Stage, Layer, Line, Circle, Image as KonvaImage, Rect } from 'react-kon
 import { Dropdown } from '../../components/common/Dropdown'
 import { Slider } from '../../components/common/Slider'
 import { Tooltip } from '../../components/common/Tooltip'
+import { 
+  BrushIcon, 
+  EraserIcon, 
+  EyeIcon, 
+  EyeOffIcon, 
+  Trash2 as DeleteIcon,
+  Plus,
+  Download,
+  RefreshCw,
+  Upload,
+  Droplet
+} from '../../components/icons'
 import { LazyBrush } from '../../services/drawing/LazyBrush'
 import {
   PerfectFreehandService,
@@ -90,7 +102,7 @@ export function DrawingPanel() {
   // Services
   const perfectFreehandRef = useRef(new PerfectFreehandService(BRUSH_PRESETS[brushPreset]))
   const pressureManagerRef = useRef(new PressureManager())
-  const lazyBrushRef = useRef(new LazyBrush(smoothingRadius))
+  const lazyBrushRef = useRef(new LazyBrush({ radius: smoothingRadius }))
 
   // Initialize services
   useEffect(() => {
@@ -113,7 +125,7 @@ export function DrawingPanel() {
 
   // Update lazy brush radius
   useEffect(() => {
-    lazyBrushRef.current.setRadius(smoothingRadius)
+    lazyBrushRef.current.configure({ radius: smoothingRadius })
   }, [smoothingRadius])
 
   // Handle drawing start
@@ -129,7 +141,7 @@ export function DrawingPanel() {
     const pressure = pressureManagerRef.current.getCurrentPressure()
 
     // Initialize lazy brush
-    lazyBrushRef.current.update(pos.x, pos.y, true)
+    lazyBrushRef.current.initializePositions({ x: pos.x, y: pos.y })
 
     // Start perfect freehand stroke
     perfectFreehandRef.current.startStroke({ x: pos.x, y: pos.y, pressure })
@@ -164,7 +176,8 @@ export function DrawingPanel() {
     if (!isDrawing) return
 
     // Update lazy brush
-    const smoothed = lazyBrushRef.current.update(pos.x, pos.y, false)
+    lazyBrushRef.current.update({ x: pos.x, y: pos.y })
+    const smoothed = lazyBrushRef.current.getBrushCoordinates()
 
     // Get pressure
     const pressure = pressureManagerRef.current.getCurrentPressure()
@@ -340,24 +353,27 @@ export function DrawingPanel() {
               <button
                 class={`tool-btn ${tool === 'brush' ? 'active' : ''}`}
                 onClick={() => setTool('brush')}
+                aria-label="Brush Tool"
               >
-                🖌️
+                <BrushIcon size={20} />
               </button>
             </Tooltip>
             <Tooltip content="Eraser Tool (E)">
               <button
                 class={`tool-btn ${tool === 'eraser' ? 'active' : ''}`}
                 onClick={() => setTool('eraser')}
+                aria-label="Eraser Tool"
               >
-                🧹
+                <EraserIcon size={20} />
               </button>
             </Tooltip>
             <Tooltip content="Smudge Tool (S)">
               <button
                 class={`tool-btn ${tool === 'smudge' ? 'active' : ''}`}
                 onClick={() => setTool('smudge')}
+                aria-label="Smudge Tool"
               >
-                👆
+                <Droplet size={20} />
               </button>
             </Tooltip>
           </div>
@@ -477,8 +493,9 @@ export function DrawingPanel() {
                     e.stopPropagation()
                     toggleLayerVisibility(index)
                   }}
+                  aria-label={layer.visible ? 'Hide layer' : 'Show layer'}
                 >
-                  {layer.visible ? '👁️' : '🔒'}
+                  {layer.visible ? <EyeIcon size={16} /> : <EyeOffIcon size={16} />}
                 </button>
                 <span class="layer-name">{layer.name}</span>
                 <input
@@ -497,15 +514,17 @@ export function DrawingPanel() {
                       e.stopPropagation()
                       deleteLayer(index)
                     }}
+                    aria-label="Delete layer"
                   >
-                    ❌
+                    <DeleteIcon size={14} />
                   </button>
                 )}
               </div>
             ))}
           </div>
           <button class="add-layer-btn" onClick={addLayer}>
-            + Add Layer
+            <Plus size={16} class="lucide-icon" />
+            Add Layer
           </button>
         </div>
 
@@ -513,9 +532,18 @@ export function DrawingPanel() {
         <div class="tool-section">
           <h3>Actions</h3>
           <div class="action-buttons">
-            <button onClick={clearCanvas}>Clear Layer</button>
-            <button onClick={exportCanvas}>Export</button>
-            <button onClick={() => fileInputRef.current?.click()}>Load Background</button>
+            <button onClick={clearCanvas}>
+              <RefreshCw size={16} class="lucide-icon" />
+              Clear Layer
+            </button>
+            <button onClick={exportCanvas}>
+              <Download size={16} class="lucide-icon" />
+              Export
+            </button>
+            <button onClick={() => fileInputRef.current?.click()}>
+              <Upload size={16} class="lucide-icon" />
+              Load Background
+            </button>
           </div>
         </div>
       </div>

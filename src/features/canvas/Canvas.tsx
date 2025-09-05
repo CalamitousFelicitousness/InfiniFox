@@ -15,6 +15,7 @@ import { FloatingDrawingPanel } from './FloatingDrawingPanel'
 import { DraggableZoomControls } from './DraggableZoomControls'
 import { DraggableCanvasToolbar } from './DraggableCanvasToolbar'
 import { CanvasMinimap } from './CanvasMinimap'
+import { ImageSizeIndicator } from './ImageSizeIndicator'
 import './Canvas.css'
 
 // Tool types enum for better mode management
@@ -1020,6 +1021,14 @@ export function Canvas() {
           )}
         </Layer>
       </Stage>
+
+      {/* Image Size Indicator */}
+      <ImageSizeIndicator
+        imageId={selectedId}
+        images={konvaImages}
+        scale={scale}
+        position={position}
+      />
 
       {/* Minimap */}
       <CanvasMinimap

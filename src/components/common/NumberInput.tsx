@@ -94,7 +94,13 @@ export function NumberInput({
           type="button"
           onPointerDown={(e) => {
             e.stopPropagation()
-            onInput(Math.min(max, value + step))
+            // For width/height with step=16, snap to next multiple
+            if (step === 16) {
+              const nextMultiple = Math.ceil((value + 1) / 16) * 16
+              onInput(Math.min(max, nextMultiple))
+            } else {
+              onInput(Math.min(max, value + step))
+            }
           }}
           disabled={disabled || value >= max}
           aria-label="Increase"
@@ -105,7 +111,13 @@ export function NumberInput({
           type="button"
           onPointerDown={(e) => {
             e.stopPropagation()
-            onInput(Math.max(min, value - step))
+            // For width/height with step=16, snap to previous multiple
+            if (step === 16) {
+              const prevMultiple = Math.floor((value - 1) / 16) * 16
+              onInput(Math.max(min, prevMultiple))
+            } else {
+              onInput(Math.max(min, value - step))
+            }
           }}
           disabled={disabled || value <= min}
           aria-label="Decrease"

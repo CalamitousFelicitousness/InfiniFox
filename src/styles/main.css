@@ -1,3 +1,6 @@
+/* Import icon styles */
+@import 'icons.css';
+
 :root {
   --primary-bg-color: #1a1a1a;
   --secondary-bg-color: #2a2a2a;
@@ -66,8 +69,18 @@ button, label, .tabs, .queue-item, .history-item {
   margin-bottom: 2rem;
 }
 
+.panel-header h2 {
+  margin: 0;
+}
+
 .generation-panel h3 {
   margin-top: 0;
+}
+
+h3 {
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
 }
 
 .form-group {
@@ -87,22 +100,18 @@ button, label, .tabs, .queue-item, .history-item {
   border: 1px solid var(--border-color);
   background-color: var(--primary-bg-color);
   color: var(--primary-text-color);
-.panel-header h2 {
-  margin: 0;
 }
-
-h3 {
-}
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 0.5rem;
-  margin-bottom: 1rem;
 
 .generate-btn {
+  border: none;
+  border-radius: 4px;
+}
+
 .size-inputs {
   display: flex;
   gap: 1rem;
-  border: none;
-  border-radius: 4px;
+}
+
 textarea, select, input[type="number"] {
   width: 100%;
   padding: 0.5rem;
@@ -169,68 +178,49 @@ textarea {
   }
 }
 
-/* Floating Action Button for Drawing Panel */
+/* Floating Action Button for Drawing Panel - Updated to match app design */
 .drawing-fab {
   position: fixed;
   bottom: 2rem;
   right: 2rem;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  color: white;
-  font-size: 1.5rem;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background-color: rgba(42, 42, 42, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
-  box-shadow: 
-    0 4px 12px rgba(102, 126, 234, 0.4),
-    0 2px 4px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
   z-index: 100;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+/* Ensure icon inherits color */
+.drawing-fab svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  fill: none;
+}
+
 .drawing-fab:hover {
-  transform: translateY(-4px) scale(1.05);
-  box-shadow: 
-    0 8px 20px rgba(102, 126, 234, 0.5),
-    0 4px 8px rgba(0, 0, 0, 0.3);
+  background-color: rgba(100, 108, 255, 0.2);
+  border-color: rgba(100, 108, 255, 0.5);
+  color: #ffffff;
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 15px rgba(100, 108, 255, 0.4);
+}
+
+.drawing-fab:hover svg {
+  stroke: #ffffff;
 }
 
 .drawing-fab:active {
-  transform: translateY(-2px) scale(0.98);
-}
-
-/* Pulse animation for attention */
-@keyframes pulse {
-  0% {
-    box-shadow: 
-      0 4px 12px rgba(102, 126, 234, 0.4),
-      0 2px 4px rgba(0, 0, 0, 0.2),
-      0 0 0 0 rgba(102, 126, 234, 0.4);
-  }
-  70% {
-    box-shadow: 
-      0 4px 12px rgba(102, 126, 234, 0.4),
-      0 2px 4px rgba(0, 0, 0, 0.2),
-      0 0 0 10px rgba(102, 126, 234, 0);
-  }
-  100% {
-    box-shadow: 
-      0 4px 12px rgba(102, 126, 234, 0.4),
-      0 2px 4px rgba(0, 0, 0, 0.2),
-      0 0 0 0 rgba(102, 126, 234, 0);
-  }
-}
-
-.drawing-fab {
-  animation: pulse 2s infinite;
-}
-
-.drawing-fab:hover {
-  animation: none;
+  transform: translateY(0) scale(0.95);
 }
 
 /* Responsive adjustment for mobile */
@@ -238,8 +228,8 @@ textarea {
   .drawing-fab {
     bottom: 1rem;
     right: 1rem;
-    width: 48px;
-    height: 48px;
-    font-size: 1.2rem;
+    width: 44px;
+    height: 44px;
+    font-size: 1.1rem;
   }
 }
