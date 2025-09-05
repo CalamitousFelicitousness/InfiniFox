@@ -1,3 +1,6 @@
+<p align="center">
+  <img src="./src/assets/InfiniFox.svg" width="640" alt="Infinifox Logo">
+</p>
 # InfiniFox
 
 A modern, professional web interface for SD.Next with an infinite canvas powered by Konva.js. Features universal input support for mouse, touch, and stylus devices with pressure sensitivity.
