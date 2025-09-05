@@ -1,5 +1,5 @@
 {
-  "name": "sdnextnewui",
+  "name": "infinifox",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -19,6 +19,7 @@
   "dependencies": {
     "@preact/compat": "^18.3.1",
     "konva": "^9.3.22",
+    "lucide-preact": "^0.542.0",
     "perfect-freehand": "^1.2.0",
     "preact": "^10.27.0",
     "preact-reconciler": "0.2.3",
