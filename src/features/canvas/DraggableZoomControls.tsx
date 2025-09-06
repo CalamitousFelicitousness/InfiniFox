@@ -1,4 +1,10 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
+import { 
+  Plus, 
+  Minus, 
+  RotateIcon,
+  GripIcon 
+} from '../../components/icons'
 import './DraggableZoomControls.css'
 
 interface DraggableZoomControlsProps {
@@ -20,7 +26,6 @@ export function DraggableZoomControls({ scale, onZoomIn, onZoomOut, onReset }: D
     if (savedPos) {
       try {
         const parsed = JSON.parse(savedPos)
-        // Ensure controls are visible within current viewport
         const maxX = window.innerWidth - 200
         const maxY = window.innerHeight - 100
         setPosition({
@@ -60,11 +65,9 @@ export function DraggableZoomControls({ scale, onZoomIn, onZoomOut, onReset }: D
   // Handle dragging
   const handlePointerDown = (e: PointerEvent) => {
     const target = e.target as HTMLElement
-    // Only drag from the header/grip area
-    if (!target.closest('.floating-panel-grip')) return
+    if (!target.closest('.toolbar-grip')) return
     
     setIsDragging(true)
-    // Calculate offset from click position to panel's current position
     setDragOffset({
       x: e.clientX - position.x,
       y: e.clientY - position.y
@@ -81,7 +84,6 @@ export function DraggableZoomControls({ scale, onZoomIn, onZoomOut, onReset }: D
       const newX = e.clientX - dragOffset.x
       const newY = e.clientY - dragOffset.y
       
-      // Keep panel within viewport
       const maxX = window.innerWidth - (panelRef.current?.offsetWidth || 200)
       const maxY = window.innerHeight - (panelRef.current?.offsetHeight || 60)
       
@@ -107,44 +109,55 @@ export function DraggableZoomControls({ scale, onZoomIn, onZoomOut, onReset }: D
   return (
     <div
       ref={panelRef}
-      class={`draggable-zoom-controls floating-panel glass-surface ${isDragging ? 'dragging' : ''}`}
+      class={`zoom-controls toolbar toolbar-horizontal toolbar-floating toolbar-draggable glass-surface ${isDragging ? 'dragging' : ''}`}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`
       }}
       onPointerDown={handlePointerDown}
     >
-      <div class="floating-panel-grip" title="Drag to move">
-        ⋮⋮
+      <div class="toolbar-grip" title="Drag to move">
+        <GripIcon class="lucide-icon" />
       </div>
       
-      <button 
-        onClick={onZoomIn}
-        title="Zoom In (Ctrl +)"
-        class="zoom-btn"
-      >
-        +
-      </button>
+      <div class="toolbar-separator" />
       
-      <button 
-        onClick={onZoomOut}
-        title="Zoom Out (Ctrl -)"
-        class="zoom-btn"
-      >
-        −
-      </button>
+      <div class="toolbar-group">
+        <button
+          class="toolbar-item"
+          onClick={onZoomOut}
+          data-tooltip="Zoom Out (Ctrl -)"
+          aria-label="Zoom Out"
+        >
+          <Minus class="lucide-icon" />
+        </button>
+        
+        <span class="zoom-value" title="Current zoom level">
+          {Math.round(scale * 100)}%
+        </span>
+        
+        <button
+          class="toolbar-item"
+          onClick={onZoomIn}
+          data-tooltip="Zoom In (Ctrl +)"
+          aria-label="Zoom In"
+        >
+          <Plus class="lucide-icon" />
+        </button>
+      </div>
       
-      <button
-        onClick={onReset}
-        title="Reset View"
-        class="zoom-btn reset-btn"
-      >
-        Reset
-      </button>
+      <div class="toolbar-separator" />
       
-      <span class="zoom-level" title="Current zoom level">
-        {Math.round(scale * 100)}%
-      </span>
+      <div class="toolbar-group">
+        <button
+          class="toolbar-item"
+          onClick={onReset}
+          data-tooltip="Reset View"
+          aria-label="Reset View"
+        >
+          <RotateIcon class="lucide-icon" />
+        </button>
+      </div>
     </div>
   )
 }

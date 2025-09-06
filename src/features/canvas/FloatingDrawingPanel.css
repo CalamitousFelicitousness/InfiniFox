@@ -19,6 +19,44 @@
   justify-content: space-between;
 }
 
+/* Preset button states */
+.preset-button {
+  background-color: var(--color-surface-disabled);
+  border: 1px solid var(--color-border-primary);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: var(--transition-button);
+}
+
+.preset-button:hover:not(.active) {
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-border-hover);
+  color: var(--color-text-primary);
+  transform: translateY(-1px);
+}
+
+.preset-button.active {
+  background-color: var(--color-surface-selected);
+  border-color: var(--color-primary-500);
+  color: var(--color-primary-400);
+  box-shadow: var(--shadow-glow-sm);
+}
+
+.preset-button.active:hover {
+  background-color: var(--color-surface-selected);
+  border-color: var(--color-primary-400);
+  transform: none;
+}
+
+.preset-button:active:not(.active) {
+  transform: translateY(0);
+}
+
+.preset-button:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-sm);
+}
+
 /* Drawing-specific stats section */
 .drawing-stats {
   display: flex;

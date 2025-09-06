@@ -26,7 +26,6 @@ export function DraggableCanvasToolbar({ currentTool, onToolChange }: DraggableC
     if (savedPos) {
       try {
         const parsed = JSON.parse(savedPos)
-        // Ensure toolbar is visible within current viewport
         const maxX = window.innerWidth - 300
         const maxY = window.innerHeight - 100
         setPosition({
@@ -60,11 +59,9 @@ export function DraggableCanvasToolbar({ currentTool, onToolChange }: DraggableC
   // Handle dragging
   const handlePointerDown = (e: PointerEvent) => {
     const target = e.target as HTMLElement
-    // Only drag from the header/grip area
-    if (!target.closest('.floating-panel-grip')) return
+    if (!target.closest('.toolbar-grip')) return
     
     setIsDragging(true)
-    // Calculate offset from click position to panel's current position
     setDragOffset({
       x: e.clientX - position.x,
       y: e.clientY - position.y
@@ -81,7 +78,6 @@ export function DraggableCanvasToolbar({ currentTool, onToolChange }: DraggableC
       const newX = e.clientX - dragOffset.x
       const newY = e.clientY - dragOffset.y
       
-      // Keep panel within viewport
       const maxX = window.innerWidth - (panelRef.current?.offsetWidth || 300)
       const maxY = window.innerHeight - (panelRef.current?.offsetHeight || 60)
       
@@ -114,33 +110,32 @@ export function DraggableCanvasToolbar({ currentTool, onToolChange }: DraggableC
   return (
     <div
       ref={panelRef}
-      class={`draggable-canvas-toolbar floating-panel glass-surface ${isDragging ? 'dragging' : ''}`}
+      class={`toolbar toolbar-horizontal toolbar-floating toolbar-draggable glass-surface ${isDragging ? 'dragging' : ''}`}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`
       }}
       onPointerDown={handlePointerDown}
     >
-      <div class="floating-panel-grip" title="Drag to move">
-        <GripIcon size={12} class="grip-icon" />
+      <div class="toolbar-grip" title="Drag to move">
+        <GripIcon class="lucide-icon" />
       </div>
       
-      <div class="toolbar-tools">
+      <div class="toolbar-separator" />
+      
+      <div class="toolbar-group">
         {tools.map(tool => {
           const IconComponent = tool.icon
           return (
             <button
               key={tool.id}
-              class={`toolbar-tool-btn ${currentTool === tool.id ? 'active' : ''}`}
+              class={`toolbar-item ${currentTool === tool.id ? 'active' : ''}`}
               onClick={() => onToolChange(tool.id)}
-              title={tool.tooltip}
+              data-tooltip={tool.tooltip}
               aria-label={tool.tooltip}
               aria-pressed={currentTool === tool.id}
             >
-              <span class="tool-icon">
-                <IconComponent size={16} />
-              </span>
-              <span class="tool-label">{tool.label}</span>
+              <IconComponent class="lucide-icon" />
             </button>
           )
         })}
