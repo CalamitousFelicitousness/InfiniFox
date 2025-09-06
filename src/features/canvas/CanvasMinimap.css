@@ -29,6 +29,9 @@
   height: auto !important;
   min-width: 120px;
   min-height: auto;
+  /* Fix positioning - prevent anchoring to right/bottom */
+  right: auto !important;
+  bottom: auto !important;
 }
 
 /* Minimap Header */
