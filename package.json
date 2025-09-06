@@ -12,6 +12,12 @@
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css,md,json}\"",
     "type-check": "tsc --noEmit",
     "validate": "npm run type-check && npm run lint",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "analyze:emojis": "python scripts/analysis/find-emojis.py",
+    "analyze:hardcoded": "python scripts/analysis/find-hardcoded.py",
+    "theme:test": "bash scripts/development/test-theme.sh",
     "python:lint": "ruff check .",
     "python:format": "black .",
     "python:typecheck": "mypy ."
