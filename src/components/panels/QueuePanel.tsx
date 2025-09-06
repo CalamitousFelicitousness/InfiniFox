@@ -19,7 +19,7 @@ import {
 import { useQueueStore } from '../../store/queueStore'
 
 export function QueuePanel() {
-  const [isExpanded, setIsExpanded] = useState(true)
+  const [isExpanded, setIsExpanded] = useState(false)
   const {
     queue,
     currentItem,

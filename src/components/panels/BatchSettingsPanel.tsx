@@ -4,7 +4,7 @@ import { Layers, ChevronRight } from 'lucide-preact'
 import { useQueueStore } from '../../store/queueStore'
 
 export function BatchSettingsPanel() {
-  const [isExpanded, setIsExpanded] = useState(true)
+  const [isExpanded, setIsExpanded] = useState(false)
   const { batchSettings, setBatchSettings, toggleBatchMode } = useQueueStore()
   const panelRef = useRef<HTMLDivElement>(null)
 

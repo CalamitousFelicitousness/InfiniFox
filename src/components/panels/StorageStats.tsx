@@ -5,7 +5,7 @@ import { useStore } from '../../store/store'
 import { imageStorage } from '../../services/storage'
 
 export function StorageStats() {
-  const [isExpanded, setIsExpanded] = useState(true)
+  const [isExpanded, setIsExpanded] = useState(false)
   const { storageStats, updateStorageStats } = useStore()
   
   useEffect(() => {

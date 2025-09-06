@@ -4,7 +4,7 @@ import { Undo, Redo, Trash2, Clock, ChevronRight } from 'lucide-preact'
 import { useHistoryStore } from '../../store/historyStore'
 
 export function HistoryPanel() {
-  const [isExpanded, setIsExpanded] = useState(true)
+  const [isExpanded, setIsExpanded] = useState(false)
   const { canUndo, canRedo, undo, redo, clearHistory, getHistoryList } = useHistoryStore()
   const history = getHistoryList()
   const listRef = useRef<HTMLDivElement>(null)
