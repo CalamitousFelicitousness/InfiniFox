@@ -1,7 +1,5 @@
 import { useRef } from 'preact/hooks'
 
-import './Tabs.css'
-
 interface Tab {
   id: string
   label: string
@@ -51,7 +49,7 @@ export function Tabs({ tabs, activeTab, setActiveTab }: TabsProps) {
       {tabs.map((tab, index) => (
         <button
           key={tab.id}
-          class={activeTab === tab.id ? 'active' : ''}
+          class={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
           onPointerDown={(e) => {
             e.preventDefault()
             setActiveTab(tab.id)

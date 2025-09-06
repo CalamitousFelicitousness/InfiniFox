@@ -1,0 +1,296 @@
+/**
+ * InfiniFox Header Styles
+ * Header component styling using design tokens
+ */
+
+/* ==========================================
+   Base Header Styles
+   ========================================== */
+
+.header {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-3) var(--spacing-4);
+  background-color: var(--color-surface-primary);
+  border-bottom: var(--border-subtle);
+  min-height: 48px;
+  user-select: none;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: var(--spacing-3);
+}
+
+.header-title-group {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.header-title {
+  margin: 0;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-subtitle {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+
+/* ==========================================
+   Header Actions
+   ========================================== */
+
+.header-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: var(--transition-all);
+  
+  &:hover {
+    background-color: var(--color-surface-hover);
+    color: var(--color-text-primary);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+    background-color: var(--color-surface-active);
+  }
+  
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--ring-sm);
+  }
+}
+
+.header-collapse {
+  margin-right: var(--spacing-1);
+}
+
+.header-close:hover {
+  background-color: var(--color-error-500);
+  color: white;
+}
+
+/* ==========================================
+   Header Variants
+   ========================================== */
+
+/* Panel Header */
+.header-panel {
+  background-color: transparent;
+  padding: var(--spacing-panel-padding-sm);
+  
+  .header-title {
+    font-size: var(--font-size-sm);
+  }
+}
+
+/* Modal Header */
+.header-modal {
+  padding: var(--spacing-4);
+  background-color: var(--color-surface-elevated);
+  border-bottom: var(--border-default);
+  border-radius: var(--radius-modal-base) var(--radius-modal-base) 0 0;
+  
+  .header-title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+  }
+}
+
+/* Floating Header */
+.header-floating {
+  padding: var(--spacing-3);
+  background: transparent;
+  border-bottom: var(--border-subtle);
+  cursor: move;
+  
+  &:active {
+    cursor: grabbing;
+  }
+  
+  .header-title {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+  }
+}
+
+/* ==========================================
+   App Header (Main Application Header)
+   ========================================== */
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-3) var(--spacing-5);
+  background: var(--custom-glass-bg);
+  backdrop-filter: blur(var(--custom-glass-blur));
+  -webkit-backdrop-filter: blur(var(--custom-glass-blur));
+  border-bottom: 1px solid var(--custom-glass-border);
+  box-shadow: var(--shadow-sm);
+  
+  .app-logo {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    margin-right: var(--spacing-6);
+    
+    img, svg {
+      width: 32px;
+      height: 32px;
+    }
+    
+    .app-name {
+      font-size: var(--font-size-xl);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      letter-spacing: var(--letter-spacing-tight);
+    }
+  }
+  
+  .app-nav {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    
+    .nav-item {
+      padding: var(--spacing-2) var(--spacing-3);
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-base);
+      color: var(--color-text-secondary);
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      cursor: pointer;
+      transition: var(--transition-colors);
+      
+      &:hover {
+        background-color: var(--color-surface-hover);
+        color: var(--color-text-primary);
+      }
+      
+      &.active {
+        background-color: var(--color-surface-selected);
+        color: var(--color-primary-500);
+      }
+    }
+  }
+  
+  .app-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+  }
+}
+
+/* ==========================================
+   Section Header
+   ========================================== */
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-2) 0;
+  margin-bottom: var(--spacing-3);
+  border-bottom: var(--border-subtle);
+  
+  .section-title {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+  }
+  
+  .section-actions {
+    display: flex;
+    gap: var(--spacing-2);
+  }
+}
+
+/* ==========================================
+   Responsive Adjustments
+   ========================================== */
+
+@media (max-width: 768px) {
+  .header {
+    padding: var(--spacing-2) var(--spacing-3);
+  }
+  
+  .app-header {
+    padding: var(--spacing-2) var(--spacing-3);
+    
+    .app-logo .app-name {
+      display: none;
+    }
+    
+    .app-nav {
+      gap: 0;
+      
+      .nav-item {
+        padding: var(--spacing-2);
+        font-size: var(--font-size-xs);
+      }
+    }
+  }
+  
+  .header-title {
+    font-size: var(--font-size-sm);
+  }
+  
+  .header-subtitle {
+    display: none;
+  }
+}
+
+/* Touch-friendly adjustments */
+@media (pointer: coarse) {
+  .header-action {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .app-nav .nav-item {
+    min-height: 44px;
+    padding: var(--spacing-3) var(--spacing-4);
+  }
+}

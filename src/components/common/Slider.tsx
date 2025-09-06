@@ -1,7 +1,5 @@
 import { useRef, useState, useEffect } from 'preact/hooks'
 
-import './Slider.css'
-
 interface SliderProps {
   label?: string
   value: number
@@ -25,7 +23,6 @@ export function Slider({
 }: SliderProps) {
   // Use onChange if provided, otherwise fallback to onInput
   const handleChange = onChange || onInput || (() => {});
-  const sliderRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [showTooltip, setShowTooltip] = useState(false)
@@ -53,7 +50,7 @@ export function Slider({
       }
     }
 
-    const handlePointerUp = (e: PointerEvent) => {
+    const handlePointerUp = () => {
       if (isDragging) {
         setIsDragging(false)
         setShowTooltip(false)
@@ -86,17 +83,17 @@ export function Slider({
   const percentage = ((value - min) / (max - min)) * 100
 
   return (
-    <div class="slider-group" ref={sliderRef}>
+    <div class={`slider-group ${disabled ? 'slider-disabled' : ''}`}>
       {label && (
-        <label>
-          {label}: {value}
-        </label>
+        <div class="slider-header">
+          <span class="slider-label">{label}</span>
+          <span class="slider-value">{value}</span>
+        </div>
       )}
       <div 
         class="slider-track" 
         ref={trackRef}
         onPointerDown={handlePointerDown}
-        style={{ opacity: disabled ? 0.5 : 1 }}
       >
         <div 
           class="slider-fill" 

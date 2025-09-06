@@ -12,6 +12,9 @@ export default defineConfig({
       { find: 'react/jsx-runtime', replacement: 'preact/jsx-runtime' },
       { find: 'react/jsx-dev-runtime', replacement: 'preact/jsx-dev-runtime' },
 
+      // map lucide-react to lucide-preact for icon compatibility
+      { find: 'lucide-react', replacement: 'lucide-preact' },
+
       // map reconciler to preact's implementation (absolute paths)
       {
         find: /^react-reconciler\/constants(\.js)?$/,

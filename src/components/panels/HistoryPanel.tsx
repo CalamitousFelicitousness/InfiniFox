@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'preact/hooks'
+import { Undo, Redo, Trash2, Clock } from 'lucide-react'
 
 import { useHistoryStore } from '../../store/historyStore'
-import './HistoryPanel.css'
 
 export function HistoryPanel() {
   const { canUndo, canRedo, undo, redo, clearHistory, getHistoryList } = useHistoryStore()
@@ -46,25 +46,25 @@ export function HistoryPanel() {
   }
 
   return (
-    <div class="history-panel">
-      <div class="history-header">
-        <h3>History</h3>
-        <div class="history-controls">
+    <div class="panel history-panel">
+      <div class="panel-header">
+        <h3 class="panel-title">History</h3>
+        <div class="panel-actions">
           <button
             onPointerDown={(e) => { e.preventDefault(); undo() }}
             disabled={!canUndo}
             title="Undo (Ctrl+Z)"
-            class="history-btn"
+            class="btn btn-xs btn-ghost"
           >
-            ↶
+            <Undo size={14} />
           </button>
           <button
             onPointerDown={(e) => { e.preventDefault(); redo() }}
             disabled={!canRedo}
             title="Redo (Ctrl+Shift+Z)"
-            class="history-btn"
+            class="btn btn-xs btn-ghost"
           >
-            ↷
+            <Redo size={14} />
           </button>
           <button
             onPointerDown={(e) => {
@@ -75,9 +75,9 @@ export function HistoryPanel() {
             }}
             disabled={history.length === 0}
             title="Clear History"
-            class="history-btn"
+            class="btn btn-xs btn-ghost"
           >
-            🗑️
+            <Trash2 size={14} />
           </button>
         </div>
       </div>
@@ -91,14 +91,17 @@ export function HistoryPanel() {
               key={item.id}
               class={`history-item ${item.isCurrent ? 'current' : ''}`}
             >
-              <span class="history-description">{item.description}</span>
-              <span class="history-time">{formatTime(item.timestamp)}</span>
+              <span class="history-item-icon">
+                <Clock size={14} />
+              </span>
+              <span class="history-item-label">{item.description}</span>
+              <span class="history-item-time">{formatTime(item.timestamp)}</span>
             </div>
           ))
         )}
       </div>
 
-      <div class="history-info">
+      <div class="history-footer">
         <span>{history.length} action{history.length !== 1 ? 's' : ''}</span>
         <span>Max: 50</span>
       </div>

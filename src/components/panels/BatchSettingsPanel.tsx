@@ -1,7 +1,7 @@
 import { useRef } from 'preact/hooks'
+import { Layers } from 'lucide-react'
 
 import { useQueueStore } from '../../store/queueStore'
-import './BatchSettingsPanel.css'
 
 export function BatchSettingsPanel() {
   const { batchSettings, setBatchSettings, toggleBatchMode } = useQueueStore()
@@ -29,32 +29,40 @@ export function BatchSettingsPanel() {
   }
 
   return (
-    <div class="batch-settings-panel" ref={panelRef}>
-      <div class="batch-header">
-        <h3>Batch Settings</h3>
+    <div class="panel batch-settings-panel" ref={panelRef}>
+      <div class="panel-header">
+        <div class="d-flex items-center gap-2">
+          <Layers size={16} />
+          <h3 class="panel-title">Batch Settings</h3>
+        </div>
         <label 
-          class="batch-toggle"
+          class="toggle-group"
           onPointerDown={(e) => {
             e.preventDefault()
             toggleBatchMode()
           }}
         >
-          <input
-            type="checkbox"
-            checked={batchSettings.enabled}
-            onChange={toggleBatchMode}
-            tabIndex={-1}
-          />
-          <span>Enable Batch Mode</span>
+          <div class="toggle-switch">
+            <input
+              type="checkbox"
+              class="toggle-input"
+              checked={batchSettings.enabled}
+              onChange={toggleBatchMode}
+              tabIndex={-1}
+            />
+            <div class="toggle-slider"></div>
+          </div>
+          <span class="toggle-label">Enable</span>
         </label>
       </div>
 
       {batchSettings.enabled && (
-        <div class="batch-content">
-          <div class="batch-count">
-            <label>Batch Count</label>
+        <div class="panel-body">
+          <div class="form-group">
+            <label class="form-label">Batch Count</label>
             <input
               type="number"
+              class="text-input-field"
               min="1"
               max="100"
               value={batchSettings.count}
@@ -65,12 +73,13 @@ export function BatchSettingsPanel() {
           </div>
 
           <div class="batch-variations">
-            <h4>Variations</h4>
+            <h4 class="section-title">Variations</h4>
             
-            <div class="variation-group">
-              <label>
+            <div class="form-group">
+              <label class="checkbox-group">
                 <input
                   type="checkbox"
+                  class="checkbox-input"
                   checked={batchSettings.variations.seed}
                   onChange={(e) =>
                     setBatchSettings({
@@ -81,11 +90,13 @@ export function BatchSettingsPanel() {
                     })
                   }
                 />
-                <span>Vary Seed</span>
+                <span class="checkbox-box"></span>
+                <span class="checkbox-label">Vary Seed</span>
               </label>
               {batchSettings.variations.seed && (
                 <input
                   type="number"
+                  class="text-input-field mt-2"
                   placeholder="Seed increment"
                   value={batchSettings.seedIncrement}
                   onInput={(e) =>
@@ -95,10 +106,11 @@ export function BatchSettingsPanel() {
               )}
             </div>
 
-            <div class="variation-group">
-              <label>
+            <div class="form-group">
+              <label class="checkbox-group">
                 <input
                   type="checkbox"
+                  class="checkbox-input"
                   checked={batchSettings.variations.prompt}
                   onChange={(e) =>
                     setBatchSettings({
@@ -109,10 +121,12 @@ export function BatchSettingsPanel() {
                     })
                   }
                 />
-                <span>Vary Prompt</span>
+                <span class="checkbox-box"></span>
+                <span class="checkbox-label">Vary Prompt</span>
               </label>
               {batchSettings.variations.prompt && (
                 <textarea
+                  class="text-input-field textarea-field mt-2"
                   placeholder="Enter prompts (one per line)"
                   value={batchSettings.promptVariations.join('\n')}
                   onInput={(e) => handlePromptVariationsChange(e.currentTarget.value)}
@@ -121,10 +135,11 @@ export function BatchSettingsPanel() {
               )}
             </div>
 
-            <div class="variation-group">
-              <label>
+            <div class="form-group">
+              <label class="checkbox-group">
                 <input
                   type="checkbox"
+                  class="checkbox-input"
                   checked={batchSettings.variations.steps}
                   onChange={(e) =>
                     setBatchSettings({
@@ -135,11 +150,13 @@ export function BatchSettingsPanel() {
                     })
                   }
                 />
-                <span>Vary Steps</span>
+                <span class="checkbox-box"></span>
+                <span class="checkbox-label">Vary Steps</span>
               </label>
               {batchSettings.variations.steps && (
                 <input
                   type="text"
+                  class="text-input-field mt-2"
                   placeholder="e.g., 10, 20, 30"
                   value={batchSettings.stepsVariations.join(', ')}
                   onInput={(e) => handleStepsVariationsChange(e.currentTarget.value)}
@@ -147,10 +164,11 @@ export function BatchSettingsPanel() {
               )}
             </div>
 
-            <div class="variation-group">
-              <label>
+            <div class="form-group">
+              <label class="checkbox-group">
                 <input
                   type="checkbox"
+                  class="checkbox-input"
                   checked={batchSettings.variations.cfgScale}
                   onChange={(e) =>
                     setBatchSettings({
@@ -161,11 +179,13 @@ export function BatchSettingsPanel() {
                     })
                   }
                 />
-                <span>Vary CFG Scale</span>
+                <span class="checkbox-box"></span>
+                <span class="checkbox-label">Vary CFG Scale</span>
               </label>
               {batchSettings.variations.cfgScale && (
                 <input
                   type="text"
+                  class="text-input-field mt-2"
                   placeholder="e.g., 5.5, 7.5, 9.5"
                   value={batchSettings.cfgScaleVariations.join(', ')}
                   onInput={(e) => handleCfgScaleVariationsChange(e.currentTarget.value)}
@@ -174,10 +194,10 @@ export function BatchSettingsPanel() {
             </div>
           </div>
 
-          <div class="batch-info">
-            <p>
-              Total generations: {' '}
-              <strong>
+          <div class="panel-footer">
+            <p class="text-sm text-secondary">
+              Total generations:{' '}
+              <strong class="text-primary">
                 {batchSettings.count *
                   (batchSettings.variations.prompt ? batchSettings.promptVariations.length || 1 : 1) *
                   (batchSettings.variations.steps ? batchSettings.stepsVariations.length || 1 : 1) *

@@ -1,0 +1,326 @@
+/**
+ * InfiniFox Layout Styles
+ * Application layout structure using design tokens
+ */
+
+/* ==========================================
+   App Layout
+   ========================================== */
+
+.app-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: var(--color-background-primary);
+}
+
+/* ==========================================
+   Canvas Container
+   ========================================== */
+
+.canvas-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-background-canvas);
+  min-width: 0; /* Allow flex item to shrink below content size */
+}
+
+/* ==========================================
+   Loader/Progress Indicator
+   ========================================== */
+
+.loader {
+  position: fixed;
+  top: var(--spacing-4);
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--color-interactive-primary);
+  color: white;
+  padding: var(--spacing-2) var(--spacing-4);
+  border-radius: var(--radius-base);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-toast);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  animation: var(--animation-fade-in);
+}
+
+/* ==========================================
+   Floating Action Button
+   ========================================== */
+
+.drawing-fab {
+  position: fixed;
+  bottom: var(--spacing-8);
+  right: var(--spacing-8);
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--custom-glass-bg);
+  backdrop-filter: blur(var(--custom-glass-blur));
+  -webkit-backdrop-filter: blur(var(--custom-glass-blur));
+  border: 1px solid var(--custom-glass-border);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  box-shadow: var(--shadow-panel-default);
+  transition: var(--transition-all);
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* Icon styling */
+  svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: none;
+    transition: var(--transition-colors);
+  }
+  
+  /* Hover state */
+  &:hover {
+    background-color: rgba(100, 108, 255, 0.2);
+    border-color: rgba(100, 108, 255, 0.5);
+    color: var(--color-text-primary);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: var(--shadow-glow-base);
+    
+    svg {
+      stroke: var(--color-text-primary);
+    }
+  }
+  
+  /* Active state */
+  &:active {
+    transform: translateY(0) scale(0.95);
+  }
+  
+  /* Focus state */
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--ring-primary);
+  }
+}
+
+/* ==========================================
+   Layout Utilities
+   ========================================== */
+
+.container {
+  width: 100%;
+  max-width: var(--container-xl);
+  margin: 0 auto;
+  padding: 0 var(--spacing-4);
+}
+
+.container-fluid {
+  width: 100%;
+  padding: 0 var(--spacing-4);
+}
+
+/* Sidebar layouts */
+.sidebar-layout {
+  display: flex;
+  height: 100vh;
+  
+  .sidebar {
+    width: var(--layout-control-panel-desktop);
+    flex-shrink: 0;
+    background-color: var(--color-background-secondary);
+    border-right: var(--border-default);
+    overflow-y: auto;
+  }
+  
+  .main-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-6);
+  }
+}
+
+/* Split layout */
+.split-layout {
+  display: flex;
+  height: 100vh;
+  
+  .split-left,
+  .split-right {
+    flex: 1;
+    overflow-y: auto;
+  }
+  
+  .split-divider {
+    width: 4px;
+    background-color: var(--color-border-primary);
+    cursor: col-resize;
+    position: relative;
+    
+    &:hover {
+      background-color: var(--color-primary-500);
+    }
+    
+    &::before {
+      content: '';
+      position: absolute;
+      left: -2px;
+      right: -2px;
+      top: 0;
+      bottom: 0;
+    }
+  }
+}
+
+/* ==========================================
+   Responsive Breakpoints
+   ========================================== */
+
+/* Tablet and below */
+@media (max-width: 1024px) {
+  .control-panel {
+    width: var(--layout-control-panel-tablet);
+  }
+  
+  .sidebar-layout .sidebar {
+    width: var(--layout-control-panel-tablet);
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .app-layout {
+    flex-direction: column;
+  }
+  
+  .control-panel {
+    width: 100%;
+    height: auto;
+    max-height: 50vh;
+    border-right: none;
+    border-bottom: var(--border-default);
+    order: 2; /* Move control panel to bottom on mobile */
+  }
+  
+  .canvas-container {
+    order: 1;
+    height: 50vh;
+  }
+  
+  .drawing-fab {
+    bottom: var(--spacing-4);
+    right: var(--spacing-4);
+    width: 44px;
+    height: 44px;
+  }
+  
+  .sidebar-layout {
+    flex-direction: column;
+    
+    .sidebar {
+      width: 100%;
+      height: auto;
+      max-height: 40vh;
+      border-right: none;
+      border-bottom: var(--border-default);
+    }
+  }
+  
+  .split-layout {
+    flex-direction: column;
+    
+    .split-divider {
+      width: 100%;
+      height: 4px;
+      cursor: row-resize;
+    }
+  }
+}
+
+/* Small mobile */
+@media (max-width: 480px) {
+  .container,
+  .container-fluid {
+    padding: 0 var(--spacing-3);
+  }
+  
+  .sidebar-layout .main-content {
+    padding: var(--spacing-4);
+  }
+}
+
+/* ==========================================
+   Touch-Friendly Adjustments
+   ========================================== */
+
+@media (pointer: coarse) {
+  /* Larger touch targets */
+  button,
+  input[type="checkbox"],
+  input[type="radio"],
+  .clickable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Larger spacing between interactive elements */
+  .form-group {
+    margin-bottom: var(--spacing-5);
+  }
+}
+
+/* ==========================================
+   Print Styles
+   ========================================== */
+
+@media print {
+  .control-panel,
+  .sidebar,
+  .drawing-fab,
+  .loader {
+    display: none !important;
+  }
+  
+  .app-layout {
+    display: block;
+  }
+  
+  .canvas-container {
+    width: 100%;
+    height: auto;
+  }
+}
+
+/* ==========================================
+   Accessibility: Reduced Motion
+   ========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================
+   Accessibility: High Contrast
+   ========================================== */
+
+@media (prefers-contrast: high) {
+  .drawing-fab {
+    border: 2px solid currentColor;
+  }
+  
+  .control-panel {
+    border-right: 2px solid var(--color-border-primary);
+  }
+  
+  .loader {
+    border: 2px solid white;
+  }
+}

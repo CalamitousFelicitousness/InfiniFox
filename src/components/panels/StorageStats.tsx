@@ -1,7 +1,7 @@
 import { useEffect } from 'preact/hooks'
+import { HardDrive, Trash2 } from 'lucide-react'
 import { useStore } from '../../store/store'
 import { imageStorage } from '../../services/storage'
-import './StorageStats.css'
 
 export function StorageStats() {
   const { storageStats, updateStorageStats } = useStore()
@@ -40,33 +40,44 @@ export function StorageStats() {
   }
   
   return (
-    <div class="storage-stats">
-      <h4>Storage Usage</h4>
-      <div class="stats-grid">
-        <div class="stat-item">
-          <span class="stat-label">Images:</span>
-          <span class="stat-value">{storageStats.imageCount}</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">Size:</span>
-          <span class="stat-value">{formatBytes(storageStats.totalSize)}</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">Active URLs:</span>
-          <span class="stat-value">{storageStats.memoryUrls}</span>
+    <div class="panel storage-stats-panel">
+      <div class="panel-header">
+        <div class="d-flex items-center gap-2">
+          <HardDrive size={16} />
+          <h4 class="panel-title">Storage Usage</h4>
         </div>
       </div>
-      <div class="storage-actions">
-        <button 
-          class="clear-storage-btn"
-          onClick={handleClearStorage}
-          title="Clear all stored images"
-        >
-          Clear Storage
-        </button>
-      </div>
-      <div class="storage-info">
-        <small>Images are stored locally in your browser using IndexedDB</small>
+      
+      <div class="panel-body compact">
+        <div class="storage-stats-grid">
+          <div class="storage-stat-item">
+            <span class="storage-stat-label">Images:</span>
+            <span class="storage-stat-value">{storageStats.imageCount}</span>
+          </div>
+          <div class="storage-stat-item">
+            <span class="storage-stat-label">Size:</span>
+            <span class="storage-stat-value">{formatBytes(storageStats.totalSize)}</span>
+          </div>
+          <div class="storage-stat-item">
+            <span class="storage-stat-label">Active URLs:</span>
+            <span class="storage-stat-value">{storageStats.memoryUrls}</span>
+          </div>
+        </div>
+        
+        <div class="panel-actions mt-3">
+          <button 
+            class="btn btn-sm btn-danger w-full"
+            onClick={handleClearStorage}
+            title="Clear all stored images"
+          >
+            <Trash2 size={14} />
+            <span>Clear Storage</span>
+          </button>
+        </div>
+        
+        <div class="form-help mt-3">
+          Images are stored locally in your browser using IndexedDB
+        </div>
       </div>
     </div>
   )

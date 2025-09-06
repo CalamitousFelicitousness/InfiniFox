@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'preact/hooks'
-import { Settings, ChevronDown, ChevronRight, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
-
+import { SettingsIcon, ChevronDownIcon, ChevronRightIcon, CheckCircleIcon, XCircleIcon } from '../../components/icons'
 import { progressService } from '../../services/progress/ProgressService'
 import { useStore } from '../../store/store'
 import { Dropdown } from '../common/Dropdown'
-import { Input } from '../common/Input'
 
+/**
+ * Settings Panel Component - Migrated to Theme System
+ * 
+ * Migration changes:
+ * 1. Replaced emoji icons with lucide icons
+ * 2. Using semantic class names from theme system
+ * 3. Removed component-specific CSS in favor of theme classes
+ * 4. Using design tokens for all styling
+ */
 export function SettingsPanel() {
   const { apiSettings, setApiSettings, testConnection, detectApiType } = useStore()
   const [isExpanded, setIsExpanded] = useState(false)
@@ -83,98 +90,122 @@ export function SettingsPanel() {
     setWsUrl(defaultWsUrl)
     setProgressMethod('auto')
     setApiType('sdnext')
-    setApiSettings({ apiUrl: defaultApiUrl, wsUrl: defaultWsUrl, progressMethod: 'auto' as ProgressMethod, apiType: 'sdnext' as const })
+    setApiSettings({ 
+      apiUrl: defaultApiUrl, 
+      wsUrl: defaultWsUrl, 
+      progressMethod: 'auto' as ProgressMethod, 
+      apiType: 'sdnext' as const 
+    })
     setConnectionStatus(null)
   }
 
   return (
-    <div class="panel settings-panel">
+    <div class="settings-panel">
       <div class="settings-header">
         <div class="d-flex items-center gap-2">
-          <Settings size={16} />
+          <SettingsIcon size={16} class="text-secondary" />
           <h3>API Settings</h3>
         </div>
         <button
-          class="settings-toggle"
+          class="icon-btn"
           onPointerDown={(e) => {
             e.preventDefault()
             setIsExpanded(!isExpanded)
           }}
           aria-label={isExpanded ? 'Collapse' : 'Expand'}
+          aria-expanded={isExpanded}
         >
-          {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          {isExpanded ? (
+            <ChevronDownIcon size={16} />
+          ) : (
+            <ChevronRightIcon size={16} />
+          )}
         </button>
       </div>
 
       {isExpanded && (
         <div class="settings-content">
           <div class="settings-group">
-            <Input
-              label="API URL"
-              value={apiUrl}
-              onInput={setApiUrl}
-              placeholder="http://127.0.0.1:7860/sdapi/v1"
-            />
+            <label>API URL</label>
+            <div class="settings-input-group">
+              <input
+                type="text"
+                class="settings-input"
+                value={apiUrl}
+                onInput={(e) => setApiUrl(e.currentTarget.value)}
+                placeholder="http://127.0.0.1:7860/sdapi/v1"
+              />
+            </div>
             <div class="form-help">
               Example: http://127.0.0.1:7860/sdapi/v1
             </div>
           </div>
 
           <div class="settings-group">
-            <Input
-              label="WebSocket URL"
-              value={wsUrl}
-              onInput={setWsUrl}
-              placeholder="127.0.0.1:7860"
-            />
+            <label>WebSocket URL</label>
+            <div class="settings-input-group">
+              <input
+                type="text"
+                class="settings-input"
+                value={wsUrl}
+                onInput={(e) => setWsUrl(e.currentTarget.value)}
+                placeholder="127.0.0.1:7860"
+              />
+            </div>
             <div class="form-help">
               Example: 127.0.0.1:7860 (without protocol)
             </div>
           </div>
 
-          <div class="settings-group">
-            <Dropdown
-              label="Progress Monitoring"
-              value={progressMethod}
-              onInput={(val) => setProgressMethod(val as any)}
-              options={['auto', 'websocket', 'rest', 'none']}
-            />
-            <div class="form-help">
-              Auto will detect the best available method
-            </div>
+          <Dropdown
+            label="Progress Monitoring"
+            value={progressMethod}
+            onInput={(val) => setProgressMethod(val as any)}
+            options={['auto', 'websocket', 'rest', 'none']}
+          />
+          <div class="form-help">
+            Auto will detect the best available method
           </div>
 
-          <div class="settings-group">
-            <Dropdown
-              label="API Type"
-              value={apiType}
-              onInput={(val) => setApiType(val as any)}
-              options={['sdnext', 'a1111', 'comfyui', 'custom']}
-            />
-            <div class="form-help">
-              Helps optimize compatibility with different backends
-              {apiType && (
-                <div class="mt-1 text-xs">
-                  Supports: {getApiFeatures(apiType).websocket ? '✅' : '❌'} WebSocket, 
-                  {' '}{getApiFeatures(apiType).rest ? '✅' : '❌'} REST Polling
-                </div>
-              )}
-            </div>
+          <Dropdown
+            label="API Type"
+            value={apiType}
+            onInput={(val) => setApiType(val as any)}
+            options={['sdnext', 'a1111', 'comfyui', 'custom']}
+          />
+          <div class="form-help">
+            Helps optimize compatibility with different backends
+            {apiType && (
+              <div class="mt-1 text-xs">
+                Supports: {getApiFeatures(apiType).websocket ? (
+                  <CheckCircleIcon size={12} class="text-success d-inline-block" />
+                ) : (
+                  <XCircleIcon size={12} class="text-error d-inline-block" />
+                )} WebSocket,
+                {' '}{getApiFeatures(apiType).rest ? (
+                  <CheckCircleIcon size={12} class="text-success d-inline-block" />
+                ) : (
+                  <XCircleIcon size={12} class="text-error d-inline-block" />
+                )} REST Polling
+              </div>
+            )}
           </div>
 
           {connectionStatus && (
-            <div class={`settings-status ${connectionStatus}`}>
-              {connectionStatus === 'success' ? (
-                <>
-                  <CheckCircle size={14} />
-                  <span>Connected! API: {apiType}, Progress: {detectedProgressMethod}</span>
-                </>
-              ) : (
-                <>
-                  <XCircle size={14} />
-                  <span>Connection failed!</span>
-                </>
-              )}
+            <div class={`connection-status ${connectionStatus}`}>
+              <div class="d-flex items-center gap-2">
+                {connectionStatus === 'success' ? (
+                  <>
+                    <CheckCircleIcon size={16} />
+                    <span>Connected! API: {apiType}, Progress: {detectedProgressMethod}</span>
+                  </>
+                ) : (
+                  <>
+                    <XCircleIcon size={16} />
+                    <span>Connection failed!</span>
+                  </>
+                )}
+              </div>
             </div>
           )}
           
@@ -184,15 +215,27 @@ export function SettingsPanel() {
             </div>
           )}
 
-          <div class="settings-actions">
-            <button class="btn btn-sm btn-secondary" onPointerDown={handleTest} disabled={isTesting}>
+          <div class="d-flex gap-2">
+            <button 
+              class="btn btn-secondary" 
+              onPointerDown={handleTest} 
+              disabled={isTesting}
+            >
               {isTesting ? 'Testing...' : 'Test Connection'}
             </button>
-            <button class="btn btn-sm btn-primary" onPointerDown={handleSave} disabled={isTesting}>
+            <button 
+              class="btn btn-primary" 
+              onPointerDown={handleSave} 
+              disabled={isTesting}
+            >
               Save Settings
             </button>
-            <button class="btn btn-sm btn-ghost" onPointerDown={handleReset} disabled={isTesting}>
-              Reset to Default
+            <button 
+              class="btn btn-ghost" 
+              onPointerDown={handleReset} 
+              disabled={isTesting}
+            >
+              Reset
             </button>
           </div>
         </div>

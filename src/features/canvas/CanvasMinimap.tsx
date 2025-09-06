@@ -19,7 +19,7 @@ interface MinimapProps {
 
 export function CanvasMinimap({ stageRef, scale, position, images, onViewportChange }: MinimapProps) {
   // State declarations
-  const [isMinimized, setIsMinimized] = useState(false)
+  const [isMinimized, setIsMinimized] = useState(false)  // Default to open, not minimized
   const [minimapPos, setMinimapPos] = useState({ 
     x: window.innerWidth - 220, 
     y: window.innerHeight - 170 
@@ -61,10 +61,10 @@ export function CanvasMinimap({ stageRef, scale, position, images, onViewportCha
           width: Math.min(Math.max(150, parsed.width), 400),
           height: Math.min(Math.max(100, parsed.height), 300)
         })
-        // Restore minimized state
-        if (parsed.minimized !== undefined) {
-          setIsMinimized(parsed.minimized)
-        }
+        // Don't restore minimized state - always start open
+        // if (parsed.minimized !== undefined) {
+        //   setIsMinimized(parsed.minimized)
+        // }
       } catch (e) {
         // Invalid saved state, use defaults
       }
@@ -380,13 +380,11 @@ export function CanvasMinimap({ stageRef, scale, position, images, onViewportCha
     if (!target.closest('.minimap-grip')) return
     
     setIsDragging(true)
-    const rect = panelRef.current?.getBoundingClientRect()
-    if (rect) {
-      setDragOffset({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-      })
-    }
+    // Fix: Use position state instead of getBoundingClientRect
+    setDragOffset({
+      x: e.clientX - minimapPos.x,
+      y: e.clientY - minimapPos.y
+    })
     e.preventDefault()
   }
   
@@ -437,7 +435,7 @@ export function CanvasMinimap({ stageRef, scale, position, images, onViewportCha
         left: `${minimapPos.x}px`,
         top: `${minimapPos.y}px`,
         width: isMinimized ? 'auto' : `${minimapSize.width}px`,
-        height: isMinimized ? 'auto' : `${minimapSize.height + 32}px`
+        height: isMinimized ? 'auto' : `${minimapSize.height + 32}px`  // 32px for header
       }}
       onPointerDown={handlePointerDown}
     >

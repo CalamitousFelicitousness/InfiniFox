@@ -1,7 +1,5 @@
 import { useState, useRef } from 'preact/hooks'
 
-import './NumberInput.css'
-
 interface NumberInputProps {
   label: string
   value: number
@@ -49,12 +47,12 @@ export function NumberInput({
       document.body.style.cursor = ''
       document.removeEventListener('pointermove', handlePointerMove)
       document.removeEventListener('pointerup', handlePointerUp)
-      document.removeEventListener('pointercancel', handlePointerUp)  // Clean up pointercancel listener
+      document.removeEventListener('pointercancel', handlePointerUp)
     }
     
     document.addEventListener('pointermove', handlePointerMove)
     document.addEventListener('pointerup', handlePointerUp)
-    document.addEventListener('pointercancel', handlePointerUp)  // Handle pointer cancel events
+    document.addEventListener('pointercancel', handlePointerUp)
   }
 
   const handleWheel = (e: WheelEvent) => {
@@ -74,12 +72,13 @@ export function NumberInput({
       onPointerDown={handlePointerDown}
       onWheel={handleWheel}
     >
-      <label style={{ cursor: disabled ? 'default' : 'ew-resize' }}>
+      <label class={`number-input-label ${disabled ? '' : 'draggable'}`}>
         {label}
       </label>
       <input
         ref={inputRef}
         type="number"
+        class="number-input-field"
         value={value}
         min={min}
         max={max}
@@ -92,6 +91,7 @@ export function NumberInput({
       <div class="number-input-buttons">
         <button 
           type="button"
+          class="number-input-button"
           onPointerDown={(e) => {
             e.stopPropagation()
             // For width/height with step=16, snap to next multiple
@@ -109,6 +109,7 @@ export function NumberInput({
         </button>
         <button 
           type="button"
+          class="number-input-button"
           onPointerDown={(e) => {
             e.stopPropagation()
             // For width/height with step=16, snap to previous multiple

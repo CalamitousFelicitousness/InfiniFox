@@ -1,7 +1,21 @@
 import { useRef } from 'preact/hooks'
+import { 
+  Clock, 
+  Play, 
+  Pause, 
+  Trash2, 
+  X, 
+  RefreshCw, 
+  ChevronUp, 
+  ChevronDown,
+  CheckCircle,
+  XCircle,
+  Ban,
+  Loader2,
+  HelpCircle
+} from 'lucide-react'
 
 import { useQueueStore } from '../../store/queueStore'
-import './QueuePanel.css'
 
 export function QueuePanel() {
   const {
@@ -25,17 +39,17 @@ export function QueuePanel() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending':
-        return '⏳'
+        return <Clock size={16} />
       case 'processing':
-        return '🔄'
+        return <Loader2 size={16} class="animate-spin" />
       case 'completed':
-        return '✅'
+        return <CheckCircle size={16} />
       case 'failed':
-        return '❌'
+        return <XCircle size={16} />
       case 'cancelled':
-        return '🚫'
+        return <Ban size={16} />
       default:
-        return '❓'
+        return <HelpCircle size={16} />
     }
   }
 
@@ -51,24 +65,26 @@ export function QueuePanel() {
   }
 
   return (
-    <div class="queue-panel" ref={panelRef}>
-      <div class="queue-header">
-        <h3>Queue ({stats.total})</h3>
-        <div class="queue-controls">
+    <div class="panel queue-panel" ref={panelRef}>
+      <div class="panel-header">
+        <h3 class="panel-title">Queue ({stats.total})</h3>
+        <div class="panel-actions">
           {isProcessing ? (
             <button 
               onPointerDown={(e) => { e.preventDefault(); stopProcessing() }}
-              class="queue-btn stop"
+              class="btn btn-sm btn-secondary"
             >
-              ⏸️ Pause
+              <Pause size={14} />
+              <span>Pause</span>
             </button>
           ) : (
             <button
               onPointerDown={(e) => { e.preventDefault(); startProcessing() }}
               disabled={stats.pending === 0}
-              class="queue-btn start"
+              class="btn btn-sm btn-success"
             >
-              ▶️ Start
+              <Play size={14} />
+              <span>Start</span>
             </button>
           )}
           <button
@@ -79,18 +95,30 @@ export function QueuePanel() {
               }
             }}
             disabled={queue.length === 0}
-            class="queue-btn clear"
+            class="btn btn-sm btn-ghost"
           >
-            Clear
+            <Trash2 size={14} />
           </button>
         </div>
       </div>
 
       <div class="queue-stats">
-        <span class="stat pending">⏳ {stats.pending}</span>
-        <span class="stat processing">🔄 {stats.processing}</span>
-        <span class="stat completed">✅ {stats.completed}</span>
-        <span class="stat failed">❌ {stats.failed}</span>
+        <span class="queue-stat pending">
+          <Clock size={14} />
+          <span>{stats.pending}</span>
+        </span>
+        <span class="queue-stat processing">
+          <Loader2 size={14} />
+          <span>{stats.processing}</span>
+        </span>
+        <span class="queue-stat completed">
+          <CheckCircle size={14} />
+          <span>{stats.completed}</span>
+        </span>
+        <span class="queue-stat failed">
+          <XCircle size={14} />
+          <span>{stats.failed}</span>
+        </span>
       </div>
 
       <div class="queue-list" ref={listRef}>
@@ -101,15 +129,17 @@ export function QueuePanel() {
             <div
               key={item.id}
               class={`queue-item ${item.status} ${
-                currentItem?.id === item.id ? 'current' : ''
+                currentItem?.id === item.id ? 'active' : ''
               }`}
             >
               <div class="queue-item-header">
-                <span class="queue-item-status">{getStatusIcon(item.status)}</span>
-                <span class="queue-item-description">{getItemDescription(item)}</span>
+                <span class={`queue-item-status status-${item.status}`}>
+                  {getStatusIcon(item.status)}
+                </span>
+                <span class="queue-item-prompt">{getItemDescription(item)}</span>
               </div>
 
-              <div class="queue-item-info">
+              <div class="queue-item-params">
                 <span class="queue-item-time">{formatTime(item.createdAt)}</span>
                 {item.retryCount > 0 && (
                   <span class="queue-item-retry">Retry {item.retryCount}/{item.maxRetries}</span>
@@ -117,9 +147,9 @@ export function QueuePanel() {
               </div>
 
               {item.progress !== undefined && item.status === 'processing' && (
-                <div class="queue-item-progress">
+                <div class="queue-progress">
                   <div
-                    class="queue-item-progress-bar"
+                    class="queue-progress-bar"
                     style={{ width: `${item.progress}%` }}
                   />
                 </div>
@@ -129,6 +159,7 @@ export function QueuePanel() {
                 {item.status === 'pending' && (
                   <>
                     <button
+                      class="btn btn-xs btn-ghost"
                       onPointerDown={(e) => { 
                         e.preventDefault()
                         e.stopPropagation()
@@ -137,9 +168,10 @@ export function QueuePanel() {
                       disabled={index === 0}
                       title="Move up"
                     >
-                      ↑
+                      <ChevronUp size={14} />
                     </button>
                     <button
+                      class="btn btn-xs btn-ghost"
                       onPointerDown={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
@@ -148,25 +180,37 @@ export function QueuePanel() {
                       disabled={index === queue.length - 1}
                       title="Move down"
                     >
-                      ↓
+                      <ChevronDown size={14} />
                     </button>
                   </>
                 )}
                 
                 {item.status === 'failed' && (
-                  <button onPointerDown={(e) => { e.preventDefault(); retryItem(item.id) }} title="Retry">
-                    🔄
+                  <button 
+                    class="btn btn-xs btn-ghost"
+                    onPointerDown={(e) => { e.preventDefault(); retryItem(item.id) }} 
+                    title="Retry"
+                  >
+                    <RefreshCw size={14} />
                   </button>
                 )}
                 
                 {(item.status === 'pending' || item.status === 'processing') && (
-                  <button onPointerDown={(e) => { e.preventDefault(); cancelItem(item.id) }} title="Cancel">
-                    ✖
+                  <button 
+                    class="btn btn-xs btn-ghost"
+                    onPointerDown={(e) => { e.preventDefault(); cancelItem(item.id) }} 
+                    title="Cancel"
+                  >
+                    <X size={14} />
                   </button>
                 )}
                 
-                <button onPointerDown={(e) => { e.preventDefault(); removeFromQueue(item.id) }} title="Remove">
-                  🗑️
+                <button 
+                  class="btn btn-xs btn-ghost"
+                  onPointerDown={(e) => { e.preventDefault(); removeFromQueue(item.id) }} 
+                  title="Remove"
+                >
+                  <Trash2 size={14} />
                 </button>
               </div>
 

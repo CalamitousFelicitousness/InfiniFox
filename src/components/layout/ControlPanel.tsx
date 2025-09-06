@@ -13,7 +13,6 @@ import { SettingsPanel } from '../panels/SettingsPanel'
 import { StorageStats } from '../panels/StorageStats'
 
 import { Tabs } from './Tabs'
-import './ControlPanel.css'
 
 export function ControlPanel() {
   const [activeTab, setActiveTab] = useState('txt2img')
@@ -42,16 +41,35 @@ export function ControlPanel() {
           isLoading={isModelLoading}
         />
       </div>
-      <Tabs tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
-      {activeTab === 'txt2img' && <Txt2ImgPanel />}
-      {activeTab === 'img2img' && <Img2ImgPanel />}
-      {activeTab === 'inpaint' && <InpaintPanel />}
+      
+      <div class="control-panel-content">
+        <div class="tab-panel">
+          <Tabs tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
+          <div class="tab-content">
+            {activeTab === 'txt2img' && (
+              <div class="tab-pane active">
+                <Txt2ImgPanel />
+              </div>
+            )}
+            {activeTab === 'img2img' && (
+              <div class="tab-pane active">
+                <Img2ImgPanel />
+              </div>
+            )}
+            {activeTab === 'inpaint' && (
+              <div class="tab-pane active">
+                <InpaintPanel />
+              </div>
+            )}
+          </div>
+        </div>
 
-      <SettingsPanel />
-      <StorageStats />
-      <BatchSettingsPanel />
-      <QueuePanel />
-      <HistoryPanel />
+        <SettingsPanel />
+        <StorageStats />
+        <BatchSettingsPanel />
+        <QueuePanel />
+        <HistoryPanel />
+      </div>
     </aside>
   )
 }

@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'preact/hooks'
-
-import './Dropdown.css'
+import { ChevronDown } from 'lucide-react'
 
 interface DropdownProps {
   label: string
@@ -76,47 +75,48 @@ export function Dropdown({ label, value, onInput, options, disabled = false, isL
 
   return (
     <div class="dropdown-group" ref={dropdownRef}>
-      {label && <label>{label}</label>}
-      <div class="dropdown-container">
-        <button
-          type="button"
-          class="dropdown-trigger"
-          onPointerDown={(e) => {
-            e.preventDefault()
-            if (!disabled) setIsOpen(!isOpen)
-          }}
-          onKeyDown={handleKeyDown}
-          disabled={disabled}
-          aria-haspopup="listbox"
-          aria-expanded={isOpen}
-        >
-          <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
-            {value}
-            {isLoading && <span class="dropdown-spinner" />}
-          </span>
-          <span class="dropdown-arrow">▼</span>
-        </button>
-        
-        {isOpen && (
-          <div class="dropdown-menu" role="listbox">
-            {options.map((option, index) => (
-              <div
-                key={option}
-                class={`dropdown-option ${value === option ? 'selected' : ''} ${highlightedIndex === index ? 'highlighted' : ''}`}
-                onPointerDown={(e) => {
-                  e.preventDefault()
-                  handleSelect(option)
-                }}
-                onPointerEnter={() => setHighlightedIndex(index)}
-                role="option"
-                aria-selected={value === option}
-              >
-                {option}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      {label && <label class="dropdown-label">{label}</label>}
+      <button
+        type="button"
+        class="dropdown-button"
+        onPointerDown={(e) => {
+          e.preventDefault()
+          if (!disabled) setIsOpen(!isOpen)
+        }}
+        onKeyDown={handleKeyDown}
+        disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', flex: 1 }}>
+          {value}
+          {isLoading && <span class="dropdown-spinner" />}
+        </span>
+        <ChevronDown 
+          size={14} 
+          class="dropdown-icon"
+        />
+      </button>
+      
+      {isOpen && (
+        <div class={`dropdown-menu ${isOpen ? 'open' : ''}`} role="listbox">
+          {options.map((option, index) => (
+            <div
+              key={option}
+              class={`dropdown-option ${value === option ? 'selected' : ''} ${highlightedIndex === index ? 'highlighted' : ''}`}
+              onPointerDown={(e) => {
+                e.preventDefault()
+                handleSelect(option)
+              }}
+              onPointerEnter={() => setHighlightedIndex(index)}
+              role="option"
+              aria-selected={value === option}
+            >
+              {option}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

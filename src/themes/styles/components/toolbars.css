@@ -1,0 +1,477 @@
+/**
+ * InfiniFox Toolbar Styles
+ * Toolbar component styling using design tokens
+ */
+
+/* ==========================================
+   Base Toolbar Styles
+   ========================================== */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-toolbar-gap);
+  padding: var(--spacing-toolbar-padding);
+  background: var(--custom-glass-bg);
+  backdrop-filter: blur(var(--custom-glass-blur));
+  -webkit-backdrop-filter: blur(var(--custom-glass-blur));
+  border: 1px solid var(--custom-glass-border);
+  border-radius: var(--radius-toolbar-base);
+  box-shadow: var(--shadow-toolbar-default);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ==========================================
+   Toolbar Variants
+   ========================================== */
+
+/* Horizontal Toolbar */
+.toolbar-horizontal {
+  flex-direction: row;
+  width: fit-content;
+  height: auto;
+}
+
+/* Vertical Toolbar */
+.toolbar-vertical {
+  flex-direction: column;
+  width: auto;
+  height: fit-content;
+}
+
+/* Floating Toolbar */
+.toolbar-floating {
+  position: fixed;
+  z-index: var(--z-sticky);
+  box-shadow: var(--shadow-toolbar-floating);
+}
+
+/* Draggable Toolbar */
+.toolbar-draggable {
+  cursor: move;
+  
+  &.dragging {
+    opacity: 0.8;
+    cursor: grabbing;
+    box-shadow: var(--shadow-panel-floating);
+    transform: scale(1.02);
+  }
+  
+  .toolbar-grip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-1);
+    color: var(--color-text-tertiary);
+    cursor: grab;
+    transition: var(--transition-colors);
+    
+    &:hover {
+      color: var(--color-text-secondary);
+    }
+    
+    &:active {
+      cursor: grabbing;
+      color: var(--color-text-primary);
+    }
+    
+    .lucide-icon {
+      width: 16px;
+      height: 16px;
+    }
+  }
+}
+
+/* ==========================================
+   Toolbar Groups
+   ========================================== */
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  
+  &:not(:last-child) {
+    padding-right: var(--spacing-toolbar-group-gap);
+    border-right: 1px solid var(--color-border-secondary);
+    margin-right: var(--spacing-toolbar-group-gap);
+  }
+  
+  /* Vertical toolbar groups */
+  .toolbar-vertical & {
+    flex-direction: column;
+    
+    &:not(:last-child) {
+      padding-right: 0;
+      padding-bottom: var(--spacing-toolbar-group-gap);
+      border-right: none;
+      border-bottom: 1px solid var(--color-border-secondary);
+      margin-right: 0;
+      margin-bottom: var(--spacing-toolbar-group-gap);
+    }
+  }
+}
+
+/* ==========================================
+   Toolbar Items
+   ========================================== */
+
+.toolbar-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  padding: var(--spacing-toolbar-item-padding);
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: var(--transition-button);
+  
+  &:hover {
+    background-color: var(--color-surface-hover);
+    color: var(--color-text-primary);
+  }
+  
+  &:active {
+    background-color: var(--color-surface-active);
+  }
+  
+  &.active {
+    background-color: var(--color-surface-selected);
+    color: var(--color-primary-400);
+    border-color: var(--color-primary-500);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--ring-sm);
+  }
+}
+
+/* ==========================================
+   Canvas Toolbar
+   ========================================== */
+
+.canvas-toolbar {
+  position: absolute;
+  top: var(--spacing-4);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2);
+  background: var(--custom-glass-bg);
+  backdrop-filter: blur(var(--custom-glass-blur));
+  -webkit-backdrop-filter: blur(var(--custom-glass-blur));
+  border: 1px solid var(--custom-glass-border);
+  border-radius: var(--radius-toolbar-lg);
+  box-shadow: var(--shadow-toolbar-floating);
+  z-index: var(--z-sticky);
+  
+  /* Collapsed state */
+  &.collapsed {
+    .toolbar-group:not(.toolbar-primary) {
+      display: none;
+    }
+  }
+  
+  /* Minimized state */
+  &.minimized {
+    transform: translateX(-50%) scale(0.9);
+    opacity: 0.3;
+    pointer-events: none;
+    
+    &:hover {
+      transform: translateX(-50%) scale(1);
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+}
+
+/* ==========================================
+   Drawing Toolbar
+   ========================================== */
+
+.drawing-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3);
+  background: var(--custom-glass-bg);
+  backdrop-filter: blur(var(--custom-glass-blur));
+  -webkit-backdrop-filter: blur(var(--custom-glass-blur));
+  border: 1px solid var(--custom-glass-border);
+  border-radius: var(--radius-toolbar-lg);
+  box-shadow: var(--shadow-toolbar-floating);
+  
+  .tool-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+    
+    .tool-label {
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: var(--letter-spacing-wide);
+      margin-bottom: var(--spacing-1);
+    }
+    
+    .tool-options {
+      display: flex;
+      gap: var(--spacing-1);
+      flex-wrap: wrap;
+    }
+  }
+  
+  .brush-size-slider {
+    width: 100%;
+    margin-top: var(--spacing-2);
+  }
+  
+  .color-palette {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: var(--spacing-1);
+    
+    .color-swatch {
+      width: 24px;
+      height: 24px;
+      border-radius: var(--radius-sm);
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: var(--transition-transform);
+      
+      &:hover {
+        transform: scale(1.1);
+      }
+      
+      &.active {
+        border-color: white;
+        box-shadow: var(--shadow-glow-sm);
+      }
+    }
+  }
+}
+
+/* ==========================================
+   Zoom Controls Toolbar
+   ========================================== */
+
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2);
+  background: var(--custom-glass-bg);
+  backdrop-filter: blur(var(--custom-glass-blur));
+  -webkit-backdrop-filter: blur(var(--custom-glass-blur));
+  border: 1px solid var(--custom-glass-border);
+  border-radius: var(--radius-toolbar-base);
+  box-shadow: var(--shadow-toolbar-default);
+  
+  .zoom-value {
+    min-width: 60px;
+    text-align: center;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    user-select: none;
+  }
+  
+  .zoom-slider {
+    width: 120px;
+  }
+  
+  .zoom-presets {
+    display: flex;
+    gap: var(--spacing-1);
+    margin-left: var(--spacing-2);
+    padding-left: var(--spacing-2);
+    border-left: 1px solid var(--color-border-secondary);
+    
+    button {
+      padding: var(--spacing-1) var(--spacing-2);
+      font-size: var(--font-size-xs);
+      min-width: auto;
+    }
+  }
+}
+
+/* ==========================================
+   Toolbar Tooltips
+   ========================================== */
+
+.toolbar-item[data-tooltip] {
+  position: relative;
+  
+  &::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + var(--spacing-2));
+    left: 50%;
+    transform: translateX(-50%);
+    padding: var(--spacing-1) var(--spacing-2);
+    background-color: rgba(0, 0, 0, 0.9);
+    color: white;
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
+    border-radius: var(--radius-sm);
+    pointer-events: none;
+    opacity: 0;
+    transition: var(--transition-opacity);
+    z-index: var(--z-tooltip);
+  }
+  
+  &::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 4px 4px 0 4px;
+    border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent;
+    pointer-events: none;
+    opacity: 0;
+    transition: var(--transition-opacity);
+  }
+  
+  &:hover {
+    &::after,
+    &::before {
+      opacity: 1;
+    }
+  }
+  
+  /* Vertical toolbar tooltips */
+  .toolbar-vertical & {
+    &::after {
+      bottom: auto;
+      left: calc(100% + var(--spacing-2));
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    
+    &::before {
+      bottom: auto;
+      left: calc(100% + 4px);
+      top: 50%;
+      transform: translateY(-50%);
+      border-width: 4px 4px 4px 0;
+      border-color: transparent rgba(0, 0, 0, 0.9) transparent transparent;
+    }
+  }
+}
+
+/* ==========================================
+   Toolbar Separator
+   ========================================== */
+
+.toolbar-separator {
+  width: 1px;
+  height: 20px;
+  background-color: var(--color-border-secondary);
+  margin: 0 var(--spacing-2);
+  
+  .toolbar-vertical & {
+    width: 20px;
+    height: 1px;
+    margin: var(--spacing-2) 0;
+  }
+}
+
+/* ==========================================
+   Toolbar Toggle Button
+   ========================================== */
+
+.toolbar-toggle {
+  position: absolute;
+  top: 50%;
+  right: -12px;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-surface-primary);
+  border: var(--border-default);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: var(--transition-all);
+  
+  &:hover {
+    background-color: var(--color-surface-hover);
+    border-color: var(--color-primary-400);
+  }
+  
+  .lucide-icon {
+    width: 12px;
+    height: 12px;
+    transition: var(--transition-transform);
+  }
+  
+  &.collapsed .lucide-icon {
+    transform: rotate(180deg);
+  }
+}
+
+/* ==========================================
+   Responsive Adjustments
+   ========================================== */
+
+/* Small screens */
+@media (max-width: 640px) {
+  .toolbar {
+    gap: var(--spacing-1);
+    padding: var(--spacing-1-5);
+  }
+  
+  .toolbar-item {
+    min-width: 40px;
+    min-height: 40px;
+  }
+  
+  .canvas-toolbar {
+    width: calc(100% - var(--spacing-4));
+    max-width: none;
+    left: var(--spacing-2);
+    right: var(--spacing-2);
+    transform: none;
+  }
+  
+  .zoom-controls {
+    .zoom-slider {
+      display: none;
+    }
+  }
+}
+
+/* Touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .toolbar-item {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  .toolbar {
+    gap: var(--spacing-2);
+    padding: var(--spacing-2);
+  }
+}

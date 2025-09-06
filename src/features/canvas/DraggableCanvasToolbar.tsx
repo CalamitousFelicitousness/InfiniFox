@@ -64,13 +64,11 @@ export function DraggableCanvasToolbar({ currentTool, onToolChange }: DraggableC
     if (!target.closest('.toolbar-grip')) return
     
     setIsDragging(true)
-    const rect = panelRef.current?.getBoundingClientRect()
-    if (rect) {
-      setDragOffset({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-      })
-    }
+    // Calculate offset from click position to panel's current position
+    setDragOffset({
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
+    })
     e.preventDefault()
   }
   
