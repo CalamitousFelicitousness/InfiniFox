@@ -1,15 +1,9 @@
 /**
- * Img2Img Panel Styles
- * Uses theme tokens for consistent styling
+ * Image to Image Panel
+ * Extends generation-panel patterns
  */
-
-.img2img-source-section {
-  margin-bottom: var(--spacing-4);
-}
 
 .canvas-image-count {
   opacity: 0.7;
   font-size: var(--font-size-xs);
 }
-
-/* Use shared toggle-group classes from toggles.css */

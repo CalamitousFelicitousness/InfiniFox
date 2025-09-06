@@ -2,7 +2,7 @@ import { useState, useEffect } from 'preact/hooks'
 
 import { Img2ImgPanel } from '../../features/generation/Img2ImgPanel'
 import { Txt2ImgPanel } from '../../features/generation/Txt2ImgPanel'
-import { InpaintPanel } from '../../features/inpaint/InpaintPanel'
+import { InpaintPanel } from '../../features/generation/InpaintPanel'
 
 import { useStore } from '../../store/store'
 import { Dropdown } from '../common/Dropdown'

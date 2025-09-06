@@ -1,4 +1,4 @@
-import { useRef } from 'preact/hooks'
+import { useRef, useState } from 'preact/hooks'
 import { 
   Clock, 
   Play, 
@@ -8,16 +8,18 @@ import {
   RefreshCw, 
   ChevronUp, 
   ChevronDown,
+  ChevronRight,
   CheckCircle,
   XCircle,
   Ban,
   Loader2,
   HelpCircle
-} from 'lucide-react'
+} from 'lucide-preact'
 
 import { useQueueStore } from '../../store/queueStore'
 
 export function QueuePanel() {
+  const [isExpanded, setIsExpanded] = useState(true)
   const {
     queue,
     currentItem,
@@ -39,17 +41,17 @@ export function QueuePanel() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Clock size={16} />
+        return <Clock class="icon-base" />
       case 'processing':
-        return <Loader2 size={16} class="animate-spin" />
+        return <Loader2 class="icon-base animate-spin" />
       case 'completed':
-        return <CheckCircle size={16} />
+        return <CheckCircle class="icon-base" />
       case 'failed':
-        return <XCircle size={16} />
+        return <XCircle class="icon-base" />
       case 'cancelled':
-        return <Ban size={16} />
+        return <Ban class="icon-base" />
       default:
-        return <HelpCircle size={16} />
+        return <HelpCircle class="icon-base" />
     }
   }
 
@@ -65,7 +67,7 @@ export function QueuePanel() {
   }
 
   return (
-    <div class="panel queue-panel" ref={panelRef}>
+    <div class={`panel queue-panel ${isExpanded ? '' : 'collapsed'}`} ref={panelRef}>
       <div class="panel-header">
         <h3 class="panel-title">Queue ({stats.total})</h3>
         <div class="panel-actions">
@@ -74,7 +76,7 @@ export function QueuePanel() {
               onPointerDown={(e) => { e.preventDefault(); stopProcessing() }}
               class="btn btn-sm btn-secondary"
             >
-              <Pause size={14} />
+              <Pause class="icon-sm" />
               <span>Pause</span>
             </button>
           ) : (
@@ -83,7 +85,7 @@ export function QueuePanel() {
               disabled={stats.pending === 0}
               class="btn btn-sm btn-success"
             >
-              <Play size={14} />
+              <Play class="icon-sm" />
               <span>Start</span>
             </button>
           )}
@@ -97,35 +99,47 @@ export function QueuePanel() {
             disabled={queue.length === 0}
             class="btn btn-sm btn-ghost"
           >
-            <Trash2 size={14} />
+            <Trash2 class="icon-sm" />
+          </button>
+          <button
+            class="settings-toggle"
+            onPointerDown={(e) => {
+              e.preventDefault()
+              setIsExpanded(!isExpanded)
+            }}
+            aria-label={isExpanded ? 'Collapse' : 'Expand'}
+          >
+            <ChevronRight class="icon-base" />
           </button>
         </div>
       </div>
 
-      <div class="queue-stats">
-        <span class="queue-stat pending">
-          <Clock size={14} />
-          <span>{stats.pending}</span>
-        </span>
-        <span class="queue-stat processing">
-          <Loader2 size={14} />
-          <span>{stats.processing}</span>
-        </span>
-        <span class="queue-stat completed">
-          <CheckCircle size={14} />
-          <span>{stats.completed}</span>
-        </span>
-        <span class="queue-stat failed">
-          <XCircle size={14} />
-          <span>{stats.failed}</span>
-        </span>
-      </div>
+      <div class={`panel-content ${!isExpanded ? 'collapsed' : ''}`}>
+        {isExpanded && (<>
+          <div class="queue-stats">
+            <span class="queue-stat pending">
+              <Clock class="icon-sm" />
+              <span>{stats.pending}</span>
+            </span>
+            <span class="queue-stat processing">
+              <Loader2 class="icon-sm" />
+              <span>{stats.processing}</span>
+            </span>
+            <span class="queue-stat completed">
+              <CheckCircle class="icon-sm" />
+              <span>{stats.completed}</span>
+            </span>
+            <span class="queue-stat failed">
+              <XCircle class="icon-sm" />
+              <span>{stats.failed}</span>
+            </span>
+          </div>
 
-      <div class="queue-list" ref={listRef}>
-        {queue.length === 0 ? (
-          <div class="queue-empty">Queue is empty</div>
-        ) : (
-          queue.map((item, index) => (
+          <div class="queue-list" ref={listRef}>
+            {queue.length === 0 ? (
+              <div class="queue-empty">Queue is empty</div>
+            ) : (
+              queue.map((item, index) => (
             <div
               key={item.id}
               class={`queue-item ${item.status} ${
@@ -150,7 +164,7 @@ export function QueuePanel() {
                 <div class="queue-progress">
                   <div
                     class="queue-progress-bar"
-                    style={{ width: `${item.progress}%` }}
+                    style={`width: ${item.progress}%`}
                   />
                 </div>
               )}
@@ -168,7 +182,7 @@ export function QueuePanel() {
                       disabled={index === 0}
                       title="Move up"
                     >
-                      <ChevronUp size={14} />
+                      <ChevronUp class="icon-sm" />
                     </button>
                     <button
                       class="btn btn-xs btn-ghost"
@@ -180,7 +194,7 @@ export function QueuePanel() {
                       disabled={index === queue.length - 1}
                       title="Move down"
                     >
-                      <ChevronDown size={14} />
+                      <ChevronDown class="icon-sm" />
                     </button>
                   </>
                 )}
@@ -191,7 +205,7 @@ export function QueuePanel() {
                     onPointerDown={(e) => { e.preventDefault(); retryItem(item.id) }} 
                     title="Retry"
                   >
-                    <RefreshCw size={14} />
+                    <RefreshCw class="icon-sm" />
                   </button>
                 )}
                 
@@ -201,7 +215,7 @@ export function QueuePanel() {
                     onPointerDown={(e) => { e.preventDefault(); cancelItem(item.id) }} 
                     title="Cancel"
                   >
-                    <X size={14} />
+                    <X class="icon-sm" />
                   </button>
                 )}
                 
@@ -210,7 +224,7 @@ export function QueuePanel() {
                   onPointerDown={(e) => { e.preventDefault(); removeFromQueue(item.id) }} 
                   title="Remove"
                 >
-                  <Trash2 size={14} />
+                  <Trash2 class="icon-sm" />
                 </button>
               </div>
 
@@ -229,8 +243,10 @@ export function QueuePanel() {
                 </div>
               )}
             </div>
-          ))
-        )}
+            ))
+            )}
+          </div>
+        </>)}
       </div>
     </div>
   )

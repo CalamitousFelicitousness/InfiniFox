@@ -106,11 +106,11 @@ export function InpaintPanel() {
   }
 
   return (
-    <>
-      <h3>Inpainting</h3>
-      <form onSubmit={handleGenerate}>
-        <div class="inpaint-image-section">
-          <label>Base Image</label>
+    <div class="generation-panel">
+      <h3 class="generation-panel-header">Inpainting</h3>
+      <form class="generation-form" onSubmit={handleGenerate}>
+        <div class="image-source-section">
+          <label class="prompt-label">Base Image</label>
           
           {images.length > 0 && (
             <div class="toggle-group">
@@ -170,20 +170,26 @@ export function InpaintPanel() {
           </div>
         )}
 
-        <label>Prompt</label>
-        <textarea
-          value={prompt}
-          onInput={(e) => setPrompt(e.currentTarget.value)}
-          disabled={isLoading}
-          placeholder="Describe what should appear in the masked area..."
-        />
+        <div class="prompt-group">
+          <label class="prompt-label">Prompt</label>
+          <textarea
+            class="prompt-textarea"
+            value={prompt}
+            onInput={(e) => setPrompt(e.currentTarget.value)}
+            disabled={isLoading}
+            placeholder="Describe what should appear in the masked area..."
+          />
+        </div>
 
-        <label>Negative Prompt</label>
-        <textarea
-          value={negativePrompt}
-          onInput={(e) => setNegativePrompt(e.currentTarget.value)}
-          disabled={isLoading}
-        />
+        <div class="prompt-group">
+          <label class="prompt-label">Negative Prompt</label>
+          <textarea
+            class="prompt-textarea"
+            value={negativePrompt}
+            onInput={(e) => setNegativePrompt(e.currentTarget.value)}
+            disabled={isLoading}
+          />
+        </div>
 
         <Slider
           label="Denoising Strength"
@@ -214,13 +220,16 @@ export function InpaintPanel() {
         />
 
         <div class="checkbox-group">
-          <label>
-            <input
-              type="checkbox"
-              checked={inpaintFullRes}
-              onChange={(e) => setInpaintFullRes(e.currentTarget.checked)}
-              disabled={isLoading}
-            />
+          <input
+            type="checkbox"
+            id="inpaint-full-res"
+            class="checkbox-input"
+            checked={inpaintFullRes}
+            onChange={(e) => setInpaintFullRes(e.currentTarget.checked)}
+            disabled={isLoading}
+          />
+          <div class="checkbox-box"></div>
+          <label for="inpaint-full-res" class="checkbox-label">
             Inpaint at Full Resolution
           </label>
         </div>
@@ -249,10 +258,12 @@ export function InpaintPanel() {
         <Slider label="Steps" value={steps} onInput={setSteps} min={1} max={100} disabled={isLoading} />
         <Slider label="CFG Scale" value={cfgScale} onInput={setCfgScale} min={1} max={30} step={0.5} disabled={isLoading} />
 
-        <button type="submit" class="generate-btn" disabled={isLoading || !maskImage}>
-          {isLoading ? 'Generating...' : 'Generate'}
-        </button>
+        <div class="generation-actions">
+          <button type="submit" class="btn btn-primary btn-block" disabled={isLoading || !maskImage}>
+            {isLoading ? 'Generating...' : 'Generate'}
+          </button>
+        </div>
       </form>
-    </>
+    </div>
   )
 }

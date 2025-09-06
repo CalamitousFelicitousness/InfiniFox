@@ -1,0 +1,116 @@
+/**
+ * Generation Panel Patterns
+ * Shared styles for generation panels
+ */
+
+.generation-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.generation-panel-header {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  padding-bottom: var(--spacing-2);
+  border-bottom: 1px solid var(--color-border-secondary);
+  margin-bottom: var(--spacing-3);
+}
+
+.generation-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.generation-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  padding-bottom: var(--spacing-3);
+  border-bottom: 1px solid var(--color-border-secondary);
+}
+
+.generation-form-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+/* Prompt areas */
+.prompt-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.prompt-label {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.prompt-textarea {
+  min-height: var(--spacing-24);
+  padding: var(--spacing-2);
+  background-color: var(--color-surface-primary);
+  border: var(--border-default);
+  border-radius: var(--radius-input-base);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family-base);
+  resize: vertical;
+  transition: var(--transition-input);
+}
+
+.prompt-textarea:hover:not(:disabled) {
+  border-color: var(--color-primary-700);
+  background-color: var(--color-surface-secondary);
+}
+
+.prompt-textarea:focus:not(:disabled) {
+  outline: none;
+  border-color: var(--color-border-focus);
+  box-shadow: var(--ring-primary);
+}
+
+.prompt-textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: var(--color-surface-disabled);
+}
+
+.prompt-textarea::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+/* Size inputs */
+.size-inputs-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-3);
+}
+
+/* Image source section */
+.image-source-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.selected-image-info {
+  padding: var(--spacing-2);
+  background: var(--color-surface-secondary);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-mono);
+}
+
+/* Actions */
+.generation-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  margin-top: var(--spacing-3);
+}

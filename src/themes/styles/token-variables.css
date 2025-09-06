@@ -512,6 +512,81 @@
   --z-toast: 500;
 
   /* ========================================
+     SIZE TOKENS
+     ======================================== */
+
+  /* Component Sizes */
+  --size-scrollbar-width: 8px;
+  --size-scrollbar-thumb-radius: var(--radius-sm);
+  --size-resize-handle: 16px;
+  --size-toggle-button: 24px;
+  --size-toggle-button-padding: var(--spacing-1);
+  --size-touch-target: 44px;
+  --size-progress-bar: 4px;
+  --size-border-thick-accent: 3px;
+  --size-image-thumbnail-max: 100px;
+
+  /* Panel Heights */
+  --height-panel-collapsed: 48px;
+  --height-panel-header-min: 48px;
+  --height-panel-settings-min: 250px;
+  --height-panel-storage-min: 200px;
+  --height-panel-batch-min: 200px;
+  --height-panel-queue-min: 400px;
+  --height-panel-queue-max: 600px;
+  --height-panel-queue-list-min: 200px;
+  --height-panel-history-min: 300px;
+  --height-panel-history-max: 500px;
+  --height-panel-history-list-min: 150px;
+
+  /* ========================================
+     OPACITY TOKENS
+     ======================================== */
+
+  /* Opacity Scale */
+  --opacity-0: 0;
+  --opacity-5: 0.05;
+  --opacity-10: 0.1;
+  --opacity-15: 0.15;
+  --opacity-20: 0.2;
+  --opacity-25: 0.25;
+  --opacity-30: 0.3;
+  --opacity-35: 0.35;
+  --opacity-40: 0.4;
+  --opacity-45: 0.45;
+  --opacity-50: 0.5;
+  --opacity-55: 0.55;
+  --opacity-60: 0.6;
+  --opacity-65: 0.65;
+  --opacity-70: 0.7;
+  --opacity-75: 0.75;
+  --opacity-80: 0.8;
+  --opacity-85: 0.85;
+  --opacity-90: 0.9;
+  --opacity-95: 0.95;
+  --opacity-100: 1;
+
+  /* Semantic Opacity */
+  --opacity-subtle: var(--opacity-5);
+  --opacity-light: var(--opacity-10);
+  --opacity-muted: var(--opacity-15);
+  --opacity-soft: var(--opacity-20);
+  --opacity-medium: var(--opacity-50);
+  --opacity-strong: var(--opacity-70);
+  --opacity-heavy: var(--opacity-80);
+  --opacity-intense: var(--opacity-90);
+  --opacity-full: var(--opacity-100);
+  --opacity-disabled: var(--opacity-60);
+  --opacity-hover: var(--opacity-10);
+  --opacity-active: var(--opacity-20);
+  --opacity-selected: var(--opacity-30);
+  --opacity-overlay: var(--opacity-50);
+  --opacity-overlay-heavy: var(--opacity-70);
+  --opacity-overlay-light: var(--opacity-30);
+  --opacity-glass: var(--opacity-95);
+  --opacity-icon-secondary: var(--opacity-70);
+
+  /* ========================================
      CUSTOM DARK THEME PROPERTIES
      ======================================== */
 

@@ -1,9 +1,10 @@
-import { useRef, useEffect } from 'preact/hooks'
-import { Undo, Redo, Trash2, Clock } from 'lucide-react'
+import { useRef, useEffect, useState } from 'preact/hooks'
+import { Undo, Redo, Trash2, Clock, ChevronRight } from 'lucide-preact'
 
 import { useHistoryStore } from '../../store/historyStore'
 
 export function HistoryPanel() {
+  const [isExpanded, setIsExpanded] = useState(true)
   const { canUndo, canRedo, undo, redo, clearHistory, getHistoryList } = useHistoryStore()
   const history = getHistoryList()
   const listRef = useRef<HTMLDivElement>(null)
@@ -46,7 +47,7 @@ export function HistoryPanel() {
   }
 
   return (
-    <div class="panel history-panel">
+    <div class={`panel history-panel ${isExpanded ? '' : 'collapsed'}`}>
       <div class="panel-header">
         <h3 class="panel-title">History</h3>
         <div class="panel-actions">
@@ -56,7 +57,7 @@ export function HistoryPanel() {
             title="Undo (Ctrl+Z)"
             class="btn btn-xs btn-ghost"
           >
-            <Undo size={14} />
+            <Undo class="icon-sm" />
           </button>
           <button
             onPointerDown={(e) => { e.preventDefault(); redo() }}
@@ -64,7 +65,7 @@ export function HistoryPanel() {
             title="Redo (Ctrl+Shift+Z)"
             class="btn btn-xs btn-ghost"
           >
-            <Redo size={14} />
+            <Redo class="icon-sm" />
           </button>
           <button
             onPointerDown={(e) => {
@@ -77,33 +78,47 @@ export function HistoryPanel() {
             title="Clear History"
             class="btn btn-xs btn-ghost"
           >
-            <Trash2 size={14} />
+            <Trash2 class="icon-sm" />
+          </button>
+          <button
+            class="settings-toggle"
+            onPointerDown={(e) => {
+              e.preventDefault()
+              setIsExpanded(!isExpanded)
+            }}
+            aria-label={isExpanded ? 'Collapse' : 'Expand'}
+          >
+            <ChevronRight class="icon-base" />
           </button>
         </div>
       </div>
 
-      <div class="history-list" ref={listRef}>
-        {history.length === 0 ? (
-          <div class="history-empty">No actions yet</div>
-        ) : (
-          history.map((item) => (
-            <div
-              key={item.id}
-              class={`history-item ${item.isCurrent ? 'current' : ''}`}
-            >
-              <span class="history-item-icon">
-                <Clock size={14} />
-              </span>
-              <span class="history-item-label">{item.description}</span>
-              <span class="history-item-time">{formatTime(item.timestamp)}</span>
-            </div>
-          ))
-        )}
-      </div>
+      <div class="panel-content">
+        {isExpanded && (<>
+          <div class="history-list" ref={listRef}>
+            {history.length === 0 ? (
+              <div class="history-empty">No actions yet</div>
+            ) : (
+              history.map((item) => (
+                <div
+                  key={item.id}
+                  class={`history-item ${item.isCurrent ? 'current' : ''}`}
+                >
+                  <span class="history-item-icon">
+                    <Clock class="icon-sm" />
+                  </span>
+                  <span class="history-item-label">{item.description}</span>
+                  <span class="history-item-time">{formatTime(item.timestamp)}</span>
+                </div>
+              ))
+            )}
+          </div>
 
-      <div class="history-footer">
-        <span>{history.length} action{history.length !== 1 ? 's' : ''}</span>
-        <span>Max: 50</span>
+          <div class="history-footer">
+            <span>{history.length} action{history.length !== 1 ? 's' : ''}</span>
+            <span>Max: 50</span>
+          </div>
+        </>)}
       </div>
     </div>
   )

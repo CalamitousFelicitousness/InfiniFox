@@ -194,7 +194,7 @@ export function MaskEditor({ baseImage, onMaskUpdate, disabled = false }: MaskEd
         <div class="tool-buttons">
           <button
             type="button"
-            class={tool === 'brush' ? 'active' : ''}
+            class={`btn btn-secondary ${tool === 'brush' ? 'active' : ''}`}
             onClick={() => setTool('brush')}
             disabled={disabled}
           >
@@ -202,7 +202,7 @@ export function MaskEditor({ baseImage, onMaskUpdate, disabled = false }: MaskEd
           </button>
           <button
             type="button"
-            class={tool === 'eraser' ? 'active' : ''}
+            class={`btn btn-secondary ${tool === 'eraser' ? 'active' : ''}`}
             onClick={() => setTool('eraser')}
             disabled={disabled}
           >
@@ -230,10 +230,10 @@ export function MaskEditor({ baseImage, onMaskUpdate, disabled = false }: MaskEd
         )}
 
         <div class="mask-actions">
-          <button type="button" onClick={clearMask} disabled={disabled}>
+          <button type="button" class="btn btn-ghost" onClick={clearMask} disabled={disabled}>
             Clear
           </button>
-          <button type="button" onClick={downloadMask} disabled={disabled}>
+          <button type="button" class="btn btn-ghost" onClick={downloadMask} disabled={disabled}>
             Download
           </button>
         </div>

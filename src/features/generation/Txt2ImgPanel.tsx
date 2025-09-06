@@ -49,25 +49,31 @@ export function Txt2ImgPanel() {
   }
 
   return (
-    <>
-      <h3>Text to Image</h3>
-      <form onSubmit={handleGenerate}>
-        <label>Prompt</label>
-        <textarea
-          value={prompt}
-          onInput={(e) => setPrompt(e.currentTarget.value)}
-          disabled={isLoading}
-        />
+    <div class="generation-panel">
+      <h3 class="generation-panel-header">Text to Image</h3>
+      <form class="generation-form" onSubmit={handleGenerate}>
+        <div class="prompt-group">
+          <label class="prompt-label">Prompt</label>
+          <textarea
+            class="prompt-textarea"
+            value={prompt}
+            onInput={(e) => setPrompt(e.currentTarget.value)}
+            disabled={isLoading}
+          />
+        </div>
 
-        <label>Negative Prompt</label>
-        <Tooltip content="Describe what you DON'T want to see in the image">
-        <textarea
-          value={negativePrompt}
-          onInput={(e) => setNegativePrompt(e.currentTarget.value)}
-          disabled={isLoading}
-          placeholder="Things to avoid in the generation..."
-        />
-        </Tooltip>
+        <div class="prompt-group">
+          <label class="prompt-label">Negative Prompt</label>
+          <Tooltip content="Describe what you DON'T want to see in the image">
+            <textarea
+              class="prompt-textarea"
+              value={negativePrompt}
+              onInput={(e) => setNegativePrompt(e.currentTarget.value)}
+              disabled={isLoading}
+              placeholder="Things to avoid in the generation..."
+            />
+          </Tooltip>
+        </div>
 
         <Dropdown
           label="Sampler"
@@ -110,7 +116,7 @@ export function Txt2ImgPanel() {
         />
         </Tooltip>
 
-        <div class="size-inputs">
+        <div class="size-inputs-group">
           <NumberInput
             label="Width"
             value={width}
@@ -131,22 +137,24 @@ export function Txt2ImgPanel() {
           />
         </div>
 
-        <Tooltip content="Ctrl/Cmd + Enter">
-          <button type="submit" class="generate-btn" disabled={isLoading}>
-            {isLoading ? 'Generating...' : 'Generate'}
-          </button>
-        </Tooltip>
-        
-        {isLoading && (
-          <button 
-            type="button" 
-            class="cancel-btn" 
-            onPointerDown={(e) => { e.preventDefault(); handleCancel() }}
-          >
-            Cancel
-          </button>
-        )}
+        <div class="generation-actions">
+          <Tooltip content="Ctrl/Cmd + Enter">
+            <button type="submit" class="btn btn-primary btn-block" disabled={isLoading}>
+              {isLoading ? 'Generating...' : 'Generate'}
+            </button>
+          </Tooltip>
+          
+          {isLoading && (
+            <button 
+              type="button" 
+              class="btn btn-secondary btn-block" 
+              onPointerDown={(e) => { e.preventDefault(); handleCancel() }}
+            >
+              Cancel
+            </button>
+          )}
+        </div>
       </form>
-    </>
+    </div>
   )
 }

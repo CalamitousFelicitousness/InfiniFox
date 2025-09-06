@@ -1,0 +1,8 @@
+/**
+ * Inpaint Panel
+ * Extends generation-panel patterns
+ */
+
+.mask-section {
+  margin-bottom: var(--spacing-4);
+}

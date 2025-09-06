@@ -12,8 +12,31 @@
   border: var(--border-default);
   border-radius: var(--radius-panel-base);
   box-shadow: var(--shadow-panel-default);
-  overflow: hidden;
   transition: var(--transition-panel);
+  display: block;
+  position: relative;
+  overflow: hidden;
+  min-height: min-content;
+}
+
+/* Common utility classes for flex alignment */
+.d-flex {
+  display: flex;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.gap-2 {
+  gap: var(--spacing-2);
+}
+
+/* Fix nested flex containers in panel headers */
+.panel-header .d-flex.items-center,
+.settings-header .d-flex.items-center {
+  height: 100%;
+  align-items: center;
 }
 
 /* Glass Panel Variant */
@@ -31,13 +54,14 @@
    ========================================== */
 
 .panel-header {
-  display: flex;
+  display: flex !important;
   align-items: center;
   justify-content: space-between;
-  padding: var(--spacing-panel-padding-sm);
+  padding: var(--spacing-panel-padding-sm) !important;
   border-bottom: var(--border-subtle);
   background-color: transparent;
-  min-height: 48px;
+  min-height: calc(var(--font-size-base) * var(--line-height-normal) + var(--spacing-panel-padding-sm) * 2);
+  box-sizing: border-box;
   
   h2, h3, h4 {
     margin: 0;
@@ -52,21 +76,56 @@
     display: flex;
     align-items: center;
     gap: var(--spacing-2);
-    flex: 1;
+    flex: 1 1 auto;
+    margin: 0;
+    min-width: 0;
   }
   
   .panel-actions {
     display: flex;
     align-items: center;
     gap: var(--spacing-1);
+    flex: 0 0 auto;
   }
 }
 
+/* Settings toggle button - used by all collapsible panels */
+.settings-toggle {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: var(--size-toggle-button-padding);
+  border-radius: var(--radius-sm);
+  transition: var(--transition-colors);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: var(--size-toggle-button);
+  min-height: var(--size-toggle-button);
+  
+  &:hover {
+    color: var(--color-primary-400);
+    background-color: var(--color-surface-hover);
+  }
+  
+  /* Chevron rotation - no animation */
+  svg {
+    transform-origin: center;
+  }
+}
+
+/* Collapsed state chevron rotation */
+.panel.collapsed .settings-toggle svg,
+.settings-panel.collapsed .settings-toggle svg {
+  transform: rotate(-90deg);
+}
+
 /* ==========================================
-   Panel Body
+   Panel Content
    ========================================== */
 
-.panel-body,
 .panel-content {
   padding: var(--spacing-panel-padding-base);
   overflow-y: auto;
@@ -101,7 +160,17 @@
 }
 
 /* ==========================================
-   Collapsible Panel
+   Collapsible Panel Animation
+   ========================================== */
+
+/* Collapsible panels - no animation */
+.panel.collapsed .panel-content,
+.settings-panel.collapsed .settings-content {
+  display: none;
+}
+
+/* ==========================================
+   Collapsible Panel (Legacy)
    ========================================== */
 
 .panel.collapsible {
@@ -117,8 +186,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 24px;
-      height: 24px;
+      width: var(--size-toggle-button);
+      height: var(--size-toggle-button);
       margin-right: var(--spacing-2);
       transition: var(--transition-transform);
       
@@ -128,7 +197,7 @@
     }
   }
   
-  .panel-body {
+  .panel-content {
     max-height: 0;
     overflow: hidden;
     padding-top: 0;
@@ -136,7 +205,6 @@
     transition: var(--transition-panel-collapse);
     
     &.expanded {
-      max-height: none;
       padding-top: var(--spacing-panel-padding-base);
       padding-bottom: var(--spacing-panel-padding-base);
     }
@@ -185,17 +253,17 @@
   
   /* Scrollbar styling */
   .control-panel-content::-webkit-scrollbar {
-    width: 8px;
+    width: var(--size-scrollbar-width);
   }
   
   .control-panel-content::-webkit-scrollbar-track {
     background: var(--color-background-primary);
-    border-radius: var(--radius-sm);
+    border-radius: var(--size-scrollbar-thumb-radius);
   }
   
   .control-panel-content::-webkit-scrollbar-thumb {
     background: var(--color-gray-600);
-    border-radius: var(--radius-sm);
+    border-radius: var(--size-scrollbar-thumb-radius);
     transition: var(--transition-colors);
   }
   
@@ -212,8 +280,8 @@
   /* Touch-friendly sizes */
   @media (pointer: coarse) {
     button {
-      min-height: 44px;
-      min-width: 44px;
+      min-height: var(--size-touch-target);
+      min-width: var(--size-touch-target);
     }
   }
   
@@ -237,17 +305,26 @@
    ========================================== */
 
 .settings-panel {
+  width: 100%;
   background-color: var(--color-surface-primary);
   border-radius: var(--radius-panel-base);
   border: var(--border-default);
-  padding: var(--spacing-4);
   margin-top: var(--spacing-4);
+  transition: var(--transition-all);
+  position: relative;
+  z-index: 1;
   
+  &:not(.collapsed) {
+    padding: var(--spacing-4);
+  }
+  
+  /* Fix for settings panel which doesn't use .panel-header */
   .settings-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: var(--spacing-4);
+    min-height: var(--height-panel-header-min);
     
     h3 {
       margin: 0;
@@ -256,23 +333,24 @@
       border: none;
       padding: 0;
     }
+  }
+  
+  &.collapsed {
+    padding: 0;
+    min-height: var(--height-panel-collapsed);
     
-    .settings-toggle {
-      background: none;
-      border: none;
-      color: var(--color-text-secondary);
-      cursor: pointer;
-      padding: var(--spacing-1);
-      border-radius: var(--radius-sm);
-      transition: var(--transition-colors);
+    .settings-content {
+      display: none;
+    }
+    
+    .settings-header {
+      padding: var(--spacing-2) var(--spacing-4);
+      margin-bottom: 0;
+      border-bottom: none;
+      min-height: auto;
+      height: var(--height-panel-collapsed);
       display: flex;
       align-items: center;
-      justify-content: center;
-      
-      &:hover {
-        color: var(--color-primary-400);
-        background-color: var(--color-surface-hover);
-      }
     }
   }
   
@@ -304,13 +382,13 @@
     transition: var(--transition-all);
     
     &.success {
-      background-color: rgba(76, 175, 80, 0.1);
+      background-color: color-mix(in srgb, var(--color-success-500) var(--opacity-10), transparent);
       border: 1px solid var(--color-success-500);
       color: var(--color-success-500);
     }
     
     &.error {
-      background-color: rgba(244, 67, 54, 0.1);
+      background-color: color-mix(in srgb, var(--color-error-500) var(--opacity-10), transparent);
       border: 1px solid var(--color-error-500);
       color: var(--color-error-500);
     }
@@ -356,8 +434,8 @@
     position: absolute;
     bottom: 0;
     right: 0;
-    width: 16px;
-    height: 16px;
+    width: var(--size-resize-handle);
+    height: var(--size-resize-handle);
     cursor: nwse-resize;
     
     &::after {
@@ -375,7 +453,7 @@
   
   /* Minimized state */
   &.minimized {
-    .panel-body {
+    .panel-content {
       display: none;
     }
     
@@ -461,18 +539,43 @@
    ========================================== */
 
 .queue-panel {
-  display: flex;
-  flex-direction: column;
-  height: 400px;
+  width: 100%;
   background-color: var(--color-surface-primary);
   border-radius: var(--radius-panel-base);
   border: var(--border-default);
   margin-top: var(--spacing-4);
-  overflow: hidden;
+  transition: var(--transition-all);
+  position: relative;
+  z-index: 1;
+  
+  &:not(.collapsed) {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  &.collapsed {
+    min-height: var(--height-panel-collapsed);
+    
+    .queue-stats,
+    .queue-list {
+      display: none;
+    }
+    
+    .panel-header {
+      border-bottom: none;
+      padding: var(--spacing-2) var(--spacing-3) !important;
+      min-height: auto !important;
+      height: var(--height-panel-collapsed);
+    }
+    
+    .panel-content {
+      display: none;
+    }
+  }
   
   .panel-header {
     flex-shrink: 0;
-    padding: var(--spacing-3);
+    padding: var(--spacing-3) !important;
     border-bottom: var(--border-subtle);
     
     .panel-title {
@@ -480,11 +583,15 @@
       font-weight: var(--font-weight-semibold);
       color: var(--color-text-primary);
       margin: 0;
+      display: flex;
+      align-items: center;
     }
     
     .panel-actions {
       display: flex;
+      align-items: center;
       gap: var(--spacing-2);
+      flex-shrink: 0;
       
       button {
         display: flex;
@@ -526,9 +633,18 @@
     }
   }
   
+  .panel-content {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+    flex: 1;
+  }
+  
   .queue-list {
     flex: 1;
     overflow-y: auto;
+    max-height: var(--height-panel-queue-max);
     padding: var(--spacing-3);
     display: flex;
     flex-direction: column;
@@ -564,13 +680,13 @@
     }
     
     &.processing {
-      background-color: rgba(33, 150, 243, 0.05);
+      background-color: color-mix(in srgb, var(--color-info-500) var(--opacity-5), transparent);
       border-color: var(--color-info-500);
     }
     
     &.completed {
-      background-color: rgba(76, 175, 80, 0.05);
-      opacity: 0.8;
+      background-color: color-mix(in srgb, var(--color-success-500) var(--opacity-5), transparent);
+      opacity: var(--opacity-heavy);
       
       .queue-item-status {
         color: var(--color-success-500);
@@ -578,7 +694,7 @@
     }
     
     &.failed {
-      background-color: rgba(244, 67, 54, 0.05);
+      background-color: color-mix(in srgb, var(--color-error-500) var(--opacity-5), transparent);
       border-color: var(--color-error-500);
       
       .queue-item-status {
@@ -587,8 +703,8 @@
     }
     
     &.cancelled {
-      background-color: rgba(158, 158, 158, 0.05);
-      opacity: 0.6;
+      background-color: color-mix(in srgb, var(--color-gray-650) var(--opacity-5), transparent);
+      opacity: var(--opacity-disabled);
     }
     
     .queue-item-header {
@@ -626,7 +742,7 @@
     }
     
     .queue-progress {
-      height: 4px;
+      height: var(--size-progress-bar);
       background-color: var(--color-surface-secondary);
       border-radius: var(--radius-full);
       overflow: hidden;
@@ -651,7 +767,7 @@
     .queue-item-result {
       img {
         max-width: 100%;
-        max-height: 100px;
+        max-height: var(--size-image-thumbnail-max);
         border-radius: var(--radius-sm);
         border: var(--border-subtle);
       }
@@ -660,7 +776,7 @@
     .queue-item-error {
       padding: var(--spacing-2);
       background-color: var(--color-surface-secondary);
-      border-left: 3px solid var(--color-error-500);
+      border-left: var(--size-border-thick-accent) solid var(--color-error-500);
       border-radius: var(--radius-sm);
       font-size: var(--font-size-xs);
       color: var(--color-error-500);
@@ -678,18 +794,43 @@
    ========================================== */
 
 .history-panel {
-  display: flex;
-  flex-direction: column;
-  height: 300px;
+  width: 100%;
   background-color: var(--color-surface-primary);
   border-radius: var(--radius-panel-base);
   border: var(--border-default);
   margin-top: var(--spacing-4);
-  overflow: hidden;
+  transition: var(--transition-all);
+  position: relative;
+  z-index: 1;
+  
+  &:not(.collapsed) {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  &.collapsed {
+    min-height: var(--height-panel-collapsed);
+    
+    .history-list,
+    .history-footer {
+      display: none;
+    }
+    
+    .panel-header {
+      border-bottom: none;
+      padding: var(--spacing-2) var(--spacing-3) !important;
+      min-height: auto !important;
+      height: var(--height-panel-collapsed);
+    }
+    
+    .panel-content {
+      display: none;
+    }
+  }
   
   .panel-header {
     flex-shrink: 0;
-    padding: var(--spacing-3);
+    padding: var(--spacing-3) !important;
     border-bottom: var(--border-subtle);
     
     .panel-title {
@@ -701,13 +842,24 @@
     
     .panel-actions {
       display: flex;
+      align-items: center;
       gap: var(--spacing-1);
+      flex-shrink: 0;
     }
+  }
+  
+  .panel-content {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+    flex: 1;
   }
   
   .history-list {
     flex: 1;
     overflow-y: auto;
+    max-height: var(--height-panel-history-max);
     padding: var(--spacing-2);
     display: flex;
     flex-direction: column;
@@ -747,7 +899,7 @@
       display: flex;
       align-items: center;
       color: var(--color-text-tertiary);
-      opacity: 0.7;
+      opacity: var(--opacity-icon-secondary);
     }
     
     .history-item-label {
@@ -781,13 +933,37 @@
    ========================================== */
 
 .storage-stats-panel {
+  width: 100%;
   background-color: var(--color-surface-primary);
   border-radius: var(--radius-panel-base);
   border: var(--border-default);
   margin-top: var(--spacing-4);
+  transition: var(--transition-all);
+  position: relative;
+  z-index: 1;
+  
+  &:not(.collapsed) {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  &.collapsed {
+    min-height: var(--height-panel-collapsed);
+    
+    .panel-content {
+      display: none;
+    }
+    
+    .panel-header {
+      border-bottom: none;
+      padding: var(--spacing-2) var(--spacing-4) !important;
+      min-height: auto !important;
+      height: var(--height-panel-collapsed);
+    }
+  }
   
   .panel-header {
-    padding: var(--spacing-3) var(--spacing-4);
+    padding: var(--spacing-3) var(--spacing-4) !important;
     border-bottom: var(--border-subtle);
     
     .panel-title {
@@ -840,17 +1016,38 @@
    ========================================== */
 
 .batch-settings-panel {
+  width: 100%;
   background-color: var(--color-surface-primary);
   border-radius: var(--radius-panel-base);
   border: var(--border-default);
   margin-top: var(--spacing-4);
+  transition: var(--transition-all);
+  position: relative;
+  z-index: 1;
+  
+  &:not(.collapsed) {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  &.collapsed {
+    min-height: var(--height-panel-collapsed);
+    
+    .panel-content {
+      display: none;
+    }
+    
+    .panel-header {
+      border-bottom: none;
+      padding: var(--spacing-2) var(--spacing-4) !important;
+      min-height: auto !important;
+      height: var(--height-panel-collapsed);
+    }
+  }
   
   .panel-header {
-    padding: var(--spacing-3) var(--spacing-4);
+    padding: var(--spacing-3) var(--spacing-4) !important;
     border-bottom: var(--border-subtle);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     
     .panel-title {
       font-size: var(--font-size-base);

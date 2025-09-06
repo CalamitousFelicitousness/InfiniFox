@@ -101,11 +101,11 @@ export function Img2ImgPanel() {
   }
 
   return (
-    <>
-      <h3>Image to Image</h3>
-      <form onSubmit={handleGenerate}>
-        <div class="img2img-source-section">
-          <label>Source Image</label>
+    <div class="generation-panel">
+      <h3 class="generation-panel-header">Image to Image</h3>
+      <form class="generation-form" onSubmit={handleGenerate}>
+        <div class="image-source-section">
+          <label class="prompt-label">Source Image</label>
           
           {images.length > 0 && (
             <div class="toggle-group">
@@ -141,19 +141,25 @@ export function Img2ImgPanel() {
           />
         </div>
 
-        <label>Prompt</label>
-        <textarea
-          value={prompt}
-          onInput={(e) => setPrompt(e.currentTarget.value)}
-          disabled={isLoading}
-        />
+        <div class="prompt-group">
+          <label class="prompt-label">Prompt</label>
+          <textarea
+            class="prompt-textarea"
+            value={prompt}
+            onInput={(e) => setPrompt(e.currentTarget.value)}
+            disabled={isLoading}
+          />
+        </div>
 
-        <label>Negative Prompt</label>
-        <textarea
-          value={negativePrompt}
-          onInput={(e) => setNegativePrompt(e.currentTarget.value)}
-          disabled={isLoading}
-        />
+        <div class="prompt-group">
+          <label class="prompt-label">Negative Prompt</label>
+          <textarea
+            class="prompt-textarea"
+            value={negativePrompt}
+            onInput={(e) => setNegativePrompt(e.currentTarget.value)}
+            disabled={isLoading}
+          />
+        </div>
 
         <Slider
           label="Denoising Strength"
@@ -179,15 +185,17 @@ export function Img2ImgPanel() {
 
         <Slider label="CFG Scale" value={cfgScale} onInput={setCfgScale} min={1} max={30} step={0.5} disabled={isLoading} />
 
-        <div class="size-inputs">
+        <div class="size-inputs-group">
           <NumberInput label="Width" value={width} onInput={setWidth} disabled={isLoading} />
           <NumberInput label="Height" value={height} onInput={setHeight} disabled={isLoading} />
         </div>
 
-        <button type="submit" class="generate-btn" disabled={isLoading}>
-          {isLoading ? 'Generating...' : 'Generate'}
-        </button>
+        <div class="generation-actions">
+          <button type="submit" class="btn btn-primary btn-block" disabled={isLoading}>
+            {isLoading ? 'Generating...' : 'Generate'}
+          </button>
+        </div>
       </form>
-    </>
+    </div>
   )
 }

@@ -1,9 +1,11 @@
+import { useState } from 'preact/hooks'
 import { useEffect } from 'preact/hooks'
-import { HardDrive, Trash2 } from 'lucide-react'
+import { HardDrive, Trash2, ChevronRight } from 'lucide-preact'
 import { useStore } from '../../store/store'
 import { imageStorage } from '../../services/storage'
 
 export function StorageStats() {
+  const [isExpanded, setIsExpanded] = useState(true)
   const { storageStats, updateStorageStats } = useStore()
   
   useEffect(() => {
@@ -40,44 +42,54 @@ export function StorageStats() {
   }
   
   return (
-    <div class="panel storage-stats-panel">
+    <div class={`panel storage-stats-panel ${isExpanded ? '' : 'collapsed'}`}>
       <div class="panel-header">
         <div class="d-flex items-center gap-2">
-          <HardDrive size={16} />
+          <HardDrive class="icon-base" />
           <h4 class="panel-title">Storage Usage</h4>
         </div>
+        <button
+          class="settings-toggle"
+          onPointerDown={(e) => {
+            e.preventDefault()
+            setIsExpanded(!isExpanded)
+          }}
+          aria-label={isExpanded ? 'Collapse' : 'Expand'}
+        >
+          <ChevronRight class="icon-base" />
+        </button>
       </div>
-      
-      <div class="panel-body compact">
-        <div class="storage-stats-grid">
-          <div class="storage-stat-item">
-            <span class="storage-stat-label">Images:</span>
-            <span class="storage-stat-value">{storageStats.imageCount}</span>
+      <div class={`panel-content compact ${!isExpanded ? 'collapsed' : ''}`}>
+          <div class="storage-stats-grid">
+            <div class="storage-stat-item">
+              <span class="storage-stat-label">Images:</span>
+              <span class="storage-stat-value">{storageStats.imageCount}</span>
+            </div>
+            <div class="storage-stat-item">
+              <span class="storage-stat-label">Size:</span>
+              <span class="storage-stat-value">{formatBytes(storageStats.totalSize)}</span>
+            </div>
+            <div class="storage-stat-item">
+              <span class="storage-stat-label">Active URLs:</span>
+              <span class="storage-stat-value">{storageStats.memoryUrls}</span>
+            </div>
           </div>
-          <div class="storage-stat-item">
-            <span class="storage-stat-label">Size:</span>
-            <span class="storage-stat-value">{formatBytes(storageStats.totalSize)}</span>
+          
+          <div class="panel-actions mt-3">
+            <button 
+              class="btn btn-sm btn-danger w-full"
+              onClick={handleClearStorage}
+              title="Clear all stored images"
+            >
+              <Trash2 class="icon-sm" />
+              <span>Clear Storage</span>
+            </button>
           </div>
-          <div class="storage-stat-item">
-            <span class="storage-stat-label">Active URLs:</span>
-            <span class="storage-stat-value">{storageStats.memoryUrls}</span>
+          
+          <div class="form-help mt-3">
+            Images are stored locally in your browser using IndexedDB
           </div>
-        </div>
-        
-        <div class="panel-actions mt-3">
-          <button 
-            class="btn btn-sm btn-danger w-full"
-            onClick={handleClearStorage}
-            title="Clear all stored images"
-          >
-            <Trash2 size={14} />
-            <span>Clear Storage</span>
-          </button>
-        </div>
-        
-        <div class="form-help mt-3">
-          Images are stored locally in your browser using IndexedDB
-        </div>
+
       </div>
     </div>
   )
