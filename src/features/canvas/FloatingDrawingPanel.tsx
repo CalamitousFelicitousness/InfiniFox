@@ -151,23 +151,23 @@ export function FloatingDrawingPanel({ visible, tool }: FloatingDrawingPanelProp
   return (
     <div
       ref={panelRef}
-      class={`floating-drawing-panel ${isMinimized ? 'minimized' : ''} ${isDragging ? 'dragging' : ''}`}
+      class={`floating-drawing-panel floating-panel glass-surface ${isMinimized ? 'minimized' : ''} ${isDragging ? 'dragging' : ''}`}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`
       }}
       onPointerDown={handlePointerDown}
     >
-      <div class="panel-header">
-        <div class="panel-grip" title="Drag to move">
-          <span class="grip-icon"><Icon icon={GripVertical} size="base" /></span>
+      <div class="floating-panel-header">
+        <div class="floating-panel-grip" title="Drag to move">
+          <Icon icon={GripVertical} size="base" />
         </div>
-        <span class="panel-title">
+        <span class="floating-panel-title">
           {tool === 'eraser' ? <><Icon icon={Eraser} size="base" /> Eraser</> : <><Icon icon={Brush} size="base" /> Brush</>} Settings
         </span>
-        <div class="panel-controls">
+        <div class="floating-panel-controls">
           <button
-            class="panel-control-btn"
+            class="floating-panel-control-btn"
             onClick={() => setIsMinimized(!isMinimized)}
             title={isMinimized ? 'Expand' : 'Minimize'}
           >
@@ -177,14 +177,14 @@ export function FloatingDrawingPanel({ visible, tool }: FloatingDrawingPanelProp
       </div>
       
       {!isMinimized && (
-        <div class="panel-content">
+        <div class="floating-panel-content">
           {/* Brush Presets */}
           <div class="preset-section">
-            <div class="preset-buttons">
+            <div class="preset-control">
               {Object.entries(BRUSH_PRESETS).map(([key, preset]) => (
                 <button
                   key={key}
-                  class={`preset-btn ${brushPreset === key ? 'active' : ''}`}
+                  class={`preset-button ${brushPreset === key ? 'active' : ''}`}
                   onClick={() => setBrushPreset(key)}
                   title={key}
                 >
@@ -195,9 +195,9 @@ export function FloatingDrawingPanel({ visible, tool }: FloatingDrawingPanelProp
           </div>
           
           {/* Sliders */}
-          <div class="sliders-section">
-            <div class="slider-row">
-              <label>Size</label>
+          <div class="control-group">
+            <div class="slider-control">
+              <label class="slider-label">Size</label>
               <Slider
                 min={1}
                 max={100}
@@ -205,11 +205,11 @@ export function FloatingDrawingPanel({ visible, tool }: FloatingDrawingPanelProp
                 onChange={setBrushSize}
                 step={1}
               />
-              <span class="value">{brushSize}px</span>
+              <span class="slider-value">{brushSize}px</span>
             </div>
             
-            <div class="slider-row">
-              <label>Opacity</label>
+            <div class="slider-control">
+              <label class="slider-label">Opacity</label>
               <Slider
                 min={1}
                 max={100}
@@ -217,11 +217,11 @@ export function FloatingDrawingPanel({ visible, tool }: FloatingDrawingPanelProp
                 onChange={setBrushOpacity}
                 step={1}
               />
-              <span class="value">{brushOpacity}%</span>
+              <span class="slider-value">{brushOpacity}%</span>
             </div>
             
-            <div class="slider-row">
-              <label>Smooth</label>
+            <div class="slider-control">
+              <label class="slider-label">Smooth</label>
               <Slider
                 min={0}
                 max={50}
@@ -229,7 +229,7 @@ export function FloatingDrawingPanel({ visible, tool }: FloatingDrawingPanelProp
                 onChange={setSmoothing}
                 step={1}
               />
-              <span class="value">{smoothing}</span>
+              <span class="slider-value">{smoothing}</span>
             </div>
           </div>
           
@@ -246,7 +246,7 @@ export function FloatingDrawingPanel({ visible, tool }: FloatingDrawingPanelProp
                 <span class="color-hex">{brushColor}</span>
               </div>
               
-              <div class="color-palette">
+              <div class="color-palette-grid">
                 {COLOR_PALETTE.map(color => (
                   <button
                     key={color}

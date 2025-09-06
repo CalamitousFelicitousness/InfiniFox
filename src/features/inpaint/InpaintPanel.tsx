@@ -113,7 +113,7 @@ export function InpaintPanel() {
           <label>Base Image</label>
           
           {images.length > 0 && (
-            <div class="source-mode-toggle">
+            <div class="toggle-group">
               <button
                 type="button"
                 class={imageSourceMode === 'upload' ? 'active' : ''}
@@ -138,7 +138,7 @@ export function InpaintPanel() {
 
         {baseImage && (
           <div class="mask-section">
-            <div class="mask-mode-toggle">
+            <div class="toggle-group toggle-group-compact">
               <button
                 type="button"
                 class={maskMode === 'draw' ? 'active' : ''}

@@ -35,18 +35,6 @@
   margin: var(--spacing-4) 0;
 }
 
-.color-swatch {
-  padding: var(--spacing-4);
-  border-radius: var(--radius-lg);
-  text-align: center;
-  font-weight: var(--font-weight-semibold);
-  transition: transform var(--duration-sm) var(--ease-out);
-}
-
-.color-swatch:hover {
-  transform: scale(1.05);
-}
-
 .bg-primary {
   background: var(--color-background-primary);
   border: var(--border-width-thin) solid var(--color-border-default);
@@ -230,14 +218,6 @@
   font-weight: var(--font-weight-bold);
 }
 
-/* Button samples */
-.button-group {
-  display: flex;
-  gap: var(--spacing-3);
-  flex-wrap: wrap;
-  margin: var(--spacing-4) 0;
-}
-
 /* Panel samples */
 .panel-samples {
   display: grid;
@@ -261,14 +241,6 @@
   box-shadow: var(--shadow-lg);
 }
 
-.glass-panel {
-  background: var(--custom-glass-bg);
-  backdrop-filter: var(--backdrop-blur-lg);
-  border: var(--border-width-thin) solid var(--custom-glass-border);
-  padding: var(--spacing-4);
-  border-radius: var(--radius-lg);
-}
-
 /* Progress samples */
 .progress-samples {
   margin: var(--spacing-4) 0;
@@ -281,7 +253,7 @@
   border-radius: var(--radius-lg);
 }
 
-.progress-bar {
+.progress-bar-demo {
   height: var(--spacing-2);
   background: var(--color-surface-primary);
   border-radius: var(--radius-sm);
@@ -289,7 +261,7 @@
   margin-bottom: var(--spacing-2);
 }
 
-.progress-fill {
+.progress-fill-demo {
   height: 100%;
   background: var(--color-primary);
   transition: width var(--duration-md) var(--ease-out);
@@ -472,7 +444,7 @@
   box-shadow: var(--shadow-md);
 }
 
-.context-menu {
+.context-menu-demo {
   background: var(--color-surface-elevated);
   border: var(--border-width-thin) solid var(--color-border-default);
   border-radius: var(--radius-lg);
@@ -566,57 +538,13 @@
 }
 
 .fade-in {
-  animation: fadeIn var(--duration-md) var(--ease-out);
-}
-
-.slide-in {
-  animation: slideIn var(--duration-md) var(--ease-spring);
+  animation: var(--animation-fade-in);
 }
 
 .scale-in {
-  animation: scaleIn var(--duration-md) var(--ease-spring);
+  animation: var(--animation-scale-in);
 }
 
 .spin {
-  animation: spin var(--duration-xl) linear infinite;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateX(-20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes scaleIn {
-  from {
-    transform: scale(0.8);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  animation: var(--animation-spin);
 }

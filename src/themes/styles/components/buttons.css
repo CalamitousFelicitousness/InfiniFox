@@ -460,6 +460,65 @@ button[type="submit"],
   }
 }
 
+/* Button Group Variants */
+.button-group {
+  display: flex;
+  gap: var(--spacing-2);
+}
+
+.button-group-compact {
+  gap: var(--spacing-1);
+}
+
+.button-group-full > .btn,
+.button-group-full > button {
+  flex: 1;
+}
+
+.button-group-vertical {
+  flex-direction: column;
+}
+
+/* Action Button Groups (for panel footers) */
+.action-buttons {
+  display: flex;
+  gap: var(--spacing-2);
+  border-top: 1px solid var(--color-border-secondary);
+  padding-top: var(--spacing-3);
+}
+
+.action-btn {
+  flex: 1;
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--color-surface-disabled);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-button-base);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: var(--transition-button);
+}
+
+.action-btn:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+  border-color: var(--color-primary-400);
+  color: var(--color-text-primary);
+  transform: scale(1.02);
+}
+
+.action-btn.active {
+  background: var(--color-surface-active);
+  border-color: var(--color-primary-500);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-glow-sm);
+}
+
+.action-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 /* ==========================================
    Responsive Adjustments
    ========================================== */

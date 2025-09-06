@@ -108,7 +108,7 @@ export function Img2ImgPanel() {
           <label>Source Image</label>
           
           {images.length > 0 && (
-            <div class="source-mode-toggle">
+            <div class="toggle-group">
               <button
                 type="button"
                 class={selectionMode === 'upload' ? 'active' : ''}

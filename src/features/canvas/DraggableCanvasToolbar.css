@@ -1,93 +1,19 @@
 /**
  * Draggable Canvas Toolbar Styles
- * Uses theme tokens for consistent styling
+ * Extends shared floating-panel and toolbar patterns
  */
 
 .draggable-canvas-toolbar {
-  position: fixed;
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
-  background: var(--custom-glass-bg);
-  backdrop-filter: blur(var(--custom-glass-blur));
-  -webkit-backdrop-filter: blur(var(--custom-glass-blur));
   padding: var(--spacing-2);
   padding-left: var(--spacing-1);
-  border-radius: var(--radius-base);
-  border: 1px solid var(--custom-glass-border);
-  box-shadow: var(--shadow-toolbar-default);
-  z-index: var(--z-overlay);
-  transition: var(--transition-opacity), var(--transition-shadow);
-  user-select: none;
-}
-
-.draggable-canvas-toolbar.dragging {
-  opacity: 0.85;
-  box-shadow: var(--shadow-toolbar-floating);
-  cursor: move;
-}
-
-.toolbar-grip {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 36px;
-  cursor: move;
-  color: var(--color-text-tertiary);
-  font-size: var(--font-size-xs);
-  border-right: 1px solid var(--color-border-secondary);
-  margin-right: var(--spacing-1);
-  padding: 0 var(--spacing-1);
-  transition: var(--transition-colors);
-}
-
-.toolbar-grip:hover {
-  color: var(--color-text-secondary);
 }
 
 .toolbar-tools {
   display: flex;
   gap: var(--spacing-1-5);
-}
-
-.toolbar-tool-btn {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-1-5);
-  padding: var(--spacing-2) var(--spacing-3);
-  background-color: var(--color-surface-disabled);
-  border: 1px solid var(--color-border-primary);
-  color: var(--color-text-secondary);
-  border-radius: var(--radius-button-base);
-  cursor: pointer;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  transition: var(--transition-button);
-  white-space: nowrap;
-}
-
-.toolbar-tool-btn:hover {
-  background-color: var(--color-surface-hover);
-  border-color: var(--color-primary-400);
-  color: var(--color-text-primary);
-  transform: scale(1.02);
-}
-
-.toolbar-tool-btn:active {
-  transform: scale(0.98);
-}
-
-.toolbar-tool-btn.active {
-  background-color: var(--color-surface-active);
-  border-color: var(--color-primary-500);
-  color: var(--color-text-primary);
-  box-shadow: var(--shadow-glow-sm);
-}
-
-.toolbar-tool-btn.active:hover {
-  background-color: var(--color-surface-selected);
-  border-color: var(--color-primary-500);
 }
 
 .tool-icon {
@@ -101,12 +27,6 @@
   font-weight: var(--font-weight-semibold);
 }
 
-/* Keyboard focus styles */
-.toolbar-tool-btn:focus-visible {
-  outline: var(--ring-base);
-  outline-offset: var(--outline-offset-base);
-}
-
 /* Mobile adjustments */
 @media (max-width: 768px) {
   .draggable-canvas-toolbar {
@@ -114,23 +34,7 @@
     padding: var(--spacing-1-5);
   }
   
-  .toolbar-tool-btn {
-    padding: var(--spacing-1-5) var(--spacing-2-5);
-  }
-  
-  .tool-icon {
-    font-size: var(--font-size-sm);
-  }
-  
   .tool-label {
-    display: none; /* Hide labels on mobile to save space */
-  }
-}
-
-/* Compact mode for very small screens */
-@media (max-width: 480px) {
-  .toolbar-tool-btn {
-    padding: var(--spacing-1-5) var(--spacing-2);
-    font-size: var(--font-size-xs);
+    display: none;
   }
 }

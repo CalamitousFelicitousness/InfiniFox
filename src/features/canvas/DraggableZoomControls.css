@@ -1,54 +1,14 @@
 /**
  * Draggable Zoom Controls Styles
- * Uses theme tokens for consistent styling
+ * Extends shared floating-panel patterns
  */
 
 .draggable-zoom-controls {
-  position: fixed;
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
-  background: var(--custom-glass-bg);
-  backdrop-filter: blur(var(--custom-glass-blur));
-  -webkit-backdrop-filter: blur(var(--custom-glass-blur));
   padding: var(--spacing-2);
   padding-left: var(--spacing-1);
-  border-radius: var(--radius-base);
-  border: 1px solid var(--custom-glass-border);
-  box-shadow: var(--shadow-toolbar-default);
-  z-index: var(--z-overlay);
-  transition: var(--transition-opacity), var(--transition-shadow);
-  user-select: none;
-}
-
-.draggable-zoom-controls.dragging {
-  opacity: 0.85;
-  box-shadow: var(--shadow-toolbar-floating);
-  cursor: move;
-}
-
-.zoom-controls-grip {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 32px;
-  cursor: move;
-  color: var(--color-text-tertiary);
-  font-size: var(--font-size-xs);
-  border-right: 1px solid var(--color-border-secondary);
-  margin-right: var(--spacing-1);
-  padding: 0 var(--spacing-1);
-  transition: var(--transition-colors);
-}
-
-.zoom-controls-grip:hover {
-  color: var(--color-text-secondary);
-}
-
-.grip-icon {
-  letter-spacing: -2px;
-  font-weight: var(--font-weight-bold);
 }
 
 .zoom-btn {
@@ -97,7 +57,6 @@
   justify-content: center;
 }
 
-/* Keyboard focus styles */
 .zoom-btn:focus-visible {
   outline: var(--ring-base);
   outline-offset: var(--outline-offset-base);

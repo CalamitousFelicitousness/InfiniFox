@@ -1,0 +1,184 @@
+/**
+ * Form Control Layouts
+ * Sliders, toggles, and control groups
+ */
+
+/* Slider Controls */
+.slider-control {
+  display: grid;
+  grid-template-columns: 50px 1fr 45px;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.slider-control-compact {
+  grid-template-columns: 40px 1fr 35px;
+  gap: var(--spacing-1);
+}
+
+.slider-control-wide {
+  grid-template-columns: 80px 1fr 60px;
+}
+
+.slider-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.slider-value {
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-tertiary);
+  text-align: right;
+  font-family: var(--font-family-mono);
+}
+
+/* Control Groups */
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.control-group-horizontal {
+  flex-direction: row;
+  align-items: center;
+}
+
+.control-group-compact {
+  gap: var(--spacing-2);
+}
+
+.control-group-section {
+  border-bottom: 1px solid var(--color-border-secondary);
+  padding-bottom: var(--spacing-3);
+}
+
+.control-group-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+/* Control Headers */
+.control-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-2);
+}
+
+.control-title {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+.control-description {
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-tertiary);
+  margin-top: var(--spacing-1);
+}
+
+/* Toggle Controls */
+.toggle-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+}
+
+.toggle-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+
+/* Number Input Controls */
+.number-control {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.number-control-input {
+  width: 80px;
+  text-align: center;
+}
+
+.number-control-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.number-control-button {
+  padding: 2px 6px;
+  font-size: var(--font-size-2xs);
+  line-height: 1;
+}
+
+/* Preset Controls */
+.preset-control {
+  display: flex;
+  gap: var(--spacing-1);
+  justify-content: space-between;
+}
+
+.preset-button {
+  flex: 1;
+  padding: var(--spacing-2) var(--spacing-1);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-align: center;
+}
+
+/* Range Input Styling */
+.control-range {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: var(--color-surface-primary);
+  border-radius: var(--radius-full);
+  outline: none;
+}
+
+.control-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--color-primary-500);
+  border-radius: var(--radius-circle);
+  cursor: pointer;
+  transition: var(--transition-transform);
+}
+
+.control-range::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  background: var(--color-primary-400);
+}
+
+.control-range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--color-primary-500);
+  border-radius: var(--radius-circle);
+  border: none;
+  cursor: pointer;
+  transition: var(--transition-transform);
+}
+
+.control-range::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  background: var(--color-primary-400);
+}
+
+.control-range:focus-visible::-webkit-slider-thumb {
+  box-shadow: var(--ring-primary);
+}
+
+.control-range:focus-visible::-moz-range-thumb {
+  box-shadow: var(--ring-primary);
+}

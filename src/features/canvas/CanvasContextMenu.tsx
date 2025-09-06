@@ -85,7 +85,7 @@ export function CanvasContextMenu({
   return (
     <div
       ref={menuRef}
-      class="context-menu"
+      class="menu canvas-context-menu"
       style={{
         position: 'fixed',
         left: `${x}px`,
@@ -95,7 +95,7 @@ export function CanvasContextMenu({
       {imageId === null ? (
         // Context menu for empty canvas space
         <>
-          <button onPointerDown={(e) => { 
+          <button class="menu-item" onPointerDown={(e) => { 
             e.preventDefault(); 
             onUploadImage();
             onClose()
@@ -104,8 +104,8 @@ export function CanvasContextMenu({
           </button>
           {activeImageRoles.length > 0 && (
             <>
-              <hr />
-              <button onPointerDown={(e) => { 
+              <hr class="menu-divider" />
+              <button class="menu-item" onPointerDown={(e) => { 
                 e.preventDefault(); 
                 clearImageRoles();
                 onClose()
@@ -114,34 +114,34 @@ export function CanvasContextMenu({
               </button>
             </>
           )}
-          <hr />
-          <button onPointerDown={(e) => { e.preventDefault(); /* TODO: Quick generate */ }} disabled>
+          <hr class="menu-divider" />
+          <button class="menu-item" onPointerDown={(e) => { e.preventDefault(); /* TODO: Quick generate */ }} disabled>
             Generate Here (Coming Soon)
           </button>
         </>
       ) : (
         // Context menu for image
         <>
-      <button onPointerDown={(e) => { e.preventDefault(); handleSendToImg2Img() }}>
+      <button class="menu-item" onPointerDown={(e) => { e.preventDefault(); handleSendToImg2Img() }}>
         Send to img2img{currentRole === 'img2img_init' ? <Icon icon={Check} size="sm" className="inline-icon" /> : ''}
       </button>
-      <button onPointerDown={(e) => { e.preventDefault(); handleSendToInpaint() }}>
+      <button class="menu-item" onPointerDown={(e) => { e.preventDefault(); handleSendToInpaint() }}>
         Send to Inpaint{currentRole === 'inpaint_image' ? <Icon icon={Check} size="sm" className="inline-icon" /> : ''}
       </button>
-      <hr />
+      <hr class="menu-divider" />
       {currentRole && (
         <>
-          <button onPointerDown={(e) => { 
+          <button class="menu-item" onPointerDown={(e) => { 
             e.preventDefault(); 
             setImageRole(imageId, null);
             onClose()  // Close menu after clearing role
           }}>
             Clear Role{roleIndicator}
           </button>
-          <hr />
+          <hr class="menu-divider" />
         </>
       )}
-      <button onPointerDown={(e) => { 
+      <button class="menu-item" onPointerDown={(e) => { 
         e.preventDefault(); 
         onDuplicate();
         onClose()
@@ -160,7 +160,7 @@ export function CanvasContextMenu({
         e.preventDefault(); 
         onDelete();
         onClose()
-      }} class="delete-option">
+      }} class="menu-item menu-item-danger">
         Delete
       </button>
         </>

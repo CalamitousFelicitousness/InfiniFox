@@ -14,6 +14,70 @@
   pointer-events: none; /* Icons themselves don't capture pointer events */
 }
 
+/* ================================================ */
+/* Icon Integration & Alignment Styles */
+/* ================================================ */
+
+/* Inline icon helpers */
+.inline-icon {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 0.25rem;
+}
+
+.inline-icon.success {
+  color: var(--color-status-success);
+}
+
+.inline-icon.error {
+  color: var(--color-status-danger);
+}
+
+/* Component icon alignment */
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-1);
+}
+
+.performance-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+
+.context-menu button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.mask-editor .tool-buttons button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+}
+
+.drawing-info h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.grip-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Drawing FAB and Modal Close specific fixes */
 .drawing-fab .lucide-icon,
 .modal-close .lucide-icon {

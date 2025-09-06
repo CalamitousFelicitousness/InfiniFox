@@ -61,7 +61,7 @@ export function DraggableCanvasToolbar({ currentTool, onToolChange }: DraggableC
   const handlePointerDown = (e: PointerEvent) => {
     const target = e.target as HTMLElement
     // Only drag from the header/grip area
-    if (!target.closest('.toolbar-grip')) return
+    if (!target.closest('.floating-panel-grip')) return
     
     setIsDragging(true)
     // Calculate offset from click position to panel's current position
@@ -114,14 +114,14 @@ export function DraggableCanvasToolbar({ currentTool, onToolChange }: DraggableC
   return (
     <div
       ref={panelRef}
-      class={`draggable-canvas-toolbar ${isDragging ? 'dragging' : ''}`}
+      class={`draggable-canvas-toolbar floating-panel glass-surface ${isDragging ? 'dragging' : ''}`}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`
       }}
       onPointerDown={handlePointerDown}
     >
-      <div class="toolbar-grip" title="Drag to move">
+      <div class="floating-panel-grip" title="Drag to move">
         <GripIcon size={12} class="grip-icon" />
       </div>
       

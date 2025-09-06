@@ -1,4 +1,4 @@
-/* ColorPicker.css - Advanced color picker styling with Theme Tokens */
+/* ColorPicker.css - Advanced color picker styling */
 
 .color-picker {
   position: absolute;
@@ -87,88 +87,6 @@
   pointer-events: none;
   transform: translate(-50%, -50%);
   transition: background-color var(--duration-xs) var(--ease-out);
-}
-
-/* Sliders */
-.slider-container {
-  margin-bottom: var(--spacing-4);
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-4);
-}
-
-.slider-container label {
-  color: var(--color-text-primary);
-  font-size: var(--font-size-sm);
-  min-width: 60px;
-}
-
-.slider-container span {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-xs);
-  min-width: 40px;
-  text-align: right;
-}
-
-.hue-slider {
-  flex: 1;
-  height: 12px;
-  border-radius: var(--radius-md);
-  background: linear-gradient(
-    to right,
-    #ff0000 0%,
-    #ffff00 17%,
-    #00ff00 33%,
-    #00ffff 50%,
-    #0000ff 67%,
-    #ff00ff 83%,
-    #ff0000 100%
-  );
-  outline: none;
-  -webkit-appearance: none;
-}
-
-.hue-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: var(--radius-full);
-  background: var(--color-white);
-  border: 2px solid var(--color-black-30);
-  cursor: pointer;
-  box-shadow: var(--shadow-md);
-  transition: transform var(--duration-sm) var(--ease-out);
-}
-
-.hue-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
-}
-
-.alpha-slider {
-  flex: 1;
-  height: 12px;
-  border-radius: var(--radius-md);
-  background-image:
-    linear-gradient(to right, transparent, currentColor),
-    repeating-conic-gradient(#808080 0% 25%, white 0% 50%) 50% / 20px 20px;
-  outline: none;
-  -webkit-appearance: none;
-}
-
-.alpha-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: var(--radius-full);
-  background: var(--color-white);
-  border: 2px solid var(--color-black-30);
-  cursor: pointer;
-  box-shadow: var(--shadow-md);
-  transition: transform var(--duration-sm) var(--ease-out);
-}
-
-.alpha-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
 }
 
 /* Hex input */

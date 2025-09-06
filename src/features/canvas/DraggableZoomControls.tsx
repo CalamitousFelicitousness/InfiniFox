@@ -61,7 +61,7 @@ export function DraggableZoomControls({ scale, onZoomIn, onZoomOut, onReset }: D
   const handlePointerDown = (e: PointerEvent) => {
     const target = e.target as HTMLElement
     // Only drag from the header/grip area
-    if (!target.closest('.zoom-controls-grip')) return
+    if (!target.closest('.floating-panel-grip')) return
     
     setIsDragging(true)
     // Calculate offset from click position to panel's current position
@@ -107,15 +107,15 @@ export function DraggableZoomControls({ scale, onZoomIn, onZoomOut, onReset }: D
   return (
     <div
       ref={panelRef}
-      class={`draggable-zoom-controls ${isDragging ? 'dragging' : ''}`}
+      class={`draggable-zoom-controls floating-panel glass-surface ${isDragging ? 'dragging' : ''}`}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`
       }}
       onPointerDown={handlePointerDown}
     >
-      <div class="zoom-controls-grip" title="Drag to move">
-        <span class="grip-icon">⋮⋮</span>
+      <div class="floating-panel-grip" title="Drag to move">
+        ⋮⋮
       </div>
       
       <button 

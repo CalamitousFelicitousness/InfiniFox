@@ -1,0 +1,235 @@
+/**
+ * Color Picker Components
+ * Palettes, swatches, and color selection UI
+ */
+
+/* Color Input */
+.color-input {
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--color-border-primary);
+  border-radius: var(--radius-base);
+  cursor: pointer;
+  background: transparent;
+  transition: var(--transition-border);
+}
+
+.color-input:hover {
+  border-color: var(--color-primary-400);
+}
+
+.color-input:focus-visible {
+  outline: var(--ring-primary);
+  outline-offset: var(--outline-offset-sm);
+}
+
+/* Color Display */
+.color-display {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.color-hex {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-mono);
+  text-transform: uppercase;
+}
+
+/* Color Palette Grid */
+.color-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: var(--spacing-1);
+  padding: var(--spacing-2);
+  background: var(--color-background-tertiary);
+  border-radius: var(--radius-base);
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.color-palette-grid-compact {
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  padding: var(--spacing-1);
+}
+
+.color-palette-grid-expanded {
+  grid-template-columns: repeat(10, 1fr);
+  max-height: 240px;
+}
+
+/* Color Swatches */
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition-transform);
+  position: relative;
+}
+
+.color-swatch-small {
+  width: 20px;
+  height: 20px;
+}
+
+.color-swatch-large {
+  width: 32px;
+  height: 32px;
+}
+
+.color-swatch-circle {
+  border-radius: var(--radius-circle);
+}
+
+.color-swatch:hover {
+  transform: scale(1.15);
+  border-color: var(--color-border-focus);
+  box-shadow: var(--shadow-card-hover);
+  z-index: 1;
+}
+
+.color-swatch.active {
+  border: 2px solid var(--color-text-primary);
+  box-shadow: var(--ring-primary);
+}
+
+/* Checkmark for active swatch */
+.color-swatch.active::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 8px;
+  border-left: 2px solid var(--color-text-primary);
+  border-bottom: 2px solid var(--color-text-primary);
+  transform: translate(-50%, -60%) rotate(-45deg);
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.8));
+}
+
+/* For light colors, use dark checkmark */
+.color-swatch.active.light-color::after {
+  border-color: var(--color-gray-100);
+}
+
+/* Color Preset Groups */
+.color-preset-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.color-preset-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+.color-preset-row {
+  display: flex;
+  gap: var(--spacing-1);
+}
+
+/* Color Slider */
+.color-slider {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.color-slider-label {
+  width: 20px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.color-slider-track {
+  flex: 1;
+  height: 12px;
+  border-radius: var(--radius-sm);
+  position: relative;
+  cursor: pointer;
+}
+
+.color-slider-value {
+  width: 40px;
+  text-align: right;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  font-family: var(--font-family-mono);
+}
+
+/* Hue slider gradient */
+.color-slider-hue {
+  background: linear-gradient(to right, 
+    hsl(0, 100%, 50%),
+    hsl(60, 100%, 50%),
+    hsl(120, 100%, 50%),
+    hsl(180, 100%, 50%),
+    hsl(240, 100%, 50%),
+    hsl(300, 100%, 50%),
+    hsl(360, 100%, 50%)
+  );
+}
+
+/* Saturation slider gradient */
+.color-slider-saturation {
+  background: linear-gradient(to right, 
+    hsl(var(--hue), 0%, 50%),
+    hsl(var(--hue), 100%, 50%)
+  );
+}
+
+/* Lightness slider gradient */
+.color-slider-lightness {
+  background: linear-gradient(to right, 
+    hsl(var(--hue), var(--saturation), 0%),
+    hsl(var(--hue), var(--saturation), 50%),
+    hsl(var(--hue), var(--saturation), 100%)
+  );
+}
+
+/* Alpha slider gradient */
+.color-slider-alpha {
+  background-image: 
+    linear-gradient(to right, transparent, var(--current-color)),
+    repeating-linear-gradient(45deg,
+      #ccc 0,
+      #ccc 2px,
+      #fff 2px,
+      #fff 4px
+    );
+}
+
+/* Scrollbar styling for palette */
+.color-palette-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.color-palette-grid::-webkit-scrollbar-track {
+  background: var(--custom-scrollbar-track);
+  border-radius: var(--radius-xs);
+}
+
+.color-palette-grid::-webkit-scrollbar-thumb {
+  background: var(--custom-scrollbar-thumb);
+  border-radius: var(--radius-xs);
+}
+
+.color-palette-grid::-webkit-scrollbar-thumb:hover {
+  background: var(--custom-scrollbar-thumb-hover);
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .color-palette-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}

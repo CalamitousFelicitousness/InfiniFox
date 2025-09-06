@@ -1,17 +1,19 @@
+/* PerformanceDebugPanel.css - Performance monitoring panel */
+
 .performance-debug-panel {
   position: fixed;
-  top: 10px;
-  right: 10px;
+  top: var(--spacing-2-5);
+  right: var(--spacing-2-5);
   background: rgba(0, 0, 0, 0.9);
   color: #00ff00;
-  font-family: 'Courier New', monospace;
-  font-size: 12px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
   z-index: 99999;
   min-width: 180px;
-  transition: all 0.3s ease;
-  border: 1px solid rgba(0, 255, 0, 0.2);
+  transition: var(--transition-all);
+  border: var(--border-width-thin) solid rgba(0, 255, 0, 0.2);
 }
 
 .performance-debug-panel.minimized {
@@ -22,12 +24,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
+  padding: var(--spacing-2) var(--spacing-3);
   cursor: pointer;
   user-select: none;
-  border-bottom: 1px solid rgba(0, 255, 0, 0.2);
+  border-bottom: var(--border-width-thin) solid rgba(0, 255, 0, 0.2);
   background: rgba(0, 0, 0, 0.3);
-  border-radius: 8px 8px 0 0;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
 }
 
 .performance-header:hover {
@@ -35,54 +37,54 @@
 }
 
 .performance-title {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
   color: #00ff00;
 }
 
 .performance-toggle {
   color: #00ff00;
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
 }
 
 .performance-content {
-  padding: 12px;
+  padding: var(--spacing-3);
 }
 
 .performance-main {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 10px;
+  gap: var(--spacing-1-5);
+  margin-bottom: var(--spacing-2-5);
 }
 
 .performance-metric {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 2px 0;
+  padding: var(--spacing-0-5) 0;
 }
 
 .metric-label {
   color: #888;
-  margin-right: 10px;
+  margin-right: var(--spacing-2-5);
 }
 
 .metric-value {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
   text-align: right;
   flex: 1;
 }
 
 .performance-details-toggle {
   width: 100%;
-  padding: 4px;
+  padding: var(--spacing-1);
   background: rgba(0, 255, 0, 0.1);
-  border: 1px solid rgba(0, 255, 0, 0.3);
+  border: var(--border-width-thin) solid rgba(0, 255, 0, 0.3);
   color: #00ff00;
   cursor: pointer;
-  border-radius: 4px;
-  font-size: 11px;
-  transition: all 0.2s ease;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-2xs);
+  transition: var(--transition-colors);
 }
 
 .performance-details-toggle:hover {
@@ -91,58 +93,48 @@
 }
 
 .performance-details {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(0, 255, 0, 0.2);
+  margin-top: var(--spacing-2-5);
+  padding-top: var(--spacing-2-5);
+  border-top: var(--border-width-thin) solid rgba(0, 255, 0, 0.2);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--spacing-1);
 }
 
 .performance-target {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(0, 255, 0, 0.1);
+  margin-top: var(--spacing-2);
+  padding-top: var(--spacing-2);
+  border-top: var(--border-width-thin) solid rgba(0, 255, 0, 0.1);
 }
 
 .target-label {
   color: #666;
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
   text-align: center;
 }
 
 .performance-bar {
-  margin-top: 8px;
+  margin-top: var(--spacing-2);
   height: 4px;
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   overflow: hidden;
 }
 
 .performance-bar-fill {
   height: 100%;
-  transition: width 0.3s ease;
-  border-radius: 2px;
+  transition: width var(--duration-slow) var(--easing-ease);
+  border-radius: var(--radius-xs);
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .performance-debug-panel {
     top: auto;
-    bottom: 10px;
-    right: 10px;
+    bottom: var(--spacing-2-5);
+    right: var(--spacing-2-5);
   }
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .performance-debug-panel {
-    background: rgba(0, 0, 0, 0.95);
-    border-color: rgba(0, 255, 0, 0.3);
-  }
-}
-
-/* Animation for smooth appearance */
 @keyframes slideIn {
   from {
     transform: translateX(100%);
@@ -155,5 +147,5 @@
 }
 
 .performance-debug-panel {
-  animation: slideIn 0.3s ease-out;
+  animation: slideIn var(--duration-slow) var(--easing-ease-out);
 }

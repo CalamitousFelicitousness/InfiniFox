@@ -23,4 +23,11 @@ All migration scripts should be idempotent, allowing them to be run multiple tim
 
 ## Current Status
 
-No active migration scripts are currently required. This directory structure has been established for future use as the InfiniFox project evolves.
+### Active Scripts
+
+#### cleanup-empty-dirs.sh
+Removes empty directories identified during the consistency project:
+- `test/` - Empty directory at project root
+- `src/styles/` - Empty styles directory (superseded by themes/styles/)
+
+Run with: `bash scripts/migration/cleanup-empty-dirs.sh`

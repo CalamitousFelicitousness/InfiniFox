@@ -9,7 +9,6 @@ import { imageStorage } from './services/storage'
 import { useStore } from './store/store'
 import { PaletteIcon } from './components/icons'
 import { ThemeSwitcher } from './components/ThemeSwitcher'
-import './styles/main.css'
 
 export function App() {
   const { generateTxt2Img, testConnection, loadImagesFromStorage, updateStorageStats } = useStore()

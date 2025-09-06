@@ -2,23 +2,27 @@ import { render } from 'preact'
 import { ThemeProvider } from './themes'
 import { App } from './app'
 
-// Import the new theme styles
+// Import theme styles
 import './themes/styles/token-variables.css'
 import './themes/styles/reset.css'
 import './themes/styles/global.css'
 import './themes/styles/utilities.css'
 import './themes/styles/layout.css'
+import './themes/styles/icons.css'
 
 // Import component-specific theme styles
 import './themes/styles/components/buttons.css'
-import './themes/styles/components/panels.css'
-import './themes/styles/components/headers.css'
-import './themes/styles/components/toolbars.css'
-import './themes/styles/components/canvas.css'
 import './themes/styles/components/inputs.css'
-
-// Import legacy styles temporarily (will be removed after full migration)
-import './styles/main.css'
+import './themes/styles/components/panels.css'
+import './themes/styles/components/glass.css'
+import './themes/styles/components/floating-panels.css'
+import './themes/styles/components/menus.css'
+import './themes/styles/components/controls.css'
+import './themes/styles/components/color-picker.css'
+import './themes/styles/components/toggles.css'
+import './themes/styles/components/toolbars.css'
+import './themes/styles/components/headers.css'
+import './themes/styles/components/canvas.css'
 
 // Root element
 const root = document.getElementById('app')

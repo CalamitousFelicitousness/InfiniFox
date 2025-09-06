@@ -1,0 +1,105 @@
+/**
+ * Floating Panel Patterns
+ * Shared styles for draggable floating UI panels
+ */
+
+.floating-panel {
+  position: fixed;
+  border-radius: var(--radius-panel-base);
+  box-shadow: var(--shadow-panel-default);
+  z-index: var(--z-overlay);
+  transition: var(--transition-opacity), var(--transition-shadow);
+  user-select: none;
+}
+
+.floating-panel.dragging {
+  opacity: 0.85;
+  box-shadow: var(--shadow-panel-floating);
+  cursor: move;
+}
+
+.floating-panel.minimized {
+  width: auto;
+  min-width: 200px;
+}
+
+/* Panel Structure */
+.floating-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-2);
+  border-bottom: 1px solid var(--color-border-secondary);
+  border-radius: var(--radius-panel-base) var(--radius-panel-base) 0 0;
+}
+
+.floating-panel-grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 28px;
+  cursor: move;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
+  border-right: 1px solid var(--color-border-secondary);
+  margin-right: var(--spacing-2);
+  padding: 0 var(--spacing-1);
+  transition: var(--transition-colors);
+}
+
+.floating-panel-grip:hover {
+  color: var(--color-text-secondary);
+}
+
+.floating-panel-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  flex: 1;
+}
+
+.floating-panel-controls {
+  display: flex;
+  gap: var(--spacing-1);
+}
+
+.floating-panel-control-btn {
+  background: var(--color-surface-disabled);
+  border: 1px solid var(--color-border-primary);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: var(--spacing-1) var(--spacing-2);
+  font-size: var(--font-size-sm);
+  border-radius: var(--radius-button-base);
+  transition: var(--transition-button);
+}
+
+.floating-panel-control-btn:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-primary-400);
+  color: var(--color-text-primary);
+}
+
+.floating-panel-content {
+  padding: var(--spacing-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+/* Focus styles */
+.floating-panel-control-btn:focus-visible {
+  outline: var(--ring-sm);
+  outline-offset: var(--outline-offset-sm);
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .floating-panel {
+    max-width: calc(100vw - var(--spacing-5));
+  }
+}

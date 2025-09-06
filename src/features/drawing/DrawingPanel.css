@@ -1,7 +1,6 @@
 /**
  * Drawing Panel Styles
- * Glass morphism design matching app style
- * Uses theme tokens for consistent styling
+ * Extends shared patterns
  */
 
 .drawing-panel {
@@ -12,15 +11,11 @@
   overflow: hidden;
 }
 
-/* Toolbar - Glass morphism matching app style */
+/* Toolbar specific to drawing panel */
 .drawing-toolbar {
   width: 320px;
   height: 100%;
   padding: var(--spacing-6);
-  background: var(--custom-glass-bg);
-  backdrop-filter: blur(var(--custom-glass-blur));
-  -webkit-backdrop-filter: blur(var(--custom-glass-blur));
-  border-right: 1px solid var(--custom-glass-border);
   overflow-y: auto;
   z-index: var(--z-dropdown);
 }
@@ -43,7 +38,7 @@
   background: var(--custom-scrollbar-thumb-hover);
 }
 
-/* Tool sections - Matching app panels */
+/* Tool sections */
 .tool-section {
   margin-bottom: var(--spacing-8);
   padding: var(--spacing-4);
@@ -70,7 +65,7 @@
   font-size: var(--font-size-xs);
 }
 
-/* Tool buttons - Matching canvas toolbar style */
+/* Tool buttons */
 .tool-buttons {
   display: flex;
   gap: var(--spacing-2);
@@ -114,147 +109,6 @@
 .tool-btn:focus-visible {
   outline: var(--ring-base);
   outline-offset: var(--outline-offset-base);
-}
-
-/* Preset buttons - Consistent with app style */
-.preset-buttons {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--spacing-2);
-}
-
-.preset-btn {
-  padding: var(--spacing-2);
-  background-color: var(--color-surface-disabled);
-  border: 1px solid var(--color-border-primary);
-  border-radius: var(--radius-button-base);
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-xs);
-  cursor: pointer;
-  transition: var(--transition-button);
-  text-transform: capitalize;
-}
-
-.preset-btn:hover {
-  background-color: var(--color-surface-hover);
-  border-color: var(--color-primary-300);
-  color: var(--color-text-primary);
-}
-
-.preset-btn.active {
-  background-color: var(--color-surface-active);
-  border-color: var(--color-primary-500);
-  color: var(--color-primary-500);
-}
-
-/* Settings rows */
-.setting-row {
-  margin-bottom: var(--spacing-4);
-}
-
-.setting-row label {
-  display: block;
-  margin-bottom: var(--spacing-2);
-  color: var(--color-text-primary);
-  font-size: var(--font-size-sm);
-}
-
-.setting-row input[type="range"] {
-  width: 100%;
-  height: 6px;
-  border-radius: var(--radius-xs);
-  background: var(--color-surface-secondary);
-  outline: none;
-  -webkit-appearance: none;
-}
-
-.setting-row input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: var(--radius-circle);
-  background: var(--color-primary-500);
-  cursor: pointer;
-  box-shadow: var(--shadow-button-default);
-  transition: var(--transition-transform);
-}
-
-.setting-row input[type="range"]::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
-  background: var(--color-primary-600);
-}
-
-/* Color picker section */
-.color-picker-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-4);
-}
-
-.current-color-display {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-4);
-  padding: var(--spacing-3);
-  background: var(--color-surface-disabled);
-  border-radius: var(--radius-button-base);
-  border: 1px solid var(--color-border-primary);
-}
-
-.color-input {
-  width: 60px;
-  height: 40px;
-  border: 2px solid var(--color-border-primary);
-  border-radius: var(--radius-button-base);
-  cursor: pointer;
-  background: transparent;
-}
-
-.color-hex {
-  color: var(--color-text-primary);
-  font-family: var(--font-family-mono);
-  font-size: var(--font-size-sm);
-}
-
-.color-palette,
-.recent-colors {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: var(--spacing-2);
-}
-
-.color-swatch {
-  width: 100%;
-  aspect-ratio: 1;
-  border: 2px solid transparent;
-  border-radius: var(--radius-button-base);
-  cursor: pointer;
-  transition: var(--transition-transform);
-  position: relative;
-}
-
-.color-swatch:hover {
-  transform: scale(1.1);
-  border-color: var(--color-border-focus);
-}
-
-.color-swatch.active {
-  border-color: var(--color-primary-500);
-  box-shadow: var(--ring-primary);
-}
-
-.color-swatch.active::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 12px;
-  height: 8px;
-  border-left: 2px solid var(--color-text-primary);
-  border-bottom: 2px solid var(--color-text-primary);
-  transform: translate(-50%, -60%) rotate(-45deg);
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
 }
 
 /* Layers section */
@@ -360,40 +214,6 @@
   border-color: var(--color-primary-500);
 }
 
-/* Action buttons - Matching app button style */
-.action-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-2);
-}
-
-.action-buttons button {
-  padding: var(--spacing-3);
-  background-color: var(--color-surface-disabled);
-  border: 1px solid var(--color-border-primary);
-  border-radius: var(--radius-button-base);
-  color: var(--color-text-primary);
-  font-size: var(--font-size-sm);
-  cursor: pointer;
-  transition: var(--transition-button);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-2);
-}
-
-.action-buttons button:hover {
-  background-color: var(--color-surface-hover);
-  border-color: var(--color-primary-500);
-  color: var(--color-text-primary);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-button-hover);
-}
-
-.action-buttons button:active {
-  transform: translateY(0);
-}
-
 /* Canvas container */
 .drawing-canvas-container {
   flex: 1;
@@ -414,21 +234,12 @@
   box-shadow: var(--shadow-panel-elevated);
 }
 
-/* Pressure indicator - Matching app indicators */
+/* Pressure indicator */
 .pressure-indicator {
   position: absolute;
   bottom: var(--spacing-8);
   right: var(--spacing-8);
   padding: var(--spacing-1-5) var(--spacing-2-5);
-  background: var(--custom-glass-bg);
-  backdrop-filter: blur(var(--custom-glass-blur));
-  -webkit-backdrop-filter: blur(var(--custom-glass-blur));
-  border: 1px solid var(--custom-glass-border);
-  border-radius: var(--radius-button-base);
-  color: var(--color-text-primary);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
-  box-shadow: var(--shadow-tooltip-default);
   pointer-events: none;
   transition: var(--transition-opacity);
 }
@@ -437,10 +248,6 @@
 @media (max-width: 1200px) {
   .drawing-toolbar {
     width: 280px;
-  }
-
-  .preset-buttons {
-    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -467,24 +274,12 @@
 }
 
 /* Animation delays for staggered entrance */
-.tool-section:nth-child(2) {
-  animation-delay: 0.05s;
-}
-.tool-section:nth-child(3) {
-  animation-delay: 0.1s;
-}
-.tool-section:nth-child(4) {
-  animation-delay: 0.15s;
-}
-.tool-section:nth-child(5) {
-  animation-delay: 0.2s;
-}
-.tool-section:nth-child(6) {
-  animation-delay: 0.25s;
-}
-.tool-section:nth-child(7) {
-  animation-delay: 0.3s;
-}
+.tool-section:nth-child(2) { animation-delay: 0.05s; }
+.tool-section:nth-child(3) { animation-delay: 0.1s; }
+.tool-section:nth-child(4) { animation-delay: 0.15s; }
+.tool-section:nth-child(5) { animation-delay: 0.2s; }
+.tool-section:nth-child(6) { animation-delay: 0.25s; }
+.tool-section:nth-child(7) { animation-delay: 0.3s; }
 
 /* Loading states */
 .drawing-panel.loading .drawing-toolbar {
