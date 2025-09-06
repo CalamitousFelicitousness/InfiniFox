@@ -120,6 +120,8 @@
   --color-text-inverse: var(--color-gray-100);
   --color-text-link: var(--color-primary-400);
   --color-text-link-hover: var(--color-primary-300);
+  --color-text-on-dark: rgba(255, 255, 255, 1);
+  --color-text-on-primary: rgba(255, 255, 255, 1);
 
   /* Semantic Colors - Borders */
   --color-border-primary: rgba(255, 255, 255, 0.1);
@@ -519,8 +521,11 @@
   --custom-glass-border: rgba(255, 255, 255, 0.1);
 
   /* Canvas */
+  --custom-canvas-grid-size: 20px;
   --custom-canvas-grid-color: rgba(255, 255, 255, 0.03);
   --custom-canvas-grid-color-strong: rgba(255, 255, 255, 0.06);
+  --custom-canvas-selection-color: var(--color-primary-500);
+  --custom-canvas-selection-opacity: rgba(100, 108, 255, 0.1);
 
   /* Scrollbar */
   --custom-scrollbar-track: var(--color-gray-200);

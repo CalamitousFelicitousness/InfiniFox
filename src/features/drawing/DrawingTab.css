@@ -1,78 +1,80 @@
+/* Drawing Tab - Using InfiniFox Theme Tokens */
+
 .drawing-tab {
-  padding: 20px;
+  padding: var(--spacing-5);
 }
 
 .drawing-info {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 16px;
+  background: var(--color-surface-secondary);
+  border: var(--border-width-thin) solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-4);
 }
 
 .drawing-info h3 {
-  margin: 0 0 12px 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #ffffff;
+  margin: 0 0 var(--spacing-3) 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
 }
 
 .info-text {
-  margin: 0 0 20px 0;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 14px;
-  line-height: 1.5;
+  margin: 0 0 var(--spacing-5) 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
 }
 
 .drawing-tips {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding-top: 16px;
-  margin-top: 16px;
+  border-top: var(--border-width-thin) solid var(--color-border-subtle);
+  padding-top: var(--spacing-4);
+  margin-top: var(--spacing-4);
 }
 
 .drawing-tips h4 {
-  margin: 0 0 12px 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 var(--spacing-3) 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
 }
 
 .drawing-tips ul {
   margin: 0;
-  padding-left: 20px;
+  padding-left: var(--spacing-5);
   list-style: none;
 }
 
 .drawing-tips li {
-  margin: 8px 0;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 13px;
+  margin: var(--spacing-2) 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
   position: relative;
-  padding-left: 8px;
+  padding-left: var(--spacing-2);
 }
 
 .drawing-tips li::before {
   content: '•';
   position: absolute;
-  left: -12px;
-  color: #646cff;
+  left: calc(var(--spacing-3) * -1);
+  color: var(--color-primary);
 }
 
 .drawing-tips strong {
-  color: #646cff;
-  font-weight: 600;
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
   display: inline-block;
-  min-width: 20px;
+  min-width: var(--spacing-5);
 }
 
 .drawing-stats-summary {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: var(--spacing-5);
+  padding-top: var(--spacing-4);
+  border-top: var(--border-width-thin) solid var(--color-border-subtle);
 }
 
 .drawing-stats-summary p {
   margin: 0;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 12px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
   text-align: center;
 }

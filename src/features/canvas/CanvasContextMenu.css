@@ -1,51 +1,69 @@
+/**
+ * Canvas Context Menu Styles
+ * Uses theme tokens for consistent styling
+ */
+
 .context-menu {
-  background-color: var(--secondary-bg-color);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 0.5rem;
+  background: var(--custom-glass-bg);
+  backdrop-filter: blur(var(--custom-glass-blur));
+  -webkit-backdrop-filter: blur(var(--custom-glass-blur));
+  border: 1px solid var(--custom-glass-border);
+  border-radius: var(--radius-base);
+  padding: var(--spacing-2);
   min-width: 150px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  z-index: 1000;
+  box-shadow: var(--shadow-dropdown-default);
+  z-index: var(--z-dropdown);
 }
 
 .context-menu button {
   display: block;
   width: 100%;
   text-align: left;
-  padding: 0.5rem 0.75rem;
+  padding: var(--spacing-2) var(--spacing-3);
   background: none;
   border: none;
-  color: var(--primary-text-color);
+  color: var(--color-text-primary);
   cursor: pointer;
-  font-size: 0.9rem;
-  border-radius: 4px;
-  transition: background-color 0.2s;
+  font-size: var(--font-size-sm);
+  border-radius: var(--radius-sm);
+  transition: var(--transition-colors);
 }
 
 .context-menu button:hover {
-  background-color: var(--primary-bg-color);
+  background-color: var(--color-surface-hover);
 }
 
 .context-menu hr {
-  margin: 0.5rem 0;
+  margin: var(--spacing-2) 0;
   border: none;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--color-border-secondary);
 }
 
 .context-menu .delete-option {
-  color: #ff6b6b;
+  color: var(--color-error-500);
 }
 
 .context-menu .delete-option:hover {
-  background-color: rgba(255, 107, 107, 0.1);
+  background-color: var(--color-error-50);
 }
 
 .context-menu button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  color: var(--secondary-text-color);
+  color: var(--color-text-disabled);
 }
 
 .context-menu button:disabled:hover {
   background-color: transparent;
+}
+
+/* Focus styles for keyboard navigation */
+.context-menu button:focus-visible {
+  outline: var(--ring-sm);
+  outline-offset: -2px;
+}
+
+/* Animation for menu appearance */
+.context-menu {
+  animation: var(--animation-scale-in);
 }

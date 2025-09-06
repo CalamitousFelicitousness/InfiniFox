@@ -333,24 +333,7 @@ export function useCSSVariable(name: string): string {
   return value
 }
 
-/**
- * Hook for theme transitions
- */
-export function useThemeTransition(duration = 200) {
-  const [isTransitioning, setIsTransitioning] = useState(false)
-  const { theme } = useTheme()
-  
-  useEffect(() => {
-    setIsTransitioning(true)
-    const timer = setTimeout(() => {
-      setIsTransitioning(false)
-    }, duration)
-    
-    return () => clearTimeout(timer)
-  }, [theme, duration])
-  
-  return isTransitioning
-}
+
 
 /**
  * Hook for contrast color based on background

@@ -1,4 +1,6 @@
 import { useEffect, useRef } from 'preact/hooks'
+import { Check } from 'lucide-preact'
+import { Icon } from '../../components/common/Icon'
 
 import { useStore } from '../../store/store'
 
@@ -121,10 +123,10 @@ export function CanvasContextMenu({
         // Context menu for image
         <>
       <button onPointerDown={(e) => { e.preventDefault(); handleSendToImg2Img() }}>
-        Send to img2img{currentRole === 'img2img_init' ? ' ✓' : ''}
+        Send to img2img{currentRole === 'img2img_init' ? <Icon icon={Check} size="sm" className="inline-icon" /> : ''}
       </button>
       <button onPointerDown={(e) => { e.preventDefault(); handleSendToInpaint() }}>
-        Send to Inpaint{currentRole === 'inpaint_image' ? ' ✓' : ''}
+        Send to Inpaint{currentRole === 'inpaint_image' ? <Icon icon={Check} size="sm" className="inline-icon" /> : ''}
       </button>
       <hr />
       {currentRole && (

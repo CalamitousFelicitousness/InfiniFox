@@ -1,23 +1,29 @@
+/**
+ * Draggable Zoom Controls Styles
+ * Uses theme tokens for consistent styling
+ */
+
 .draggable-zoom-controls {
   position: fixed;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background-color: rgba(42, 42, 42, 0.95);
-  backdrop-filter: blur(10px);
-  padding: 0.5rem;
-  padding-left: 0.25rem;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-  z-index: 100;
-  transition: opacity 0.2s ease, box-shadow 0.2s ease;
+  gap: var(--spacing-2);
+  background: var(--custom-glass-bg);
+  backdrop-filter: blur(var(--custom-glass-blur));
+  -webkit-backdrop-filter: blur(var(--custom-glass-blur));
+  padding: var(--spacing-2);
+  padding-left: var(--spacing-1);
+  border-radius: var(--radius-base);
+  border: 1px solid var(--custom-glass-border);
+  box-shadow: var(--shadow-toolbar-default);
+  z-index: var(--z-overlay);
+  transition: var(--transition-opacity), var(--transition-shadow);
   user-select: none;
 }
 
 .draggable-zoom-controls.dragging {
   opacity: 0.85;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-toolbar-floating);
   cursor: move;
 }
 
@@ -28,21 +34,21 @@
   width: 20px;
   height: 32px;
   cursor: move;
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 12px;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  margin-right: 0.25rem;
-  padding: 0 4px;
-  transition: color 0.2s ease;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
+  border-right: 1px solid var(--color-border-secondary);
+  margin-right: var(--spacing-1);
+  padding: 0 var(--spacing-1);
+  transition: var(--transition-colors);
 }
 
 .zoom-controls-grip:hover {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-secondary);
 }
 
 .grip-icon {
   letter-spacing: -2px;
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 .zoom-btn {
@@ -52,20 +58,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
-  border-radius: 6px;
+  background-color: var(--color-surface-disabled);
+  border: 1px solid var(--color-border-primary);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-button-base);
   cursor: pointer;
-  font-size: 18px;
-  font-weight: bold;
-  transition: all 0.2s ease;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  transition: var(--transition-button);
 }
 
 .zoom-btn:hover {
-  background-color: rgba(100, 108, 255, 0.2);
-  border-color: rgba(100, 108, 255, 0.5);
-  color: #ffffff;
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-primary-400);
+  color: var(--color-text-primary);
   transform: scale(1.05);
 }
 
@@ -75,48 +81,48 @@
 
 .reset-btn {
   width: auto;
-  padding: 0 12px;
-  font-size: 13px;
-  font-weight: 600;
+  padding: 0 var(--spacing-3);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
 }
 
 .zoom-level {
   display: flex;
   align-items: center;
-  padding: 0 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 13px;
-  font-weight: 600;
+  padding: 0 var(--spacing-3);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
   min-width: 50px;
   justify-content: center;
 }
 
 /* Keyboard focus styles */
 .zoom-btn:focus-visible {
-  outline: 2px solid #646cff;
-  outline-offset: 2px;
+  outline: var(--ring-base);
+  outline-offset: var(--outline-offset-base);
 }
 
 /* Mobile adjustments */
 @media (max-width: 768px) {
   .draggable-zoom-controls {
-    gap: 0.35rem;
-    padding: 0.35rem;
+    gap: var(--spacing-1-5);
+    padding: var(--spacing-1-5);
   }
   
   .zoom-btn {
     width: 32px;
     height: 32px;
-    font-size: 16px;
+    font-size: var(--font-size-base);
   }
   
   .reset-btn {
-    padding: 0 8px;
-    font-size: 12px;
+    padding: 0 var(--spacing-2);
+    font-size: var(--font-size-xs);
   }
   
   .zoom-level {
-    font-size: 12px;
-    padding: 0 0.5rem;
+    font-size: var(--font-size-xs);
+    padding: 0 var(--spacing-2);
   }
 }

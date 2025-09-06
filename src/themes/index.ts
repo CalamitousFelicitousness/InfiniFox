@@ -23,14 +23,21 @@ export {
   useThemeStyles,
   useComponentVariant,
   useCSSVariable,
-  useThemeTransition,
   useContrastColor,
 } from './hooks'
+
+export {
+  useThemeTransition,
+  useSystemTheme,
+  useThemePersistence,
+  useThemeShortcuts,
+} from '../hooks/useThemeTransition'
 
 // Import and export themes
 import { baseTheme } from './themes/base'
 import { darkTheme, darkThemeOverrides } from './themes/dark'
-export { baseTheme, darkTheme, darkThemeOverrides }
+import { lightTheme, lightThemeOverrides } from './themes/light'
+export { baseTheme, darkTheme, darkThemeOverrides, lightTheme, lightThemeOverrides }
 
 // Import and export token generation functions
 import {

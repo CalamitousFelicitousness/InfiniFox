@@ -1,84 +1,107 @@
+/**
+ * Inpaint Panel Styles
+ * Uses theme tokens for consistent styling
+ */
+
 .inpaint-image-section {
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-4);
 }
 
 .mask-section {
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-4);
 }
 
 .mask-mode-toggle {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-4);
 }
 
 .mask-mode-toggle button {
   flex: 1;
-  padding: 0.5rem;
-  background-color: var(--primary-bg-color);
-  border: 1px solid var(--border-color);
-  color: var(--secondary-text-color);
+  padding: var(--spacing-2);
+  background-color: var(--color-background-primary);
+  border: 1px solid var(--color-border-primary);
+  color: var(--color-text-secondary);
   cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.2s;
+  border-radius: var(--radius-button-base);
+  transition: var(--transition-button);
 }
 
 .mask-mode-toggle button.active {
-  background-color: var(--accent-color);
-  color: white;
-  border-color: var(--accent-color);
+  background-color: var(--color-primary-500);
+  color: var(--color-text-on-primary);
+  border-color: var(--color-primary-500);
 }
 
 .mask-mode-toggle button:hover:not(.active) {
-  background-color: var(--secondary-bg-color);
+  background-color: var(--color-surface-hover);
+}
+
+.mask-mode-toggle button:focus-visible {
+  outline: var(--ring-base);
+  outline-offset: var(--outline-offset-base);
 }
 
 .checkbox-group {
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-4);
 }
 
 .checkbox-group label {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-2);
   cursor: pointer;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  transition: var(--transition-colors);
+}
+
+.checkbox-group label:hover {
+  color: var(--color-text-secondary);
 }
 
 .checkbox-group input[type='checkbox'] {
   cursor: pointer;
+  accent-color: var(--color-primary-500);
 }
 
 .source-mode-toggle {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-4);
 }
 
 .source-mode-toggle button {
   flex: 1;
-  padding: 0.75rem;
-  background-color: var(--secondary-bg-color);
-  border: 1px solid var(--border-color);
-  color: var(--secondary-text-color);
-  border-radius: 4px;
+  padding: var(--spacing-3);
+  background-color: var(--color-surface-primary);
+  border: 1px solid var(--color-border-primary);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-button-base);
   cursor: pointer;
-  transition: all 0.2s;
-  font-size: 0.9rem;
+  transition: var(--transition-button);
+  font-size: var(--font-size-sm);
 }
 
 .source-mode-toggle button:hover:not(:disabled) {
-  background-color: var(--primary-bg-color);
-  border-color: var(--accent-color);
-  color: var(--primary-text-color);
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-primary-400);
+  color: var(--color-text-primary);
 }
 
 .source-mode-toggle button.active {
-  background-color: var(--accent-color);
-  border-color: var(--accent-color);
-  color: white;
+  background-color: var(--color-primary-500);
+  border-color: var(--color-primary-500);
+  color: var(--color-text-on-primary);
 }
 
 .source-mode-toggle button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.source-mode-toggle button:focus-visible {
+  outline: var(--ring-base);
+  outline-offset: var(--outline-offset-base);
 }

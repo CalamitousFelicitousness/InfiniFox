@@ -101,7 +101,7 @@
 .canvas-selection {
   position: absolute;
   border: 2px dashed var(--color-primary-500);
-  background-color: rgba(100, 108, 255, 0.1);
+  background-color: var(--custom-canvas-selection-opacity);
   pointer-events: none;
   animation: var(--animation-pulse-slow);
   
@@ -109,7 +109,7 @@
     position: absolute;
     width: 8px;
     height: 8px;
-    background-color: white;
+    background-color: var(--color-gray-1000);
     border: 2px solid var(--color-primary-500);
     border-radius: var(--radius-sm);
     pointer-events: auto;
@@ -177,7 +177,7 @@
     .minimap-viewport {
       position: absolute;
       border: 2px solid var(--color-primary-500);
-      background-color: rgba(100, 108, 255, 0.1);
+      background-color: var(--custom-canvas-selection-opacity);
       pointer-events: none;
     }
   }
@@ -246,7 +246,7 @@
       color: var(--color-error-500);
       
       &:hover {
-        background-color: rgba(244, 67, 54, 0.1);
+        background-color: var(--color-error-50);
       }
     }
     

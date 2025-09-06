@@ -178,6 +178,12 @@ export interface ThemeContextValue {
   deleteTheme: (name: string) => void
   exportTheme: (name: string) => string
   importTheme: (themeData: string) => void
+  isTransitioning?: boolean
+  getPerformanceMetrics?: () => {
+    lastSwitch: number
+    averageSwitch: number
+    switchCount: number
+  }
 }
 
 /**

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { useStore } from '../../store/store'
 import { BRUSH_PRESETS } from '../../services/drawing/PerfectFreehandService'
 import { Slider } from '../../components/common/Slider'
+import { Brush, Eraser, Eye, EyeOff, GripVertical } from 'lucide-preact'
+import { Icon } from '../../components/common/Icon'
 import './FloatingDrawingPanel.css'
 
 // Extended color palette - 48 colors organized by category
@@ -158,10 +160,10 @@ export function FloatingDrawingPanel({ visible, tool }: FloatingDrawingPanelProp
     >
       <div class="panel-header">
         <div class="panel-grip" title="Drag to move">
-          <span class="grip-icon">⋮⋮</span>
+          <span class="grip-icon"><Icon icon={GripVertical} size="base" /></span>
         </div>
         <span class="panel-title">
-          {tool === 'eraser' ? '🧹 Eraser' : '🖌️ Brush'} Settings
+          {tool === 'eraser' ? <><Icon icon={Eraser} size="base" /> Eraser</> : <><Icon icon={Brush} size="base" /> Brush</>} Settings
         </span>
         <div class="panel-controls">
           <button
@@ -279,7 +281,7 @@ export function FloatingDrawingPanel({ visible, tool }: FloatingDrawingPanelProp
               onClick={() => setDrawingLayerVisible(!drawingLayerVisible)}
               title={drawingLayerVisible ? 'Hide layer' : 'Show layer'}
             >
-              {drawingLayerVisible ? '👁️' : '👁️‍🗨️'}
+              {drawingLayerVisible ? <Icon icon={Eye} size="base" /> : <Icon icon={EyeOff} size="base" />}
             </button>
           </div>
           

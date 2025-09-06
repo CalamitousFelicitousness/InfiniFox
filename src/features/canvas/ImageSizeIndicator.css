@@ -1,56 +1,50 @@
-/* Image Size Indicator - Minimalistic size display for selected images */
+/**
+ * Image Size Indicator Styles
+ * Minimalistic size display for selected images
+ * Uses theme tokens for consistent styling
+ */
 
 .image-size-indicator {
   position: fixed;
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 10px;
-  background-color: rgba(42, 42, 42, 0.95);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 12px;
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  z-index: 50;
+  gap: var(--spacing-1);
+  padding: var(--spacing-1-5) var(--spacing-2-5);
+  background: var(--custom-glass-bg);
+  backdrop-filter: blur(var(--custom-glass-blur));
+  -webkit-backdrop-filter: blur(var(--custom-glass-blur));
+  border: 1px solid var(--custom-glass-border);
+  border-radius: var(--radius-button-base);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  box-shadow: var(--shadow-tooltip-default);
+  z-index: var(--z-sticky);
   pointer-events: none;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  animation: fadeIn 0.2s ease;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  transition: var(--transition-opacity), var(--transition-transform);
+  animation: var(--animation-fade-in);
 }
 
 .size-value {
-  color: #ffffff;
-  font-family: 'Monaco', 'Courier New', monospace;
-  letter-spacing: 0.5px;
+  color: var(--color-text-primary);
+  font-family: var(--font-family-mono);
+  letter-spacing: var(--letter-spacing-wide);
 }
 
 .size-label {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 11px;
-  margin-left: 2px;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-2xs);
+  margin-left: var(--spacing-0-5);
 }
 
 /* Responsive */
 @media (max-width: 768px) {
   .image-size-indicator {
-    font-size: 11px;
-    padding: 4px 8px;
+    font-size: var(--font-size-2xs);
+    padding: var(--spacing-1) var(--spacing-2);
   }
   
   .size-label {
-    font-size: 10px;
+    font-size: calc(var(--font-size-2xs) * 0.9);
   }
 }

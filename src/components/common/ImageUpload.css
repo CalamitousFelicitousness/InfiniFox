@@ -1,26 +1,28 @@
+/* ImageUpload.css - Using InfiniFox Theme Tokens */
+
 .image-upload {
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-4);
 }
 
 .upload-area {
-  border: 2px dashed var(--border-color);
-  border-radius: 8px;
-  padding: 2rem;
+  border: 2px dashed var(--color-border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-8);
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s ease;
-  background-color: var(--primary-bg-color);
+  transition: all var(--duration-md) var(--ease-out);
+  background-color: var(--color-surface-primary);
   position: relative;
 }
 
 .upload-area:hover {
-  border-color: var(--accent-color);
-  background-color: rgba(100, 108, 255, 0.05);
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-bg);
 }
 
 .upload-area.dragging {
-  border-color: var(--accent-color);
-  background-color: rgba(100, 108, 255, 0.1);
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-bg-hover);
 }
 
 .upload-area input[type="file"] {
@@ -28,41 +30,48 @@
 }
 
 .upload-prompt {
-  color: var(--secondary-text-color);
-  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
 }
 
 .upload-prompt span {
-  color: var(--accent-color);
+  color: var(--color-primary);
   text-decoration: underline;
 }
 
 .image-preview {
-  margin-top: 1rem;
+  margin-top: var(--spacing-4);
   position: relative;
 }
 
 .image-preview img {
   max-width: 100%;
-  border-radius: 4px;
-  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  border: var(--border-width-thin) solid var(--color-border-default);
 }
 
 .image-info {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 0.5rem;
-  font-size: 0.85rem;
-  color: var(--secondary-text-color);
+  margin-top: var(--spacing-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
 }
 
 .clear-image-btn {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.85rem;
-  background-color: var(--secondary-bg-color);
-  border: 1px solid var(--border-color);
-  color: var(--secondary-text-color);
+  padding: var(--spacing-1) var(--spacing-2);
+  font-size: var(--font-size-xs);
+  background-color: var(--color-surface-secondary);
+  border: var(--border-width-thin) solid var(--color-border-default);
+  color: var(--color-text-secondary);
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
+  transition: all var(--duration-sm) var(--ease-out);
+}
+
+.clear-image-btn:hover {
+  background-color: var(--color-button-secondary-bg-hover);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-hover);
 }

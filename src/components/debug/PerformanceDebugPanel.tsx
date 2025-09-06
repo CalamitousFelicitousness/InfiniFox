@@ -1,5 +1,7 @@
 import { useEffect, useState, useRef } from 'preact/hooks'
 import { PerformanceMonitor } from '../../utils/performanceUtils'
+import { CheckCircle, Check, AlertTriangle, XCircle, Activity } from 'lucide-preact'
+import { Icon } from '../common/Icon'
 import './PerformanceDebugPanel.css'
 
 interface PerformanceMetrics {
@@ -115,10 +117,10 @@ export function PerformanceDebugPanel({ getCanvasMetrics, visible = true }: Perf
   if (!visible) return null
   
   const getPerformanceStatus = (fps: number) => {
-    if (fps >= 55) return { text: '✅ Smooth', color: '#00ff00' }
-    if (fps >= 45) return { text: '✓ Good', color: '#90EE90' }
-    if (fps >= 30) return { text: '⚠️ OK', color: '#ffff00' }
-    return { text: '❌ Lag', color: '#ff0000' }
+    if (fps >= 55) return { text: <><Icon icon={CheckCircle} size="sm" /> Smooth</>, color: '#00ff00' }
+    if (fps >= 45) return { text: <><Icon icon={Check} size="sm" /> Good</>, color: '#90EE90' }
+    if (fps >= 30) return { text: <><Icon icon={AlertTriangle} size="sm" /> OK</>, color: '#ffff00' }
+    return { text: <><Icon icon={XCircle} size="sm" /> Lag</>, color: '#ff0000' }
   }
   
   const getFrameTimeStatus = (frameTime: number) => {
@@ -135,7 +137,7 @@ export function PerformanceDebugPanel({ getCanvasMetrics, visible = true }: Perf
     <div className={`performance-debug-panel ${isMinimized ? 'minimized' : ''}`}>
       <div className="performance-header" onClick={() => setIsMinimized(!isMinimized)}>
         <span className="performance-title">
-          {isMinimized ? `FPS: ${metrics.fps}` : '🎮 Performance'}
+          {isMinimized ? `FPS: ${metrics.fps}` : <><Icon icon={Activity} size="base" /> Performance</>}
         </span>
         <span className="performance-toggle">{isMinimized ? '▼' : '▲'}</span>
       </div>

@@ -1,23 +1,29 @@
+/**
+ * Draggable Canvas Toolbar Styles
+ * Uses theme tokens for consistent styling
+ */
+
 .draggable-canvas-toolbar {
   position: fixed;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background-color: rgba(42, 42, 42, 0.95);
-  backdrop-filter: blur(10px);
-  padding: 0.5rem;
-  padding-left: 0.25rem;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-  z-index: 100;
-  transition: opacity 0.2s ease, box-shadow 0.2s ease;
+  gap: var(--spacing-2);
+  background: var(--custom-glass-bg);
+  backdrop-filter: blur(var(--custom-glass-blur));
+  -webkit-backdrop-filter: blur(var(--custom-glass-blur));
+  padding: var(--spacing-2);
+  padding-left: var(--spacing-1);
+  border-radius: var(--radius-base);
+  border: 1px solid var(--custom-glass-border);
+  box-shadow: var(--shadow-toolbar-default);
+  z-index: var(--z-overlay);
+  transition: var(--transition-opacity), var(--transition-shadow);
   user-select: none;
 }
 
 .draggable-canvas-toolbar.dragging {
   opacity: 0.85;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-toolbar-floating);
   cursor: move;
 }
 
@@ -28,43 +34,43 @@
   width: 20px;
   height: 36px;
   cursor: move;
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 12px;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  margin-right: 0.25rem;
-  padding: 0 4px;
-  transition: color 0.2s ease;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
+  border-right: 1px solid var(--color-border-secondary);
+  margin-right: var(--spacing-1);
+  padding: 0 var(--spacing-1);
+  transition: var(--transition-colors);
 }
 
 .toolbar-grip:hover {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-secondary);
 }
 
 .toolbar-tools {
   display: flex;
-  gap: 0.35rem;
+  gap: var(--spacing-1-5);
 }
 
 .toolbar-tool-btn {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.5rem 0.75rem;
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
-  border-radius: 6px;
+  gap: var(--spacing-1-5);
+  padding: var(--spacing-2) var(--spacing-3);
+  background-color: var(--color-surface-disabled);
+  border: 1px solid var(--color-border-primary);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-button-base);
   cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  transition: all 0.2s ease;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  transition: var(--transition-button);
   white-space: nowrap;
 }
 
 .toolbar-tool-btn:hover {
-  background-color: rgba(100, 108, 255, 0.2);
-  border-color: rgba(100, 108, 255, 0.5);
-  color: #ffffff;
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-primary-400);
+  color: var(--color-text-primary);
   transform: scale(1.02);
 }
 
@@ -73,47 +79,47 @@
 }
 
 .toolbar-tool-btn.active {
-  background-color: rgba(100, 108, 255, 0.3);
-  border-color: #646cff;
-  color: #ffffff;
-  box-shadow: 0 0 10px rgba(100, 108, 255, 0.3);
+  background-color: var(--color-surface-active);
+  border-color: var(--color-primary-500);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-glow-sm);
 }
 
 .toolbar-tool-btn.active:hover {
-  background-color: rgba(100, 108, 255, 0.4);
-  border-color: #646cff;
+  background-color: var(--color-surface-selected);
+  border-color: var(--color-primary-500);
 }
 
 .tool-icon {
-  font-size: 16px;
+  font-size: var(--font-size-base);
   display: flex;
   align-items: center;
 }
 
 .tool-label {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
 }
 
 /* Keyboard focus styles */
 .toolbar-tool-btn:focus-visible {
-  outline: 2px solid #646cff;
-  outline-offset: 2px;
+  outline: var(--ring-base);
+  outline-offset: var(--outline-offset-base);
 }
 
 /* Mobile adjustments */
 @media (max-width: 768px) {
   .draggable-canvas-toolbar {
-    gap: 0.25rem;
-    padding: 0.35rem;
+    gap: var(--spacing-1);
+    padding: var(--spacing-1-5);
   }
   
   .toolbar-tool-btn {
-    padding: 0.4rem 0.6rem;
+    padding: var(--spacing-1-5) var(--spacing-2-5);
   }
   
   .tool-icon {
-    font-size: 14px;
+    font-size: var(--font-size-sm);
   }
   
   .tool-label {
@@ -124,7 +130,7 @@
 /* Compact mode for very small screens */
 @media (max-width: 480px) {
   .toolbar-tool-btn {
-    padding: 0.35rem 0.5rem;
-    font-size: 12px;
+    padding: var(--spacing-1-5) var(--spacing-2);
+    font-size: var(--font-size-xs);
   }
 }

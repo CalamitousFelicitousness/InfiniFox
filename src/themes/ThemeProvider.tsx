@@ -1,20 +1,37 @@
 /**
- * InfiniFox Theme Provider
- * React context provider for theme management
+ * InfiniFox Enhanced Theme Provider
+ * React context provider for advanced theme management
  */
 
 import { createContext } from 'preact'
-import { useContext, useEffect, useState, useCallback } from 'preact/hooks'
+import { useContext, useEffect, useState, useCallback, useRef } from 'preact/hooks'
 import type { VNode } from 'preact'
 import type { Theme, ThemeConfig, ThemeContextValue } from './types'
 import darkTheme from './themes/dark'
+import lightTheme from './themes/light'
 import { applyTokensToDocument, generateAllCSSVariables } from './tokens'
+import { 
+  validateTheme, 
+  validateContrast, 
+  autoFixTheme,
+  mergeThemes 
+} from './utils/validation'
+import {
+  applyTransition,
+  removeTransition,
+  preloadTheme,
+  measureThemeSwitch,
+  getTransitionConfig,
+  defaultTransition,
+  instantTransition,
+} from './utils/transitions'
 
 // Default configuration
 const defaultConfig: ThemeConfig = {
   defaultTheme: 'infinifox-dark',
   themes: {
     'infinifox-dark': darkTheme,
+    'infinifox-light': lightTheme,
   },
   enableSystemTheme: true,
   persistTheme: true,
@@ -30,25 +47,62 @@ interface ThemeProviderProps {
   config?: Partial<ThemeConfig>
   initialTheme?: string
   onThemeChange?: (theme: Theme) => void
+  enableTransitions?: boolean
+  validateThemes?: boolean
 }
 
 /**
- * Theme Provider Component
- * Manages theme state and provides theme context to children
+ * Enhanced Theme Provider Component
+ * Manages theme state with validation and smooth transitions
  */
 export function ThemeProvider({
   children,
   config: userConfig,
   initialTheme,
   onThemeChange,
+  enableTransitions = true,
+  validateThemes: shouldValidate = true,
 }: ThemeProviderProps) {
   // Merge user config with defaults
   const config = { ...defaultConfig, ...userConfig }
   
-  // Initialize themes
-  const [themes] = useState(config.themes)
+  // Performance tracking
+  const performanceRef = useRef<{ lastSwitch: number; average: number[] }>({
+    lastSwitch: 0,
+    average: [],
+  })
   
-  // Get initial theme name
+  // Initialize and validate themes
+  const [themes, setThemesState] = useState(() => {
+    const validatedThemes: Record<string, Theme> = {}
+    
+    Object.entries(config.themes).forEach(([name, theme]) => {
+      if (shouldValidate) {
+        const validation = validateTheme(theme)
+        if (!validation.valid) {
+          console.warn(`Theme "${name}" validation errors:`, validation.errors)
+          validatedThemes[name] = autoFixTheme(theme)
+        } else {
+          if (validation.warnings.length > 0) {
+            console.info(`Theme "${name}" warnings:`, validation.warnings)
+          }
+          validatedThemes[name] = theme
+        }
+        
+        // Validate contrast for accessibility
+        const contrastValidation = validateContrast(theme)
+        if (!contrastValidation.valid) {
+          console.warn(`Theme "${name}" contrast issues:`, contrastValidation.errors)
+        }
+      } else {
+        validatedThemes[name] = theme
+      }
+    })
+    
+    return validatedThemes
+  })
+  
+  // Get initial theme name with system preference support
   const getInitialThemeName = (): string => {
     // Priority: initialTheme prop > localStorage > system preference > default
     if (initialTheme && themes[initialTheme]) {
@@ -76,9 +130,15 @@ export function ThemeProvider({
   // Theme state
   const [currentThemeName, setCurrentThemeName] = useState(getInitialThemeName)
   const [theme, setThemeState] = useState(themes[currentThemeName])
+  const [isTransitioning, setIsTransitioning] = useState(false)
   
-  // Apply theme to document
-  const applyTheme = useCallback((theme: Theme) => {
+  // Track if initial theme has been applied
+  const initialRenderRef = useRef(true)
+  
+  // Apply theme to document with performance tracking
+  const applyTheme = useCallback((theme: Theme, skipTransition = false) => {
+    const startTime = performance.now()
+    
     // Generate and apply CSS variables
     const cssVars = generateThemeVariables(theme)
     applyTokensToDocument(cssVars)
@@ -86,30 +146,94 @@ export function ThemeProvider({
     // Add theme class to body
     document.body.className = `theme-${theme.name} theme-${theme.mode}`
     
-    // Set color-scheme
+    // Set data attributes for better detection
+    document.documentElement.setAttribute('data-theme', theme.mode) // 'light' or 'dark'
+    document.documentElement.setAttribute('data-theme-name', theme.name) // full theme name
+    document.documentElement.setAttribute('data-theme-provider', 'true') // marker for detection
+    
+    // Set color-scheme for native elements
     document.documentElement.style.colorScheme = theme.mode
+    
+    // Set meta theme-color for mobile browsers
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]')
+    if (metaThemeColor) {
+      const bgColor = theme.colors?.semantic?.background?.primary || '#1a1a1a'
+      metaThemeColor.setAttribute('content', bgColor)
+    }
+    
+    // Track performance
+    const endTime = performance.now()
+    const duration = endTime - startTime
+    performanceRef.current.lastSwitch = duration
+    performanceRef.current.average.push(duration)
+    
+    if (duration > 50) {
+      console.warn(`Theme application took ${duration.toFixed(2)}ms (target: <50ms)`)
+    }
     
     // Call onChange handler
     onThemeChange?.(theme)
   }, [onThemeChange])
   
-  // Set theme by name
-  const setTheme = useCallback((themeName: string) => {
+  // Set theme by name with transition support
+  const setTheme = useCallback(async (themeName: string) => {
     if (!themes[themeName]) {
       console.warn(`Theme "${themeName}" not found`)
       return
     }
     
+    // Skip if same theme
+    if (themeName === currentThemeName && !initialRenderRef.current) {
+      return
+    }
+    
     const newTheme = themes[themeName]
-    setCurrentThemeName(themeName)
-    setThemeState(newTheme)
-    applyTheme(newTheme)
+    
+    // Apply transition if enabled and not initial render
+    if (enableTransitions && !initialRenderRef.current) {
+      setIsTransitioning(true)
+      
+      // Get transition config based on user preference
+      const transitionConfig = getTransitionConfig(defaultTransition)
+      
+      // Apply transition styles
+      if (transitionConfig.duration > 0) {
+        applyTransition(transitionConfig)
+      }
+      
+      // Preload theme assets
+      await preloadTheme(newTheme)
+      
+      // Apply theme
+      requestAnimationFrame(() => {
+        setCurrentThemeName(themeName)
+        setThemeState(newTheme)
+        applyTheme(newTheme)
+        
+        // Remove transition after completion
+        if (transitionConfig.duration > 0) {
+          setTimeout(() => {
+            removeTransition()
+            setIsTransitioning(false)
+          }, transitionConfig.duration)
+        } else {
+          setIsTransitioning(false)
+        }
+      })
+    } else {
+      // Instant theme change
+      setCurrentThemeName(themeName)
+      setThemeState(newTheme)
+      applyTheme(newTheme, true)
+    }
     
     // Persist theme preference
     if (config.persistTheme) {
       localStorage.setItem(config.storageKey, themeName)
     }
-  }, [themes, applyTheme, config.persistTheme, config.storageKey])
+    
+    initialRenderRef.current = false
+  }, [themes, currentThemeName, applyTheme, config.persistTheme, config.storageKey, enableTransitions])
   
   // Toggle between themes
   const toggleTheme = useCallback(() => {
@@ -119,16 +243,35 @@ export function ThemeProvider({
     setTheme(themeNames[nextIndex])
   }, [currentThemeName, themes, setTheme])
   
-  // Create a new theme
-  const createTheme = useCallback((name: string, theme: Partial<Theme>) => {
-    const baseTheme = themes[config.defaultTheme]
-    const newTheme: Theme = {
-      ...baseTheme,
-      ...theme,
-      name,
+  // Toggle between light and dark specifically
+  const toggleLightDark = useCallback(() => {
+    const newTheme = theme.mode === 'dark' ? 'infinifox-light' : 'infinifox-dark'
+    if (themes[newTheme]) {
+      setTheme(newTheme)
+    } else {
+      toggleTheme()
     }
-    themes[name] = newTheme
-  }, [themes, config.defaultTheme])
+  }, [theme.mode, themes, setTheme, toggleTheme])
+  
+  // Create a new theme with validation
+  const createTheme = useCallback((name: string, themeData: Partial<Theme>) => {
+    const baseTheme = themes[config.defaultTheme]
+    const newTheme = mergeThemes(baseTheme, themeData)
+    newTheme.name = name
+    
+    if (shouldValidate) {
+      const validation = validateTheme(newTheme)
+      if (!validation.valid) {
+        console.error(`Cannot create theme "${name}":`, validation.errors)
+        return
+      }
+    }
+    
+    setThemesState(prev => ({
+      ...prev,
+      [name]: newTheme,
+    }))
+  }, [themes, config.defaultTheme, shouldValidate])
   
   // Update an existing theme
   const updateTheme = useCallback((name: string, updates: Partial<Theme>) => {
@@ -137,16 +280,26 @@ export function ThemeProvider({
       return
     }
     
-    themes[name] = {
-      ...themes[name],
-      ...updates,
+    const updatedTheme = mergeThemes(themes[name], updates)
+    
+    if (shouldValidate) {
+      const validation = validateTheme(updatedTheme)
+      if (!validation.valid) {
+        console.error(`Cannot update theme "${name}":`, validation.errors)
+        return
+      }
     }
+    
+    setThemesState(prev => ({
+      ...prev,
+      [name]: updatedTheme,
+    }))
     
     // If updating current theme, reapply it
     if (name === currentThemeName) {
-      applyTheme(themes[name])
+      applyTheme(updatedTheme)
     }
-  }, [themes, currentThemeName, applyTheme])
+  }, [themes, currentThemeName, applyTheme, shouldValidate])
   
   // Delete a theme
   const deleteTheme = useCallback((name: string) => {
@@ -155,13 +308,17 @@ export function ThemeProvider({
       return
     }
     
-    delete themes[name]
+    setThemesState(prev => {
+      const newThemes = { ...prev }
+      delete newThemes[name]
+      return newThemes
+    })
     
     // If deleting current theme, switch to default
     if (name === currentThemeName) {
       setTheme(config.defaultTheme)
     }
-  }, [themes, currentThemeName, config.defaultTheme, setTheme])
+  }, [currentThemeName, config.defaultTheme, setTheme])
   
   // Export theme as JSON
   const exportTheme = useCallback((name: string): string => {
@@ -182,15 +339,31 @@ export function ThemeProvider({
         return
       }
       
-      themes[theme.name] = theme
+      createTheme(theme.name, theme)
     } catch (error) {
       console.error('Failed to import theme:', error)
     }
-  }, [themes])
+  }, [createTheme])
+  
+  // Get theme performance metrics
+  const getPerformanceMetrics = useCallback(() => {
+    const metrics = performanceRef.current
+    const average = metrics.average.length > 0
+      ? metrics.average.reduce((a, b) => a + b, 0) / metrics.average.length
+      : 0
+    
+    return {
+      lastSwitch: metrics.lastSwitch,
+      averageSwitch: average,
+      switchCount: metrics.average.length,
+    }
+  }, [])
   
   // Apply initial theme
   useEffect(() => {
-    applyTheme(theme)
+    // Apply theme without transition on mount
+    applyTheme(theme, true)
+    initialRenderRef.current = false
   }, []) // Only on mount
   
   // Listen for system theme changes
@@ -199,15 +372,35 @@ export function ThemeProvider({
     
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     const handleChange = (e: MediaQueryListEvent) => {
-      const systemTheme = e.matches ? 'infinifox-dark' : 'infinifox-light'
-      if (themes[systemTheme]) {
-        setTheme(systemTheme)
+      // Only auto-switch if user hasn't manually selected a theme
+      const hasManualSelection = config.persistTheme && 
+        localStorage.getItem(config.storageKey) !== null
+      
+      if (!hasManualSelection) {
+        const systemTheme = e.matches ? 'infinifox-dark' : 'infinifox-light'
+        if (themes[systemTheme]) {
+          setTheme(systemTheme)
+        }
       }
     }
     
     mediaQuery.addEventListener('change', handleChange)
     return () => mediaQuery.removeEventListener('change', handleChange)
-  }, [config.enableSystemTheme, themes, setTheme])
+  }, [config.enableSystemTheme, config.persistTheme, config.storageKey, themes, setTheme])
+  
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl/Cmd + Shift + L to toggle light/dark
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'L') {
+        e.preventDefault()
+        toggleLightDark()
+      }
+    }
+    
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [toggleLightDark])
   
   // Context value
   const contextValue: ThemeContextValue = {
@@ -221,6 +414,8 @@ export function ThemeProvider({
     deleteTheme,
     exportTheme,
     importTheme,
+    isTransitioning,
+    getPerformanceMetrics,
   }
   
   return (

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'preact/hooks'
-import { Settings, ChevronDown, ChevronRight, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import { Settings, ChevronDown, ChevronRight, CheckCircle, XCircle, AlertCircle } from 'lucide-preact'
+import { Icon } from '../../components/common/Icon'
 
 import { progressService } from '../../services/progress/ProgressService'
 import { useStore } from '../../store/store'
@@ -91,7 +92,7 @@ export function SettingsPanel() {
     <div class="panel settings-panel">
       <div class="settings-header">
         <div class="d-flex items-center gap-2">
-          <Settings size={16} />
+          <Icon icon={Settings} size="base" />
           <h3>API Settings</h3>
         </div>
         <button
@@ -102,7 +103,7 @@ export function SettingsPanel() {
           }}
           aria-label={isExpanded ? 'Collapse' : 'Expand'}
         >
-          {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          {isExpanded ? <Icon icon={ChevronDown} size="base" /> : <Icon icon={ChevronRight} size="base" />}
         </button>
       </div>
 
@@ -155,8 +156,8 @@ export function SettingsPanel() {
               Helps optimize compatibility with different backends
               {apiType && (
                 <div class="mt-1 text-xs">
-                  Supports: {getApiFeatures(apiType).websocket ? '✅' : '❌'} WebSocket, 
-                  {' '}{getApiFeatures(apiType).rest ? '✅' : '❌'} REST Polling
+                  Supports: {getApiFeatures(apiType).websocket ? <Icon icon={CheckCircle} size="xs" className="inline-icon success" /> : <Icon icon={XCircle} size="xs" className="inline-icon error" />} WebSocket,
+                  {' '}{getApiFeatures(apiType).rest ? <Icon icon={CheckCircle} size="xs" className="inline-icon success" /> : <Icon icon={XCircle} size="xs" className="inline-icon error" />} REST Polling
                 </div>
               )}
             </div>
@@ -166,12 +167,12 @@ export function SettingsPanel() {
             <div class={`settings-status ${connectionStatus}`}>
               {connectionStatus === 'success' ? (
                 <>
-                  <CheckCircle size={14} />
+                  <Icon icon={CheckCircle} size="sm" />
                   <span>Connected! API: {apiType}, Progress: {detectedProgressMethod}</span>
                 </>
               ) : (
                 <>
-                  <XCircle size={14} />
+                  <Icon icon={XCircle} size="sm" />
                   <span>Connection failed!</span>
                 </>
               )}

@@ -1,4 +1,4 @@
-/* DrawingIntegration.css - Styles for different integration methods */
+/* DrawingIntegration.css - Styles for different integration methods with Theme Tokens */
 
 /* Tab Integration */
 .drawing-tab-container {
@@ -14,13 +14,13 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(10px);
+  background: var(--color-overlay-heavy);
+  backdrop-filter: var(--backdrop-blur-lg);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 9999;
-  animation: fadeIn 0.3s ease;
+  z-index: var(--z-modal-overlay);
+  animation: fadeIn var(--duration-md) var(--ease-out);
 }
 
 @keyframes fadeIn {
@@ -37,14 +37,14 @@
   height: 90vh;
   max-width: 1400px;
   max-height: 900px;
-  background: linear-gradient(135deg, rgba(30, 30, 40, 0.98) 0%, rgba(20, 20, 30, 0.98) 100%);
-  border-radius: 20px;
+  background: var(--custom-glass-bg);
+  border-radius: var(--radius-2xl);
   overflow: hidden;
   position: relative;
   box-shadow:
-    0 25px 100px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.1);
-  animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    var(--shadow-modal),
+    0 0 0 1px var(--color-border-subtle);
+  animation: slideUp var(--duration-lg) var(--ease-spring);
 }
 
 @keyframes slideUp {
@@ -60,22 +60,22 @@
 
 .modal-close {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: var(--spacing-5);
+  right: var(--spacing-5);
   width: 36px;
   height: 36px;
-  border-radius: 6px;
-  background-color: rgba(42, 42, 42, 0.95);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-secondary);
+  backdrop-filter: var(--backdrop-blur-lg);
+  border: var(--border-width-thin) solid var(--color-border-subtle);
+  color: var(--color-text-secondary);
   cursor: pointer;
   z-index: 10;
-  transition: all 0.2s ease;
+  transition: all var(--duration-sm) var(--ease-out);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 /* Ensure icon inherits color */
@@ -87,14 +87,14 @@
 }
 
 .modal-close:hover {
-  background-color: rgba(255, 50, 50, 0.2);
-  border-color: rgba(255, 50, 50, 0.5);
-  color: #ff6666;
+  background-color: var(--color-danger-bg);
+  border-color: var(--color-danger-border);
+  color: var(--color-danger);
   transform: scale(1.05);
 }
 
 .modal-close:hover svg {
-  stroke: #ff6666;
+  stroke: var(--color-danger);
 }
 
 .modal-close:active {
@@ -104,20 +104,20 @@
 /* Dockable Panel Integration */
 .dockable-drawing-panel {
   position: fixed;
-  background: linear-gradient(135deg, rgba(30, 30, 40, 0.95) 0%, rgba(20, 20, 30, 0.95) 100%);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 1000;
+  background: var(--custom-glass-bg);
+  backdrop-filter: var(--backdrop-blur-xl);
+  border: var(--border-width-thin) solid var(--color-border-subtle);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-float);
+  transition: all var(--duration-md) var(--ease-inout);
+  z-index: var(--z-dropdown);
 }
 
 .dockable-drawing-panel.docked {
-  top: 10px;
-  right: 10px;
+  top: var(--spacing-3);
+  right: var(--spacing-3);
   width: 400px;
-  max-height: calc(100vh - 20px);
+  max-height: calc(100vh - var(--spacing-5));
 }
 
 .dockable-drawing-panel.floating {
@@ -137,41 +137,41 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px 12px 0 0;
+  padding: var(--spacing-3) var(--spacing-4);
+  background: var(--color-surface-tertiary);
+  border-bottom: var(--border-width-thin) solid var(--color-border-subtle);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   cursor: move;
 }
 
 .panel-header span {
-  color: rgba(255, 255, 255, 0.9);
-  font-weight: 600;
-  font-size: 0.95rem;
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
 }
 
 .panel-controls {
   display: flex;
-  gap: 8px;
+  gap: var(--spacing-2);
 }
 
 .panel-controls button {
   width: 28px;
   height: 28px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
+  border-radius: var(--radius-full);
+  background: var(--color-button-secondary-bg);
+  border: var(--border-width-thin) solid var(--color-border-default);
+  color: var(--color-text-primary);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
-  font-size: 12px;
+  transition: all var(--duration-sm) var(--ease-out);
+  font-size: var(--font-size-xs);
 }
 
 .panel-controls button:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--color-button-secondary-bg-hover);
   transform: scale(1.1);
 }
 
@@ -183,22 +183,22 @@
 .drawing-mode-toggle {
   position: fixed;
   top: 80px;
-  right: 20px;
-  padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  right: var(--spacing-5);
+  padding: var(--spacing-3) var(--spacing-6);
+  background: var(--gradient-primary);
   border: none;
-  border-radius: 25px;
-  color: white;
-  font-weight: 600;
+  border-radius: var(--radius-pill);
+  color: var(--color-white);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
-  transition: all 0.3s ease;
-  z-index: 100;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  transition: all var(--duration-md) var(--ease-out);
+  z-index: var(--z-sticky);
+  box-shadow: var(--shadow-button-primary);
 }
 
 .drawing-mode-toggle:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+  box-shadow: var(--shadow-button-primary-hover);
 }
 
 .drawing-overlay {
@@ -207,7 +207,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 900;
+  z-index: var(--z-overlay);
   pointer-events: none;
 }
 
@@ -218,21 +218,21 @@
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .dockable-drawing-panel.docked {
-    width: calc(100vw - 20px);
-    left: 10px;
-    right: 10px;
+    width: calc(100vw - var(--spacing-5));
+    left: var(--spacing-3);
+    right: var(--spacing-3);
   }
 
   .drawing-modal {
     width: 95vw;
     height: 95vh;
-    border-radius: 12px;
+    border-radius: var(--radius-xl);
   }
 }
 
 /* Animation Classes */
 .slide-in-right {
-  animation: slideInRight 0.4s ease;
+  animation: slideInRight var(--duration-lg) var(--ease-out);
 }
 
 @keyframes slideInRight {
@@ -245,7 +245,7 @@
 }
 
 .slide-in-left {
-  animation: slideInLeft 0.4s ease;
+  animation: slideInLeft var(--duration-lg) var(--ease-out);
 }
 
 @keyframes slideInLeft {
@@ -258,11 +258,11 @@
 }
 
 .fade-in {
-  animation: fadeIn 0.3s ease;
+  animation: fadeIn var(--duration-md) var(--ease-out);
 }
 
 .scale-in {
-  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: scaleIn var(--duration-md) var(--ease-spring);
 }
 
 @keyframes scaleIn {

@@ -8,6 +8,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { imageStorage } from './services/storage'
 import { useStore } from './store/store'
 import { PaletteIcon } from './components/icons'
+import { ThemeSwitcher } from './components/ThemeSwitcher'
 import './styles/main.css'
 
 export function App() {
@@ -69,6 +70,14 @@ export function App() {
       <ProgressIndicator />
       <ControlPanel />
       <Canvas />
+      
+      {/* Theme Switcher */}
+      <ThemeSwitcher 
+        position="top-right"
+        showPreview={true}
+        animated={true}
+        showSystemOption={true}
+      />
       
       {/* Floating Action Button for Full Drawing Panel */}
       <button 

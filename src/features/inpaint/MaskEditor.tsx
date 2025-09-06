@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'preact/hooks'
 import Konva from 'konva'
 import { Stage, Layer, Image as KonvaImage, Line, Circle, Rect } from 'react-konva'
 import { getPointerInfo, getPressureAdjustedSize, preventDefaultTouch } from '../../utils/pointerEvents'
+import { Brush, Eraser } from 'lucide-preact'
+import { Icon } from '../../components/common/Icon'
 
 import './MaskEditor.css'
 
@@ -196,7 +198,7 @@ export function MaskEditor({ baseImage, onMaskUpdate, disabled = false }: MaskEd
             onClick={() => setTool('brush')}
             disabled={disabled}
           >
-            🖌️ Brush
+            <Icon icon={Brush} size="base" /> Brush
           </button>
           <button
             type="button"
@@ -204,7 +206,7 @@ export function MaskEditor({ baseImage, onMaskUpdate, disabled = false }: MaskEd
             onClick={() => setTool('eraser')}
             disabled={disabled}
           >
-            🧹 Eraser
+            <Icon icon={Eraser} size="base" /> Eraser
           </button>
         </div>
 

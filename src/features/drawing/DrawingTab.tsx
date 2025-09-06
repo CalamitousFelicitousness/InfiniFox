@@ -1,4 +1,6 @@
 import { useStore } from '../../store/store'
+import { NotebookPen } from 'lucide-preact'
+import { Icon } from '../../components/common/Icon'
 import './DrawingTab.css'
 
 /**
@@ -11,7 +13,7 @@ export function DrawingTab() {
   return (
     <div class="drawing-tab">
       <div class="drawing-info">
-        <h3>📝 Drawing Tools</h3>
+        <h3><Icon icon={NotebookPen} size="lg" /> Drawing Tools</h3>
         <p class="info-text">
           Drawing tools are now integrated directly into the canvas.
           Select the Brush or Eraser tool from the canvas toolbar to start drawing.

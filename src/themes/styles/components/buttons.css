@@ -80,7 +80,7 @@ button[type="submit"],
 
 /* Primary Button */
 .btn-primary {
-  color: white;
+  color: var(--color-text-on-primary);
   background-color: var(--color-primary-500);
   border-color: var(--color-primary-500);
   
@@ -136,7 +136,7 @@ button[type="submit"],
 
 /* Success Button */
 .btn-success {
-  color: white;
+  color: var(--color-text-on-primary);
   background-color: var(--color-success-500);
   border-color: var(--color-success-500);
   
@@ -157,7 +157,7 @@ button[type="submit"],
 
 /* Warning Button */
 .btn-warning {
-  color: white;
+  color: var(--color-text-on-primary);
   background-color: var(--color-warning-500);
   border-color: var(--color-warning-500);
   
@@ -179,7 +179,7 @@ button[type="submit"],
 /* Error/Danger Button */
 .btn-error,
 .btn-danger {
-  color: white;
+  color: var(--color-text-on-primary);
   background-color: var(--color-error-500);
   border-color: var(--color-error-500);
   
@@ -329,18 +329,18 @@ button[type="submit"],
   min-width: 32px;
   min-height: 32px;
   padding: var(--spacing-toolbar-item-padding);
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: var(--color-surface-disabled);
   border: 1px solid transparent;
   border-radius: var(--radius-base);
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
   cursor: pointer;
   transition: var(--transition-button);
   
   &:hover:not(:disabled) {
     background-color: var(--color-surface-hover);
-    border-color: rgba(255, 255, 255, 0.1);
-    color: white;
+    border-color: var(--color-border-primary);
+    color: var(--color-text-primary);
     transform: translateY(-1px);
   }
   
@@ -389,7 +389,7 @@ button[type="submit"],
   margin-top: var(--spacing-4);
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
-  color: white;
+  color: var(--color-text-on-primary);
   background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
   border: none;
   border-radius: var(--radius-button-base);

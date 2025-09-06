@@ -11,6 +11,7 @@ export * from './shadows'
 export * from './animations'
 export * from './borders'
 export * from './breakpoints'
+export * from './icons'
 
 // Import all token generators
 import { generateColorCSSVariables } from './colors'
@@ -20,6 +21,7 @@ import { generateShadowCSSVariables } from './shadows'
 import { generateAnimationCSS } from './animations'
 import { generateBorderCSSVariables } from './borders'
 import { generateBreakpointCSSVariables } from './breakpoints'
+import { generateIconCSSVariables } from './icons'
 
 // Re-export commonly used tokens for convenience
 export {
@@ -72,6 +74,12 @@ export {
   layouts,
 } from './breakpoints'
 
+export {
+  iconSizes,
+  iconSizeValues,
+  iconStrokes,
+} from './icons'
+
 /**
  * Generate all CSS variables for the theme system
  */
@@ -84,6 +92,7 @@ export function generateAllCSSVariables(): string {
     generateAnimationCSS(),
     generateBorderCSSVariables(),
     generateBreakpointCSSVariables(),
+    generateIconCSSVariables(),
   ].join('\n')
 }
 
@@ -98,6 +107,7 @@ export interface DesignTokens {
   animations: typeof import('./animations')
   borders: typeof import('./borders')
   breakpoints: typeof import('./breakpoints')
+  icons: typeof import('./icons')
 }
 
 /**

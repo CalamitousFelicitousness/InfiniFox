@@ -1,3 +1,5 @@
+/* Tooltip.css - Using InfiniFox Theme Tokens */
+
 .tooltip-wrapper {
   position: relative;
   display: inline-block;
@@ -5,17 +7,17 @@
 
 .tooltip {
   position: absolute;
-  z-index: 10000;
-  padding: 0.5rem 0.75rem;
-  background-color: var(--primary-bg-color);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  z-index: var(--z-tooltip);
+  padding: var(--spacing-2) var(--spacing-3);
+  background-color: var(--color-surface-primary);
+  border: var(--border-width-thin) solid var(--color-border-default);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
   white-space: nowrap;
-  font-size: 0.85rem;
-  color: var(--primary-text-color);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-primary);
   pointer-events: none;
-  animation: fadeIn 0.2s ease-in-out;
+  animation: fadeIn var(--duration-sm) var(--ease-in-out);
 }
 
 @keyframes fadeIn {
@@ -45,7 +47,7 @@
   bottom: 100%;
   left: 50%;
   transform: translateX(-50%);
-  margin-bottom: 8px;
+  margin-bottom: var(--spacing-2);
 }
 
 .tooltip-top .tooltip-arrow {
@@ -53,7 +55,7 @@
   left: 50%;
   transform: translateX(-50%);
   border-width: 6px 6px 0 6px;
-  border-color: var(--border-color) transparent transparent transparent;
+  border-color: var(--color-border-default) transparent transparent transparent;
 }
 
 /* Bottom position */
@@ -61,7 +63,7 @@
   top: 100%;
   left: 50%;
   transform: translateX(-50%);
-  margin-top: 8px;
+  margin-top: var(--spacing-2);
 }
 
 .tooltip-bottom .tooltip-arrow {
@@ -69,7 +71,7 @@
   left: 50%;
   transform: translateX(-50%);
   border-width: 0 6px 6px 6px;
-  border-color: transparent transparent var(--border-color) transparent;
+  border-color: transparent transparent var(--color-border-default) transparent;
 }
 
 /* Left position */
@@ -77,7 +79,7 @@
   right: 100%;
   top: 50%;
   transform: translateY(-50%);
-  margin-right: 8px;
+  margin-right: var(--spacing-2);
 }
 
 .tooltip-left .tooltip-arrow {
@@ -85,7 +87,7 @@
   top: 50%;
   transform: translateY(-50%);
   border-width: 6px 0 6px 6px;
-  border-color: transparent transparent transparent var(--border-color);
+  border-color: transparent transparent transparent var(--color-border-default);
 }
 
 /* Right position */
@@ -93,7 +95,7 @@
   left: 100%;
   top: 50%;
   transform: translateY(-50%);
-  margin-left: 8px;
+  margin-left: var(--spacing-2);
 }
 
 .tooltip-right .tooltip-arrow {
@@ -101,5 +103,5 @@
   top: 50%;
   transform: translateY(-50%);
   border-width: 6px 6px 6px 0;
-  border-color: transparent var(--border-color) transparent transparent;
+  border-color: transparent var(--color-border-default) transparent transparent;
 }
