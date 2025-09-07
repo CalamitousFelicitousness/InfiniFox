@@ -82,9 +82,16 @@
   color: var(--color-text-primary);
 }
 
+.number-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
 .number-input-field {
+  width: 100%;
   padding: var(--spacing-2);
-  padding-right: calc(var(--spacing-7) + var(--spacing-1)); /* Space for buttons */
+  padding-right: calc(var(--spacing-12) + var(--spacing-2)); /* Space for buttons */
   background-color: var(--color-surface-primary);
   border: var(--border-default);
   border-radius: var(--radius-input-base);
@@ -125,16 +132,17 @@
 /* Number Input Buttons */
 .number-input-buttons {
   position: absolute;
-  right: var(--spacing-0-5);
-  bottom: var(--spacing-0-5);
+  right: var(--spacing-2);
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
-  flex-direction: column;
-  height: calc(100% - var(--spacing-7) - var(--spacing-1)); /* Adjust for label height */
+  flex-direction: row;
+  gap: 1px;
 }
 
 .number-input-button {
-  flex: 1;
   width: var(--spacing-6);
+  height: calc(var(--spacing-8) - var(--spacing-1));
   padding: 0;
   background-color: var(--color-surface-secondary);
   border: var(--border-subtle);
@@ -150,12 +158,12 @@
 }
 
 .number-input-button:first-child {
-  border-radius: 0 calc(var(--radius-input-base) - 1px) 0 0;
-  border-bottom: none;
+  border-radius: 0;
+  border-right: none;
 }
 
 .number-input-button:last-child {
-  border-radius: 0 0 calc(var(--radius-input-base) - 1px) 0;
+  border-radius: 0 calc(var(--radius-input-base) - 1px) calc(var(--radius-input-base) - 1px) 0;
 }
 
 .number-input-button:hover:not(:disabled) {

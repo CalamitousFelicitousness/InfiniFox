@@ -75,20 +75,21 @@ export function NumberInput({
       <label class={`number-input-label ${disabled ? '' : 'draggable'}`}>
         {label}
       </label>
-      <input
-        ref={inputRef}
-        type="number"
-        class="number-input-field"
-        value={value}
-        min={min}
-        max={max}
-        step={step}
-        onInput={(e) => onInput(parseInt(e.currentTarget.value, 10))}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        disabled={disabled}
-      />
-      <div class="number-input-buttons">
+      <div class="number-input-wrapper">
+        <input
+          ref={inputRef}
+          type="number"
+          class="number-input-field"
+          value={value}
+          min={min}
+          max={max}
+          step={step}
+          onInput={(e) => onInput(parseInt(e.currentTarget.value, 10))}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          disabled={disabled}
+        />
+        <div class="number-input-buttons">
         <button 
           type="button"
           class="number-input-button"
@@ -125,6 +126,7 @@ export function NumberInput({
         >
           ▼
         </button>
+        </div>
       </div>
     </div>
   )
