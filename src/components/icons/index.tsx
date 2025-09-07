@@ -3,13 +3,13 @@
  * Exports all lucide-preact icons used throughout InfiniFox
  */
 
-export { 
+export {
   // Canvas Tools
   MousePointer2 as SelectIcon,
   Brush as BrushIcon,
   Eraser as EraserIcon,
   Hand as PanIcon,
-  
+
   // UI Controls
   Filter as FilterIcon,
   GripVertical as GripIcon,
@@ -21,7 +21,7 @@ export {
   ChevronDown as ChevronDownIcon,
   ChevronUp as ChevronUpIcon,
   ChevronLeft as ChevronLeftIcon,
-  
+
   // Actions
   Upload as UploadIcon,
   Download as DownloadIcon,
@@ -33,7 +33,7 @@ export {
   Download,
   RefreshCw,
   Upload,
-  
+
   // Status
   Check as CheckIcon,
   CheckCircle as CheckCircleIcon,
@@ -42,7 +42,7 @@ export {
   Info as InfoIcon,
   Loader2 as LoadingIcon,
   Trash2,
-  
+
   // Drawing
   Palette as PaletteIcon,
   Pipette as ColorPickerIcon,
@@ -52,7 +52,7 @@ export {
   ZoomIn as ZoomInIcon,
   ZoomOut as ZoomOutIcon,
   Droplet,
-  
+
   // Navigation
   ChevronRight,
   ChevronDown,
@@ -64,7 +64,7 @@ export {
   ArrowDown,
   ArrowLeft,
   ArrowRight,
-  
+
   // Common
   Plus,
   Minus,
@@ -76,35 +76,35 @@ export {
   Play as PlayIcon,
   Pause as PauseIcon,
   SkipForward as SkipIcon,
-  
+
   // File operations
   FolderOpen as FolderIcon,
   File as FileIcon,
   FileImage as FileImageIcon,
   FileText as FileTextIcon,
-  
+
   // Effects
   Sparkles as EffectsIcon,
   Sliders as SlidersIcon,
   Wand2 as MagicWandIcon,
-  
+
   // Communication
   MessageSquare as MessageIcon,
   HelpCircle as HelpIcon,
   AlertTriangle as WarningIcon,
-  
+
   // Window controls
   Minimize,
   Maximize,
   X as WindowCloseIcon,
-  
+
   // Additional tools
   Crop as CropIcon,
   RotateCw as RotateIcon,
   FlipHorizontal as FlipIcon,
   PenTool as PenIcon,
   Type as TextIcon,
-  
+
   // Layout & UI
   Grid as GridIcon,
   List as ListIcon,
@@ -112,13 +112,13 @@ export {
   Sidebar as SidebarIcon,
   PanelLeft as PanelLeftIcon,
   PanelRight as PanelRightIcon,
-  
+
   // Media controls
   Volume2 as VolumeIcon,
   VolumeX as MuteIcon,
   Mic as MicrophoneIcon,
   Video as VideoIcon,
-  
+
   // System
   Power as PowerIcon,
   Lock as LockIcon,
@@ -126,29 +126,29 @@ export {
   Shield as ShieldIcon,
   Cpu as CpuIcon,
   HardDrive as StorageIcon,
-  
+
   // Social & Sharing
   Share2 as ShareIcon,
   Link as LinkIcon,
   ExternalLink as ExternalLinkIcon,
-  
+
   // Editing
   Edit as EditIcon,
   Edit2 as Edit2Icon,
   Edit3 as Edit3Icon,
   Scissors as ScissorsIcon,
-  
+
   // Time
   Clock as ClockIcon,
   Calendar as CalendarIcon,
   Timer as TimerIcon,
-  
+
   // Weather & Nature
   Sun as SunIcon,
   Moon as MoonIcon,
   Cloud as CloudIcon,
   Zap as LightningIcon,
-  
+
   // Miscellaneous
   Search as SearchIcon,
   Filter as FilterIcon2,
@@ -179,17 +179,17 @@ export {
 export const defaultIconProps = {
   size: 16,
   strokeWidth: 2,
-  class: 'lucide-icon'
+  class: 'lucide-icon',
 }
 
 // Icon size constants
 export const iconSizes = {
-  xs: 12,  // Tiny icons (badges, indicators)
-  sm: 14,  // Small buttons
-  md: 16,  // Default size
-  lg: 20,  // Large buttons
-  xl: 24,  // Headers, prominent actions
-  xxl: 32  // Feature icons
+  xs: 12, // Tiny icons (badges, indicators)
+  sm: 14, // Small buttons
+  md: 16, // Default size
+  lg: 20, // Large buttons
+  xl: 24, // Headers, prominent actions
+  xxl: 32, // Feature icons
 }
 
 // Icon categories for organization
@@ -205,13 +205,44 @@ export const iconCategories = {
 // Helper function to get icon by name
 export function getIconByName(name: string): any {
   const icons = {
-    SelectIcon, BrushIcon, EraserIcon, PanIcon,
-    FilterIcon, GripIcon, CloseIcon, MinimizeIcon, MaximizeIcon, SettingsIcon,
-    ChevronRightIcon, ChevronDownIcon, ChevronUpIcon, ChevronLeftIcon,
-    UploadIcon, DownloadIcon, SaveIcon, UndoIcon, RedoIcon, CopyIcon, DeleteIcon,
-    CheckIcon, CheckCircleIcon, XCircleIcon, AlertIcon, InfoIcon, LoadingIcon,
-    PaletteIcon, ColorPickerIcon, ShapeIcon, RectangleIcon, MoveIcon,
-    ZoomInIcon, ZoomOutIcon, ImageIcon, LayersIcon, EyeIcon, EyeOffIcon,
+    SelectIcon,
+    BrushIcon,
+    EraserIcon,
+    PanIcon,
+    FilterIcon,
+    GripIcon,
+    CloseIcon,
+    MinimizeIcon,
+    MaximizeIcon,
+    SettingsIcon,
+    ChevronRightIcon,
+    ChevronDownIcon,
+    ChevronUpIcon,
+    ChevronLeftIcon,
+    UploadIcon,
+    DownloadIcon,
+    SaveIcon,
+    UndoIcon,
+    RedoIcon,
+    CopyIcon,
+    DeleteIcon,
+    CheckIcon,
+    CheckCircleIcon,
+    XCircleIcon,
+    AlertIcon,
+    InfoIcon,
+    LoadingIcon,
+    PaletteIcon,
+    ColorPickerIcon,
+    ShapeIcon,
+    RectangleIcon,
+    MoveIcon,
+    ZoomInIcon,
+    ZoomOutIcon,
+    ImageIcon,
+    LayersIcon,
+    EyeIcon,
+    EyeOffIcon,
     // Add more as needed
   }
   return icons[name as keyof typeof icons]

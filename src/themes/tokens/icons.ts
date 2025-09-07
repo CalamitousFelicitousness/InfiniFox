@@ -46,17 +46,17 @@ export const iconStrokes = {
  */
 export function generateIconCSSVariables(): string {
   const variables: string[] = []
-  
+
   // Icon sizes
   Object.entries(iconSizes).forEach(([key, value]) => {
     variables.push(`  --icon-size-${key}: ${value};`)
   })
-  
+
   // Icon strokes
   Object.entries(iconStrokes).forEach(([key, value]) => {
     variables.push(`  --icon-stroke-${key}: ${value};`)
   })
-  
+
   return variables.join('\n')
 }
 

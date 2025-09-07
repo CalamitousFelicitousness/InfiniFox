@@ -20,7 +20,7 @@ export function usePointerHover(
 
     const handlePointerEnter = (e: PointerEvent) => {
       setPointerType(e.pointerType)
-      
+
       // For touch, add a small delay to distinguish from scrolling
       if (e.pointerType === 'touch' && options.delay) {
         hoverTimeout = window.setTimeout(() => {

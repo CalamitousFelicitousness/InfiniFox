@@ -1,7 +1,8 @@
 // vite.config.ts
-import { defineConfig } from 'vite'
-import preact from '@preact/preset-vite'
 import { createRequire } from 'node:module'
+
+import preact from '@preact/preset-vite'
+import { defineConfig } from 'vite'
 const require = createRequire(import.meta.url)
 
 export default defineConfig({

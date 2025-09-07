@@ -47,17 +47,17 @@ interface QueueState {
   removeFromQueue: (id: string) => void
   clearQueue: () => void
   moveInQueue: (id: string, direction: 'up' | 'down') => void
-  
+
   // Processing
   startProcessing: () => void
   stopProcessing: () => void
   processNext: () => Promise<void>
   retryItem: (id: string) => void
   cancelItem: (id: string) => void
-  
+
   // Batch settings
   setBatchSettings: (settings: Partial<BatchSettings>) => void
-  
+
   // Stats
   getQueueStats: () => {
     total: number
@@ -99,11 +99,11 @@ export const useQueueStore = create<QueueState>((set, get) => ({
       retryCount: 0,
       maxRetries: 3,
     }
-    
+
     set((state) => ({
       queue: [...state.queue, newItem],
     }))
-    
+
     // Auto-start if enabled
     const { autoStart, isProcessing } = get()
     if (autoStart && !isProcessing) {
@@ -114,32 +114,35 @@ export const useQueueStore = create<QueueState>((set, get) => ({
   addBatch: (baseParams, type) => {
     const { batchSettings } = get()
     const items: QueueItem[] = []
-    
+
     if (batchSettings.count <= 1) {
       // Just add single item
       get().addToQueue({ type, status: 'pending', params: baseParams })
       return
     }
-    
+
     // Generate variations
     const seeds = batchSettings.variations.seed
-      ? Array.from({ length: batchSettings.count }, (_, i) => 
+      ? Array.from({ length: batchSettings.count }, (_, i) =>
           baseParams.seed === -1 ? -1 : baseParams.seed + i * batchSettings.seedIncrement
         )
       : [baseParams.seed]
-    
-    const prompts = batchSettings.variations.prompt && batchSettings.promptVariations.length > 0
-      ? batchSettings.promptVariations
-      : [baseParams.prompt]
-    
-    const steps = batchSettings.variations.steps && batchSettings.stepsVariations.length > 0
-      ? batchSettings.stepsVariations
-      : [baseParams.steps]
-    
-    const cfgScales = batchSettings.variations.cfgScale && batchSettings.cfgScaleVariations.length > 0
-      ? batchSettings.cfgScaleVariations
-      : [baseParams.cfg_scale]
-    
+
+    const prompts =
+      batchSettings.variations.prompt && batchSettings.promptVariations.length > 0
+        ? batchSettings.promptVariations
+        : [baseParams.prompt]
+
+    const steps =
+      batchSettings.variations.steps && batchSettings.stepsVariations.length > 0
+        ? batchSettings.stepsVariations
+        : [baseParams.steps]
+
+    const cfgScales =
+      batchSettings.variations.cfgScale && batchSettings.cfgScaleVariations.length > 0
+        ? batchSettings.cfgScaleVariations
+        : [baseParams.cfg_scale]
+
     // Create all combinations
     for (const seed of seeds) {
       for (const prompt of prompts) {
@@ -164,11 +167,11 @@ export const useQueueStore = create<QueueState>((set, get) => ({
         }
       }
     }
-    
+
     set((state) => ({
       queue: [...state.queue, ...items],
     }))
-    
+
     // Auto-start if enabled
     const { autoStart, isProcessing } = get()
     if (autoStart && !isProcessing) {
@@ -189,17 +192,17 @@ export const useQueueStore = create<QueueState>((set, get) => ({
   moveInQueue: (id, direction) => {
     const { queue } = get()
     const index = queue.findIndex((item) => item.id === id)
-    
+
     if (index === -1) return
-    
+
     const newIndex = direction === 'up' ? index - 1 : index + 1
-    
+
     if (newIndex < 0 || newIndex >= queue.length) return
-    
+
     const newQueue = [...queue]
     const [item] = newQueue.splice(index, 1)
     newQueue.splice(newIndex, 0, item)
-    
+
     set({ queue: newQueue })
   },
 
@@ -214,16 +217,16 @@ export const useQueueStore = create<QueueState>((set, get) => ({
 
   processNext: async () => {
     const { queue, isProcessing } = get()
-    
+
     if (!isProcessing) return
-    
+
     const pendingItem = queue.find((item) => item.status === 'pending')
-    
+
     if (!pendingItem) {
       set({ isProcessing: false, currentItem: null })
       return
     }
-    
+
     // Update item status
     set((state) => ({
       currentItem: pendingItem,
@@ -233,7 +236,7 @@ export const useQueueStore = create<QueueState>((set, get) => ({
           : item
       ),
     }))
-    
+
     try {
       // Process based on type
       let response
@@ -251,7 +254,7 @@ export const useQueueStore = create<QueueState>((set, get) => ({
           })
           break
       }
-      
+
       // Update with result
       set((state) => ({
         queue: state.queue.map((item) =>
@@ -266,7 +269,7 @@ export const useQueueStore = create<QueueState>((set, get) => ({
         ),
         completedCount: state.completedCount + 1,
       }))
-      
+
       // Add to canvas if successful
       if (response?.images[0]) {
         const useStore = (await import('./store')).useStore
@@ -293,7 +296,7 @@ export const useQueueStore = create<QueueState>((set, get) => ({
         ),
         failedCount: state.failedCount + 1,
       }))
-      
+
       // Retry if under max retries
       if (pendingItem.retryCount < pendingItem.maxRetries) {
         setTimeout(() => {
@@ -301,7 +304,7 @@ export const useQueueStore = create<QueueState>((set, get) => ({
         }, 2000)
       }
     }
-    
+
     // Process next item
     setTimeout(() => {
       get().processNext()
@@ -326,9 +329,7 @@ export const useQueueStore = create<QueueState>((set, get) => ({
   cancelItem: (id) => {
     set((state) => ({
       queue: state.queue.map((item) =>
-        item.id === id
-          ? { ...item, status: 'cancelled' as const }
-          : item
+        item.id === id ? { ...item, status: 'cancelled' as const } : item
       ),
     }))
   },

@@ -13,12 +13,12 @@ export function debounce<T extends (...args: any[]) => any>(
   wait: number
 ): (...args: Parameters<T>) => void {
   let timeoutId: ReturnType<typeof setTimeout> | null = null
-  
+
   return function debounced(...args: Parameters<T>) {
     if (timeoutId !== null) {
       clearTimeout(timeoutId)
     }
-    
+
     timeoutId = setTimeout(() => {
       func(...args)
       timeoutId = null
@@ -38,12 +38,12 @@ export function throttle<T extends (...args: any[]) => any>(
 ): (...args: Parameters<T>) => void {
   let inThrottle = false
   let lastArgs: Parameters<T> | null = null
-  
+
   return function throttled(...args: Parameters<T>) {
     if (!inThrottle) {
       func(...args)
       inThrottle = true
-      
+
       setTimeout(() => {
         inThrottle = false
         if (lastArgs !== null) {

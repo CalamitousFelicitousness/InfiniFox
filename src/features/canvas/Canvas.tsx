@@ -1012,8 +1012,16 @@ export function Canvas() {
                 y={frame.y}
                 width={frame.width}
                 height={frame.height}
-                stroke={frame.error ? tokens.colors.error : frame.isPlaceholder ? tokens.colors.textTertiary : tokens.colors.interactivePrimary}
-                strokeWidth={frame.isPlaceholder ? tokens.borders.widthThin : tokens.borders.widthMedium}
+                stroke={
+                  frame.error
+                    ? tokens.colors.error
+                    : frame.isPlaceholder
+                      ? tokens.colors.textTertiary
+                      : tokens.colors.interactivePrimary
+                }
+                strokeWidth={
+                  frame.isPlaceholder ? tokens.borders.widthThin : tokens.borders.widthMedium
+                }
                 fill={
                   frame.isPlaceholder ? tokens.colors.surfaceSelected : tokens.colors.surfaceActive
                 }

@@ -40,12 +40,12 @@ export function Img2ImgPanel() {
 
   // Auto-load image with img2img_init role
   useEffect(() => {
-    const roleImage = activeImageRoles.find(r => r.role === 'img2img_init')
+    const roleImage = activeImageRoles.find((r) => r.role === 'img2img_init')
     if (roleImage) {
-      const image = images.find(img => img.id === roleImage.imageId)
+      const image = images.find((img) => img.id === roleImage.imageId)
       if (image) {
         exportImageAsBase64(roleImage.imageId)
-          .then(base64 => {
+          .then((base64) => {
             setBaseImage(base64)
             setSelectedImageId(roleImage.imageId)
             if (image.width && image.height) {
@@ -53,7 +53,7 @@ export function Img2ImgPanel() {
               setHeight(image.height)
             }
           })
-          .catch(error => {
+          .catch((error) => {
             console.error('Failed to load role-assigned image:', error)
           })
       }
@@ -65,7 +65,7 @@ export function Img2ImgPanel() {
 
   const handleGenerate = async (e: Event) => {
     e.preventDefault()
-    
+
     // If we have a selected canvas image, export it fresh
     let finalBase64 = baseImage
     if (selectedImageId) {
@@ -77,12 +77,12 @@ export function Img2ImgPanel() {
         return
       }
     }
-    
+
     if (!finalBase64) {
       alert('Please select an image from canvas first')
       return
     }
-    
+
     if (!isLoading) {
       generateImg2Img(finalBase64, denoisingStrength)
     }
@@ -92,8 +92,6 @@ export function Img2ImgPanel() {
     <div class="generation-panel">
       <h3 class="generation-panel-header">Image to Image</h3>
       <form class="generation-form" onSubmit={handleGenerate}>
-
-
         <div class="prompt-group">
           <label class="prompt-label">Prompt</label>
           <textarea
@@ -134,9 +132,25 @@ export function Img2ImgPanel() {
 
         <NumberInput label="Seed" value={seed} onInput={setSeed} disabled={isLoading} />
 
-        <Slider label="Steps" value={steps} onInput={setSteps} min={1} max={100} step={1} disabled={isLoading} />
+        <Slider
+          label="Steps"
+          value={steps}
+          onInput={setSteps}
+          min={1}
+          max={100}
+          step={1}
+          disabled={isLoading}
+        />
 
-        <Slider label="CFG Scale" value={cfgScale} onInput={setCfgScale} min={1} max={30} step={0.5} disabled={isLoading} />
+        <Slider
+          label="CFG Scale"
+          value={cfgScale}
+          onInput={setCfgScale}
+          min={1}
+          max={30}
+          step={0.5}
+          disabled={isLoading}
+        />
 
         <div class="size-inputs-group">
           <NumberInput label="Width" value={width} onInput={setWidth} disabled={isLoading} />

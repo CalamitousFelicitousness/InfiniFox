@@ -22,8 +22,7 @@ import {
 export type { ImageData, ImageRole, CanvasSelectionMode, ApiSettings, InpaintParams } from './types'
 
 // Combined app state type
-export type AppState = 
-  GenerationSlice &
+export type AppState = GenerationSlice &
   ModelSlice &
   ApiSlice &
   CanvasSlice &

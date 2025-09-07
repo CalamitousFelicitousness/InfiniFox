@@ -16,25 +16,25 @@ export interface GenerationActionsSlice {
 
 export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> = (set, get) => ({
   generateTxt2Img: async () => {
-    const { 
-      prompt, 
-      negativePrompt, 
-      sampler, 
-      seed, 
-      steps, 
-      cfgScale, 
-      width, 
-      height, 
+    const {
+      prompt,
+      negativePrompt,
+      sampler,
+      seed,
+      steps,
+      cfgScale,
+      width,
+      height,
       generationFrames,
       removeGenerationFrame,
-      updateGenerationFrame
+      updateGenerationFrame,
     } = get()
 
     if (!prompt) {
       alert('Please enter a prompt.')
       return
     }
-    
+
     set({ isLoading: true })
 
     const params = {
@@ -65,48 +65,44 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
 
       // Create unique ID for the image
       const imageId = `img-${Date.now()}`
-      
+
       // Convert base64 to blob and create object URL
-      const storedImage = await imageStorage.createFromBase64(
-        imageId,
-        response.images[0],
-        {
-          type: 'generated',
-          prompt,
-          negativePrompt,
-          seed,
-          steps,
-          cfgScale,
-          width,
-          height,
-          sampler,
-          usedIn: new Set()
-        }
-      )
+      const storedImage = await imageStorage.createFromBase64(imageId, response.images[0], {
+        type: 'generated',
+        prompt,
+        negativePrompt,
+        seed,
+        steps,
+        cfgScale,
+        width,
+        height,
+        sampler,
+        usedIn: new Set(),
+      })
 
       // Check for active generation frame
-      const activeFrame = generationFrames.find(f => f.isGenerating)
+      const activeFrame = generationFrames.find((f) => f.isGenerating)
       const x = activeFrame ? activeFrame.x : Math.random() * (window.innerWidth - 200)
       const y = activeFrame ? activeFrame.y : Math.random() * (window.innerHeight - 200)
 
       // Add image to canvas with object URL instead of base64
       const newImage = {
         id: imageId,
-        src: storedImage.objectUrl,  // Use object URL instead of base64
+        src: storedImage.objectUrl, // Use object URL instead of base64
         x,
         y,
         width,
         height,
         metadata: storedImage.metadata,
-        blobId: imageId,  // Reference to stored blob
-        isTemporary: false
+        blobId: imageId, // Reference to stored blob
+        isTemporary: false,
       }
-      
+
       get().addImage(newImage)
-      
+
       // Update storage stats
       await get().updateStorageStats()
-      
+
       // Force complete the progress indicator since we have the image
       progressService.stopPolling(true)
     } catch (error) {
@@ -121,20 +117,20 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
   },
 
   generateInFrame: async (frameId: string) => {
-    const { 
-      prompt, 
-      negativePrompt, 
-      sampler, 
-      seed, 
-      steps, 
+    const {
+      prompt,
+      negativePrompt,
+      sampler,
+      seed,
+      steps,
       cfgScale,
       generationFrames,
       convertPlaceholderToActive,
       removeGenerationFrame,
-      updateGenerationFrame
+      updateGenerationFrame,
     } = get()
 
-    const frame = generationFrames.find(f => f.id === frameId)
+    const frame = generationFrames.find((f) => f.id === frameId)
     if (!frame) {
       console.error('Frame not found:', frameId)
       return
@@ -144,10 +140,10 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       alert('Please enter a prompt.')
       return
     }
-    
+
     // Convert placeholder to active
     convertPlaceholderToActive?.(frameId)
-    
+
     set({ isLoading: true })
 
     const params = {
@@ -172,24 +168,20 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
     try {
       progressService.startPolling()
       const response = await sdnextApi.txt2img(params)
-      
+
       const imageId = `img-${Date.now()}`
-      const storedImage = await imageStorage.createFromBase64(
-        imageId,
-        response.images[0],
-        {
-          type: 'generated',
-          prompt,
-          negativePrompt,
-          seed,
-          steps,
-          cfgScale,
-          width: frame.width,
-          height: frame.height,
-          sampler,
-          usedIn: new Set()
-        }
-      )
+      const storedImage = await imageStorage.createFromBase64(imageId, response.images[0], {
+        type: 'generated',
+        prompt,
+        negativePrompt,
+        seed,
+        steps,
+        cfgScale,
+        width: frame.width,
+        height: frame.height,
+        sampler,
+        usedIn: new Set(),
+      })
 
       const newImage = {
         id: imageId,
@@ -200,26 +192,26 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
         height: frame.height,
         metadata: storedImage.metadata,
         blobId: imageId,
-        isTemporary: false
+        isTemporary: false,
       }
-      
+
       get().addImage(newImage)
-      
+
       // Remove frame after successful generation
       removeGenerationFrame?.(frameId)
-      
+
       await get().updateStorageStats()
       progressService.stopPolling(true)
     } catch (error) {
       console.error('Failed to generate image:', error)
       alert('Failed to generate image. Check console for details.')
-      
+
       // Mark frame as error
       updateGenerationFrame?.(frameId, {
         isGenerating: false,
         error: error.message || 'Generation failed',
       })
-      
+
       progressService.stopPolling(false)
     } finally {
       set({ isLoading: false })
@@ -227,7 +219,17 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
   },
 
   generateImg2Img: async (baseImage: string, denoisingStrength: number) => {
-    const { prompt, negativePrompt, sampler, seed, steps, cfgScale, width, height, generationFrames } = get()
+    const {
+      prompt,
+      negativePrompt,
+      sampler,
+      seed,
+      steps,
+      cfgScale,
+      width,
+      height,
+      generationFrames,
+    } = get()
 
     if (!prompt) {
       alert('Please enter a prompt.')
@@ -266,31 +268,27 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       progressService.startPolling()
 
       const response = await sdnextApi.img2img(params)
-      
+
       // Create unique ID for the image
       const imageId = `img-${Date.now()}`
-      
+
       // Convert base64 to blob and create object URL
-      const storedImage = await imageStorage.createFromBase64(
-        imageId,
-        response.images[0],
-        {
-          type: 'generated',
-          prompt,
-          negativePrompt,
-          seed,
-          steps,
-          cfgScale,
-          width,
-          height,
-          sampler,
-          denoisingStrength,
-          usedIn: new Set()
-        }
-      )
+      const storedImage = await imageStorage.createFromBase64(imageId, response.images[0], {
+        type: 'generated',
+        prompt,
+        negativePrompt,
+        seed,
+        steps,
+        cfgScale,
+        width,
+        height,
+        sampler,
+        denoisingStrength,
+        usedIn: new Set(),
+      })
 
       // Check if there's an active generation frame
-      const activeFrame = generationFrames.find(f => f.isGenerating)
+      const activeFrame = generationFrames.find((f) => f.isGenerating)
       const x = activeFrame ? activeFrame.x : Math.random() * (window.innerWidth - 200)
       const y = activeFrame ? activeFrame.y : Math.random() * (window.innerHeight - 200)
 
@@ -304,14 +302,14 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
         height,
         metadata: storedImage.metadata,
         blobId: imageId,
-        isTemporary: false
+        isTemporary: false,
       }
-      
+
       get().addImage(newImage)
-      
+
       // Update storage stats
       await get().updateStorageStats()
-      
+
       // Force complete the progress indicator since we have the image
       progressService.stopPolling(true)
       set({ isLoading: false })
@@ -325,7 +323,17 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
   },
 
   generateInpaint: async (params: InpaintParams) => {
-    const { prompt, negativePrompt, sampler, seed, steps, cfgScale, width, height, generationFrames } = get()
+    const {
+      prompt,
+      negativePrompt,
+      sampler,
+      seed,
+      steps,
+      cfgScale,
+      width,
+      height,
+      generationFrames,
+    } = get()
 
     if (!prompt) {
       alert('Please enter a prompt.')
@@ -372,31 +380,27 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       progressService.startPolling()
 
       const response = await sdnextApi.img2img(apiParams)
-      
+
       // Create unique ID for the image
       const imageId = `img-${Date.now()}`
-      
+
       // Convert base64 to blob and create object URL
-      const storedImage = await imageStorage.createFromBase64(
-        imageId,
-        response.images[0],
-        {
-          type: 'generated',
-          prompt,
-          negativePrompt,
-          seed,
-          steps,
-          cfgScale,
-          width,
-          height,
-          sampler,
-          denoisingStrength: params.denoisingStrength,
-          usedIn: new Set()
-        }
-      )
+      const storedImage = await imageStorage.createFromBase64(imageId, response.images[0], {
+        type: 'generated',
+        prompt,
+        negativePrompt,
+        seed,
+        steps,
+        cfgScale,
+        width,
+        height,
+        sampler,
+        denoisingStrength: params.denoisingStrength,
+        usedIn: new Set(),
+      })
 
       // Check if there's an active generation frame
-      const activeFrame = generationFrames.find(f => f.isGenerating)
+      const activeFrame = generationFrames.find((f) => f.isGenerating)
       const x = activeFrame ? activeFrame.x : Math.random() * (window.innerWidth - 200)
       const y = activeFrame ? activeFrame.y : Math.random() * (window.innerHeight - 200)
 
@@ -410,14 +414,14 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
         height,
         metadata: storedImage.metadata,
         blobId: imageId,
-        isTemporary: false
+        isTemporary: false,
       }
-      
+
       get().addImage(newImage)
-      
+
       // Update storage stats
       await get().updateStorageStats()
-      
+
       // Force complete the progress indicator since we have the image
       progressService.stopPolling(true)
       set({ isLoading: false })
@@ -429,7 +433,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       set({ isLoading: false })
     }
   },
-  
+
   /**
    * Load images from IndexedDB on app start
    */
@@ -437,8 +441,8 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
     try {
       console.log('Loading images from storage...')
       const storedImages = await imageStorage.loadAllFromIndexedDB()
-      
-      const images = storedImages.map(stored => ({
+
+      const images = storedImages.map((stored) => ({
         id: stored.id,
         src: stored.objectUrl,
         // Use saved position if available, otherwise use random position
@@ -448,19 +452,19 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
         height: stored.metadata.height,
         metadata: stored.metadata,
         blobId: stored.id,
-        isTemporary: false
+        isTemporary: false,
       }))
-      
+
       set({ images })
       console.log(`Loaded ${images.length} images from storage with positions`)
-      
+
       // Update storage stats
       await get().updateStorageStats()
     } catch (error) {
       console.error('Failed to load images from storage:', error)
     }
   },
-  
+
   /**
    * Update storage statistics
    */
@@ -471,5 +475,5 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
     } catch (error) {
       console.error('Failed to update storage stats:', error)
     }
-  }
+  },
 })

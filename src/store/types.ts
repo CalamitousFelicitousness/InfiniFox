@@ -1,11 +1,12 @@
 import type { StateCreator } from 'zustand'
-import type { Sampler, SdModel } from '../types/sdnext'
+
 import type { ProgressMethod } from '../services/progress/ProgressService'
+import type { Sampler, SdModel } from '../types/sdnext'
 
 // Updated Image type to use Object URLs
 export interface ImageData {
   id: string
-  src: string  // This will now be an Object URL instead of base64
+  src: string // This will now be an Object URL instead of base64
   x: number
   y: number
   width?: number
@@ -22,8 +23,8 @@ export interface ImageData {
     usedIn?: Set<'img2img_init' | 'inpaint_image' | 'controlnet'>
   }
   // New fields for storage management
-  blobId?: string  // Reference to blob in storage service
-  isTemporary?: boolean  // Flag for images not yet persisted
+  blobId?: string // Reference to blob in storage service
+  isTemporary?: boolean // Flag for images not yet persisted
 }
 
 export interface ImageRole {
@@ -67,37 +68,32 @@ export interface AppState {
   cfgScale: number
   width: number
   height: number
-  
+
   // Model/Sampler
   sampler: string
   samplers: Sampler[]
   sdModel: string
   sdModels: SdModel[]
-  
+
   // Canvas/Images
   images: ImageData[]
   activeImageRoles: ImageRole[]
   canvasSelectionMode: CanvasSelectionMode
-  
+
   // API
   apiSettings: ApiSettings
   isLoading: boolean
-  
+
   // Storage management
   storageStats?: {
     imageCount: number
     totalSize: number
     memoryUrls: number
   }
-  
+
   // All actions from slices will be added here
   [key: string]: any
 }
 
 // Helper type for creating slices
-export type SliceCreator<T> = StateCreator<
-  AppState,
-  [],
-  [],
-  T
->
+export type SliceCreator<T> = StateCreator<AppState, [], [], T>

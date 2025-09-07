@@ -107,19 +107,19 @@ export const borderColors = {
   default: 'var(--color-border-primary)',
   subtle: 'var(--color-border-secondary)',
   transparent: 'transparent',
-  
+
   // Interactive borders
   interactive: 'var(--color-border-primary)',
   interactiveHover: 'var(--color-primary-400)',
   interactiveFocus: 'var(--color-border-focus)',
   interactiveActive: 'var(--color-primary-600)',
-  
+
   // State borders
   success: 'var(--color-border-success)',
   warning: 'var(--color-border-warning)',
   error: 'var(--color-border-error)',
   info: 'var(--color-info-500)',
-  
+
   // Component-specific
   input: {
     default: 'var(--color-border-primary)',
@@ -129,13 +129,13 @@ export const borderColors = {
     success: 'var(--color-border-success)',
     disabled: 'rgba(255, 255, 255, 0.05)',
   },
-  
+
   card: {
     default: 'var(--color-border-primary)',
     hover: 'rgba(255, 255, 255, 0.15)',
     selected: 'var(--color-primary-500)',
   },
-  
+
   divider: {
     light: 'rgba(255, 255, 255, 0.05)',
     default: 'var(--color-border-primary)',
@@ -150,18 +150,18 @@ export const borders = {
   default: `${borderWidths.thin} ${borderStyles.solid} ${borderColors.default}`,
   subtle: `${borderWidths.thin} ${borderStyles.solid} ${borderColors.subtle}`,
   strong: `${borderWidths.medium} ${borderStyles.solid} ${borderColors.default}`,
-  
+
   // Interactive borders
   interactive: `${borderWidths.thin} ${borderStyles.solid} ${borderColors.interactive}`,
   interactiveHover: `${borderWidths.thin} ${borderStyles.solid} ${borderColors.interactiveHover}`,
   interactiveFocus: `${borderWidths.medium} ${borderStyles.solid} ${borderColors.interactiveFocus}`,
-  
+
   // State borders
   success: `${borderWidths.thin} ${borderStyles.solid} ${borderColors.success}`,
   warning: `${borderWidths.thin} ${borderStyles.solid} ${borderColors.warning}`,
   error: `${borderWidths.thin} ${borderStyles.solid} ${borderColors.error}`,
   info: `${borderWidths.thin} ${borderStyles.solid} ${borderColors.info}`,
-  
+
   // Style variations
   dashed: `${borderWidths.thin} ${borderStyles.dashed} ${borderColors.default}`,
   dotted: `${borderWidths.thin} ${borderStyles.dotted} ${borderColors.default}`,
@@ -174,14 +174,14 @@ export const outlines = {
   default: `${borderWidths.medium} ${borderStyles.solid} ${borderColors.interactiveFocus}`,
   subtle: `${borderWidths.thin} ${borderStyles.solid} ${borderColors.interactiveFocus}`,
   strong: `${borderWidths.thick} ${borderStyles.solid} ${borderColors.interactiveFocus}`,
-  
+
   // Offset outlines
   offset: {
     sm: '1px',
     base: '2px',
     lg: '4px',
   },
-  
+
   // Ring styles (box-shadow based)
   ring: {
     sm: `0 0 0 1px ${borderColors.interactiveFocus}`,
@@ -189,7 +189,7 @@ export const outlines = {
     lg: `0 0 0 3px ${borderColors.interactiveFocus}`,
     xl: `0 0 0 4px ${borderColors.interactiveFocus}`,
   },
-  
+
   // Colored rings
   ringColored: {
     primary: `0 0 0 3px rgba(100, 108, 255, 0.3)`,
@@ -219,19 +219,19 @@ export const dividers = {
 // Generate CSS variables from tokens
 export function generateBorderCSSVariables(): string {
   let css = ':root {\n'
-  
+
   // Border widths
   css += '  /* Border Widths */\n'
   Object.entries(borderWidths).forEach(([name, value]) => {
     css += `  --border-width-${name}: ${value};\n`
   })
-  
+
   // Border radius
   css += '\n  /* Border Radius */\n'
   Object.entries(borderRadius).forEach(([name, value]) => {
     css += `  --radius-${name}: ${value};\n`
   })
-  
+
   // Component radius
   css += '\n  /* Component Border Radius */\n'
   Object.entries(componentRadius).forEach(([component, sizes]) => {
@@ -239,20 +239,20 @@ export function generateBorderCSSVariables(): string {
       css += `  --radius-${component}-${size}: ${value};\n`
     })
   })
-  
+
   // Border presets
   css += '\n  /* Border Presets */\n'
   Object.entries(borders).forEach(([name, value]) => {
     const varName = name.replace(/([A-Z])/g, '-$1').toLowerCase()
     css += `  --border-${varName}: ${value};\n`
   })
-  
+
   // Outline offsets
   css += '\n  /* Outline Offsets */\n'
   Object.entries(outlines.offset).forEach(([name, value]) => {
     css += `  --outline-offset-${name}: ${value};\n`
   })
-  
+
   // Ring styles
   css += '\n  /* Focus Rings */\n'
   Object.entries(outlines.ring).forEach(([name, value]) => {
@@ -261,9 +261,9 @@ export function generateBorderCSSVariables(): string {
   Object.entries(outlines.ringColored).forEach(([name, value]) => {
     css += `  --ring-${name}: ${value};\n`
   })
-  
+
   css += '}\n'
-  
+
   return css
 }
 

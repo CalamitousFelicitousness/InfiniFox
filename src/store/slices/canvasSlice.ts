@@ -1,10 +1,10 @@
+import { imageStorage } from '../../services/storage'
 import {
   AddImageCommand,
   RemoveImageCommand,
   MoveImageCommand,
   useHistoryStore,
 } from '../historyStore'
-import { imageStorage } from '../../services/storage'
 import type { ImageData, ImageRole, CanvasSelectionMode, SliceCreator } from '../types'
 
 // Store reference will be set after store creation to avoid circular dependency
@@ -40,7 +40,7 @@ export interface CanvasSlice {
   canvasSelectionMode: CanvasSelectionMode
   canvasViewport: CanvasViewport
   generationFrames: GenerationFrame[]
-  
+
   // Actions
   addImage: (image: ImageData) => void
   addImageDirect: (image: ImageData) => void
@@ -49,7 +49,10 @@ export interface CanvasSlice {
   duplicateImage: (id: string) => void
   updateImagePosition: (id: string, x: number, y: number) => void
   updateImagePositionDirect: (id: string, x: number, y: number) => void
-  setImageRole: (imageId: string, role: 'img2img_init' | 'inpaint_image' | 'controlnet' | null) => void
+  setImageRole: (
+    imageId: string,
+    role: 'img2img_init' | 'inpaint_image' | 'controlnet' | null
+  ) => void
   getImageRole: (imageId: string) => string | null
   clearImageRoles: () => void
   setImageAsInput: (src: string) => void
@@ -63,7 +66,13 @@ export interface CanvasSlice {
   uploadImageToCanvas: (file: File, x?: number, y?: number) => Promise<void>
   updateCanvasViewport: (scale: number, position: { x: number; y: number }) => void
   // Generation frame actions
-  addGenerationFrame: (x: number, y: number, width: number, height: number, isPlaceholder?: boolean) => string
+  addGenerationFrame: (
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    isPlaceholder?: boolean
+  ) => string
   removeGenerationFrame: (id: string) => void
   updateGenerationFrame: (id: string, updates: Partial<GenerationFrame>) => void
   clearGenerationFrames: () => void
@@ -86,10 +95,10 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
   },
   canvasViewport: {
     scale: 1,
-    position: { x: 0, y: 0 }
+    position: { x: 0, y: 0 },
   },
   generationFrames: [],
-  
+
   // Actions
   addImage: (image: ImageData) => {
     if (!storeRef) {
@@ -99,53 +108,53 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
     const command = new AddImageCommand(image, storeRef)
     useHistoryStore.getState().executeCommand(command)
   },
-  
+
   addImageDirect: (image: ImageData) => {
     set((state) => ({ images: [...state.images, image] }))
-    
+
     // Save initial position to IndexedDB if image has a blobId
     if (image.blobId) {
-      imageStorage.updateImagePosition(image.blobId, image.x, image.y).catch(error => {
+      imageStorage.updateImagePosition(image.blobId, image.x, image.y).catch((error) => {
         console.error('Failed to persist initial image position:', error)
       })
     }
   },
-  
+
   removeImage: (id: string) => {
     const image = get().images.find((img) => img.id === id)
     if (image && storeRef) {
       const command = new RemoveImageCommand(image, storeRef)
       useHistoryStore.getState().executeCommand(command)
-      
+
       // Clean up storage when removing image
       if (image.blobId) {
         imageStorage.deleteImage(image.blobId).catch(console.error)
-        
+
         // Update storage stats
         storeRef.getState().updateStorageStats?.()
       }
     }
   },
-  
+
   removeImageDirect: (id: string) => {
     const image = get().images.find((img) => img.id === id)
-    
+
     // Clean up storage
     if (image?.blobId) {
       imageStorage.deleteImage(image.blobId).catch(console.error)
     }
-    
+
     set((state) => ({
       images: state.images.filter((img) => img.id !== id),
     }))
   },
-  
+
   duplicateImage: async (id: string) => {
     const { images } = get()
     const originalImage = images.find((img) => img.id === id)
     if (originalImage) {
       const newId = `img-${Date.now()}`
-      
+
       // If the image has a blob ID, duplicate it in storage
       if (originalImage.blobId) {
         try {
@@ -157,16 +166,16 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
               await imageStorage.exportAsBase64(originalImage.blobId),
               { ...storedImage.metadata }
             )
-            
+
             const newImage: ImageData = {
               ...originalImage,
               id: newId,
               src: duplicatedImage.objectUrl,
               x: originalImage.x + 50,
               y: originalImage.y + 50,
-              blobId: newId
+              blobId: newId,
             }
-            
+
             get().addImage(newImage)
             // Position will be saved by addImageDirect
             storeRef?.getState().updateStorageStats?.()
@@ -186,7 +195,7 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
       }
     }
   },
-  
+
   updateImagePosition: (id: string, x: number, y: number) => {
     const image = get().images.find((img) => img.id === id)
     if (image && storeRef) {
@@ -195,7 +204,7 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
       useHistoryStore.getState().executeCommand(command)
     }
   },
-  
+
   updateImagePositionDirect: (id: string, x: number, y: number) => {
     // Use shallow equality check to prevent unnecessary re-renders
     const currentImage = get().images.find((img) => img.id === id)
@@ -203,27 +212,27 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
       set((state) => ({
         images: state.images.map((img) => (img.id === id ? { ...img, x, y } : img)),
       }))
-      
+
       // Save position to IndexedDB if image has a blobId
       if (currentImage.blobId) {
-        imageStorage.updateImagePosition(currentImage.blobId, x, y).catch(error => {
+        imageStorage.updateImagePosition(currentImage.blobId, x, y).catch((error) => {
           console.error('Failed to persist image position:', error)
         })
       }
     }
   },
-  
+
   setImageRole: (imageId: string, role: 'img2img_init' | 'inpaint_image' | 'controlnet' | null) => {
     set((state) => {
       let newRoles = [...state.activeImageRoles]
-      
+
       if (role) {
         // Check if another image already has this role
         const existingRole = newRoles.find((r) => r.role === role)
         if (existingRole && existingRole.imageId !== imageId) {
           console.log(`Transferring ${role} role from image ${existingRole.imageId} to ${imageId}`)
         }
-        
+
         // Remove any existing image with this same role (only one image per role)
         newRoles = newRoles.filter((r) => r.role !== role)
         // Remove any existing role for this specific image
@@ -256,12 +265,12 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
       return { activeImageRoles: newRoles, images }
     })
   },
-  
+
   getImageRole: (imageId: string) => {
     const role = get().activeImageRoles.find((r) => r.imageId === imageId)
     return role ? role.role : null
   },
-  
+
   clearImageRoles: () => {
     set((state) => {
       // Clear all metadata usedIn sets
@@ -271,14 +280,14 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
         }
         return img
       })
-      
-      return { 
+
+      return {
         activeImageRoles: [],
-        images 
+        images,
       }
     })
   },
-  
+
   setImageAsInput: (src: string) => {
     // This will be used to send image to img2img panel
     console.log('Setting image as input for img2img:', src)
@@ -288,7 +297,7 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
       get().setImageRole(image.id, 'img2img_init')
     }
   },
-  
+
   startCanvasSelection: (
     mode: 'img2img_init' | 'inpaint_image' | 'controlnet',
     callback: (imageId: string, imageSrc: string) => void
@@ -301,7 +310,7 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
       },
     })
   },
-  
+
   cancelCanvasSelection: () => {
     set({
       canvasSelectionMode: {
@@ -311,7 +320,7 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
       },
     })
   },
-  
+
   clearCanvas: async () => {
     // Clean up all images from storage
     const { images } = get()
@@ -320,11 +329,11 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
         await imageStorage.deleteImage(image.blobId).catch(console.error)
       }
     }
-    
+
     set({ images: [] })
     storeRef?.getState().updateStorageStats?.()
   },
-  
+
   /**
    * Export image as Base64 for API requests
    */
@@ -333,45 +342,41 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
     if (!image) {
       throw new Error(`Image ${id} not found`)
     }
-    
+
     if (image.blobId) {
       return await imageStorage.exportAsBase64(image.blobId)
     }
-    
+
     // Fallback for images without blob storage (shouldn't happen in new system)
     if (image.src.startsWith('data:')) {
       return image.src.split(',')[1]
     }
-    
+
     throw new Error(`Cannot export image ${id} as base64`)
   },
-  
+
   /**
    * Upload an image file to the canvas
    */
   uploadImageToCanvas: async (file: File, x?: number, y?: number) => {
     try {
       const imageId = `img-${Date.now()}-uploaded`
-      
+
       // Get image dimensions
       const dimensions = await new Promise<{ width: number; height: number }>((resolve) => {
         const img = new Image()
         img.onload = () => resolve({ width: img.width, height: img.height })
         img.src = URL.createObjectURL(file)
       })
-      
+
       // Store the image
-      const storedImage = await imageStorage.createFromFile(
-        imageId,
-        file,
-        {
-          type: 'uploaded',
-          width: dimensions.width,
-          height: dimensions.height,
-          usedIn: new Set()
-        }
-      )
-      
+      const storedImage = await imageStorage.createFromFile(imageId, file, {
+        type: 'uploaded',
+        width: dimensions.width,
+        height: dimensions.height,
+        usedIn: new Set(),
+      })
+
       // Add to canvas
       const newImage: ImageData = {
         id: imageId,
@@ -382,9 +387,9 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
         height: dimensions.height,
         metadata: storedImage.metadata,
         blobId: imageId,
-        isTemporary: false
+        isTemporary: false,
       }
-      
+
       get().addImage(newImage)
       storeRef?.getState().updateStorageStats?.()
     } catch (error) {
@@ -392,18 +397,24 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
       alert('Failed to upload image')
     }
   },
-  
+
   /**
    * Update canvas viewport (zoom and pan position)
    */
   updateCanvasViewport: (scale: number, position: { x: number; y: number }) => {
-    set({ 
-      canvasViewport: { scale, position } 
+    set({
+      canvasViewport: { scale, position },
     })
   },
-  
+
   // Generation frame actions
-  addGenerationFrame: (x: number, y: number, width: number, height: number, isPlaceholder = false) => {
+  addGenerationFrame: (
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    isPlaceholder = false
+  ) => {
     const id = `frame-${Date.now()}`
     set((state) => ({
       generationFrames: [
@@ -422,38 +433,34 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
     }))
     return id
   },
-  
+
   removeGenerationFrame: (id: string) => {
     set((state) => ({
       generationFrames: state.generationFrames.filter((f) => f.id !== id),
     }))
   },
-  
+
   updateGenerationFrame: (id: string, updates: Partial<GenerationFrame>) => {
     set((state) => ({
-      generationFrames: state.generationFrames.map((f) =>
-        f.id === id ? { ...f, ...updates } : f
-      ),
+      generationFrames: state.generationFrames.map((f) => (f.id === id ? { ...f, ...updates } : f)),
     }))
   },
-  
+
   clearGenerationFrames: () => {
     set({ generationFrames: [] })
   },
-  
+
   getNextEmptyFrame: () => {
     const frames = get().generationFrames
-    return frames.find(f => f.isPlaceholder && !f.isGenerating && !f.error) || null
+    return frames.find((f) => f.isPlaceholder && !f.isGenerating && !f.error) || null
   },
-  
+
   updateFramePosition: (id: string, x: number, y: number) => {
     set((state) => ({
-      generationFrames: state.generationFrames.map((f) =>
-        f.id === id ? { ...f, x, y } : f
-      ),
+      generationFrames: state.generationFrames.map((f) => (f.id === id ? { ...f, x, y } : f)),
     }))
   },
-  
+
   updateFrameSize: (id: string, width: number, height: number) => {
     set((state) => ({
       generationFrames: state.generationFrames.map((f) =>
@@ -461,23 +468,19 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
       ),
     }))
   },
-  
+
   lockFrame: (id: string, locked: boolean) => {
     set((state) => ({
-      generationFrames: state.generationFrames.map((f) =>
-        f.id === id ? { ...f, locked } : f
-      ),
+      generationFrames: state.generationFrames.map((f) => (f.id === id ? { ...f, locked } : f)),
     }))
   },
-  
+
   labelFrame: (id: string, label: string) => {
     set((state) => ({
-      generationFrames: state.generationFrames.map((f) =>
-        f.id === id ? { ...f, label } : f
-      ),
+      generationFrames: state.generationFrames.map((f) => (f.id === id ? { ...f, label } : f)),
     }))
   },
-  
+
   convertPlaceholderToActive: (id: string) => {
     set((state) => ({
       generationFrames: state.generationFrames.map((f) =>

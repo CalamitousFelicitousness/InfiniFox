@@ -197,16 +197,16 @@ export const semanticColors = {
 // Generate CSS variables from tokens
 export function generateColorCSSVariables(): string {
   let css = ':root {\n'
-  
+
   // Core palette
   Object.entries(corePalette).forEach(([colorName, shades]) => {
     Object.entries(shades).forEach(([shade, value]) => {
       css += `  --color-${colorName}-${shade}: ${value};\n`
     })
   })
-  
+
   css += '\n  /* Semantic Colors */\n'
-  
+
   // Semantic colors
   Object.entries(semanticColors).forEach(([category, colors]) => {
     Object.entries(colors).forEach(([name, value]) => {
@@ -214,9 +214,9 @@ export function generateColorCSSVariables(): string {
       css += `  --color-${category}-${varName}: ${value};\n`
     })
   })
-  
+
   css += '}\n'
-  
+
   return css
 }
 

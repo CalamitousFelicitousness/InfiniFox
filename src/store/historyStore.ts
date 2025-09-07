@@ -71,7 +71,12 @@ class MoveImageCommand implements Command {
   private newPos: { x: number; y: number }
   private store: any
 
-  constructor(imageId: string, oldPos: { x: number; y: number }, newPos: { x: number; y: number }, store: any) {
+  constructor(
+    imageId: string,
+    oldPos: { x: number; y: number },
+    newPos: { x: number; y: number },
+    store: any
+  ) {
     this.id = `cmd-${Date.now()}-${Math.random()}`
     this.timestamp = Date.now()
     this.imageId = imageId
@@ -105,12 +110,15 @@ class BatchCommand implements Command {
   }
 
   execute() {
-    this.commands.forEach(cmd => cmd.execute())
+    this.commands.forEach((cmd) => cmd.execute())
   }
 
   undo() {
     // Undo in reverse order
-    this.commands.slice().reverse().forEach(cmd => cmd.undo())
+    this.commands
+      .slice()
+      .reverse()
+      .forEach((cmd) => cmd.undo())
   }
 }
 
@@ -137,23 +145,23 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
 
   executeCommand: (command: Command) => {
     const { history, currentIndex, maxHistorySize } = get()
-    
+
     // Remove any commands after current index (lose redo history)
     const newHistory = history.slice(0, currentIndex + 1)
-    
+
     // Add new command
     newHistory.push(command)
-    
+
     // Execute the command
     command.execute()
-    
+
     // Trim history if too long
     if (newHistory.length > maxHistorySize) {
       newHistory.shift()
     }
-    
+
     const newIndex = newHistory.length - 1
-    
+
     set({
       history: newHistory,
       currentIndex: newIndex,
@@ -164,13 +172,13 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
 
   undo: () => {
     const { history, currentIndex } = get()
-    
+
     if (currentIndex >= 0) {
       const command = history[currentIndex]
       command.undo()
-      
+
       const newIndex = currentIndex - 1
-      
+
       set({
         currentIndex: newIndex,
         canUndo: newIndex >= 0,
@@ -181,12 +189,12 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
 
   redo: () => {
     const { history, currentIndex } = get()
-    
+
     if (currentIndex < history.length - 1) {
       const newIndex = currentIndex + 1
       const command = history[newIndex]
       command.execute()
-      
+
       set({
         currentIndex: newIndex,
         canUndo: true,

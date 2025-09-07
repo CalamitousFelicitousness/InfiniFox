@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'preact/hooks'
 import { ChevronDown } from 'lucide-react'
+import { useState, useRef, useEffect } from 'preact/hooks'
 
 interface DropdownProps {
   label: string
@@ -10,7 +10,14 @@ interface DropdownProps {
   isLoading?: boolean
 }
 
-export function Dropdown({ label, value, onInput, options, disabled = false, isLoading = false }: DropdownProps) {
+export function Dropdown({
+  label,
+  value,
+  onInput,
+  options,
+  disabled = false,
+  isLoading = false,
+}: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -21,7 +28,7 @@ export function Dropdown({ label, value, onInput, options, disabled = false, isL
         setIsOpen(false)
       }
     }
-    
+
     const handleGlobalPointerCancel = () => {
       setIsOpen(false)
       setHighlightedIndex(-1)
@@ -92,12 +99,9 @@ export function Dropdown({ label, value, onInput, options, disabled = false, isL
           {value}
           {isLoading && <span class="dropdown-spinner" />}
         </span>
-        <ChevronDown 
-          size={14} 
-          class="dropdown-icon"
-        />
+        <ChevronDown size={14} class="dropdown-icon" />
       </button>
-      
+
       {isOpen && (
         <div class={`dropdown-menu ${isOpen ? 'open' : ''}`} role="listbox">
           {options.map((option, index) => (

@@ -42,14 +42,14 @@ export const BRUSH_PRESETS = {
     simulatePressure: false,
     start: {
       taper: 0,
-      cap: true
+      cap: true,
     },
     end: {
       taper: 0,
-      cap: true
-    }
+      cap: true,
+    },
   } as DrawingStrokeOptions,
-  
+
   soft: {
     size: 16,
     thinning: 0.5,
@@ -58,14 +58,14 @@ export const BRUSH_PRESETS = {
     simulatePressure: true,
     start: {
       taper: 100,
-      easing: (t: number) => t * t * t
+      easing: (t: number) => t * t * t,
     },
     end: {
       taper: 100,
-      easing: (t: number) => t * t * t
-    }
+      easing: (t: number) => t * t * t,
+    },
   } as DrawingStrokeOptions,
-  
+
   watercolor: {
     size: 20,
     thinning: 0.7,
@@ -74,14 +74,14 @@ export const BRUSH_PRESETS = {
     simulatePressure: true,
     start: {
       taper: 150,
-      easing: (t: number) => Math.sin(t * Math.PI / 2)
+      easing: (t: number) => Math.sin((t * Math.PI) / 2),
     },
     end: {
       taper: 20,
-      easing: (t: number) => 1 - Math.pow(1 - t, 2)
-    }
+      easing: (t: number) => 1 - Math.pow(1 - t, 2),
+    },
   } as DrawingStrokeOptions,
-  
+
   pencil: {
     size: 4,
     thinning: 0.4,
@@ -90,14 +90,14 @@ export const BRUSH_PRESETS = {
     simulatePressure: false,
     start: {
       taper: 10,
-      cap: true
+      cap: true,
     },
     end: {
       taper: 10,
-      cap: true
-    }
+      cap: true,
+    },
   } as DrawingStrokeOptions,
-  
+
   marker: {
     size: 12,
     thinning: 0.2,
@@ -106,38 +106,38 @@ export const BRUSH_PRESETS = {
     simulatePressure: false,
     start: {
       taper: 0,
-      cap: true
+      cap: true,
     },
     end: {
       taper: 0,
-      cap: true
-    }
-  } as DrawingStrokeOptions
+      cap: true,
+    },
+  } as DrawingStrokeOptions,
 }
 
 export class PerfectFreehandService {
   private currentOptions: DrawingStrokeOptions
   private currentStroke: StrokePoint[] = []
   private isDrawing: boolean = false
-  
+
   constructor(options: DrawingStrokeOptions = BRUSH_PRESETS.soft) {
     this.currentOptions = options
   }
-  
+
   /**
    * Set brush options
    */
   setOptions(options: DrawingStrokeOptions): void {
     this.currentOptions = { ...this.currentOptions, ...options }
   }
-  
+
   /**
    * Use a preset brush configuration
    */
   usePreset(preset: keyof typeof BRUSH_PRESETS): void {
     this.currentOptions = { ...BRUSH_PRESETS[preset] }
   }
-  
+
   /**
    * Start a new stroke
    */
@@ -145,7 +145,7 @@ export class PerfectFreehandService {
     this.isDrawing = true
     this.currentStroke = [this.normalizePoint(point)]
   }
-  
+
   /**
    * Add a point to the current stroke
    */
@@ -153,7 +153,7 @@ export class PerfectFreehandService {
     if (!this.isDrawing) return
     this.currentStroke.push(this.normalizePoint(point))
   }
-  
+
   /**
    * End the current stroke and get the final outline
    */
@@ -163,70 +163,67 @@ export class PerfectFreehandService {
       this.currentStroke = []
       return null
     }
-    
+
     this.isDrawing = false
     const outline = this.generateStrokeOutline(this.currentStroke)
     this.currentStroke = []
     return outline
   }
-  
+
   /**
    * Generate a stroke outline from a series of points
    */
   generateStrokeOutline(points: StrokePoint[]): number[][] {
     // Convert points to the format perfect-freehand expects
-    const inputPoints = points.map(p => [p.x, p.y, p.pressure ?? 0.5])
-    
+    const inputPoints = points.map((p) => [p.x, p.y, p.pressure ?? 0.5])
+
     // Generate the stroke outline
     const strokePoints = getStroke(inputPoints, this.currentOptions)
-    
+
     return strokePoints
   }
-  
+
   /**
    * Generate a smooth path from stroke points (for advanced usage)
    */
   generateSmoothPath(points: StrokePoint[]): any[] {
-    const inputPoints = points.map(p => ({
+    const inputPoints = points.map((p) => ({
       x: p.x,
       y: p.y,
-      pressure: p.pressure ?? 0.5
+      pressure: p.pressure ?? 0.5,
     }))
-    
+
     return getStrokePoints(inputPoints, this.currentOptions)
   }
-  
+
   /**
    * Generate outline points from smooth path (for advanced usage)
    */
   generateOutlineFromPath(pathPoints: any[]): number[][] {
     return getStrokeOutlinePoints(pathPoints, this.currentOptions)
   }
-  
+
   /**
    * Convert stroke outline to SVG path data
    */
   static toSvgPath(outline: number[][]): string {
     if (!outline.length) return ''
-    
-    const d = outline.reduce(
-      (acc, [x0, y0], i, arr) => {
-        const [x1, y1] = arr[(i + 1) % arr.length]
-        return `${acc} ${x0},${y0} ${(x0 + x1) / 2},${(y0 + y1) / 2}`
-      },
-      `M ${outline[0][0]},${outline[0][1]} Q`
-    )
-    
+
+    const d = outline.reduce((acc, [x0, y0], i, arr) => {
+      const [x1, y1] = arr[(i + 1) % arr.length]
+      return `${acc} ${x0},${y0} ${(x0 + x1) / 2},${(y0 + y1) / 2}`
+    }, `M ${outline[0][0]},${outline[0][1]} Q`)
+
     return `${d} Z`
   }
-  
+
   /**
    * Convert stroke outline to Konva Line points
    */
   static toKonvaPoints(outline: number[][]): number[] {
     return outline.flat()
   }
-  
+
   /**
    * Normalize a point to ensure it has the expected format
    */
@@ -234,24 +231,24 @@ export class PerfectFreehandService {
     return {
       x: point.x,
       y: point.y,
-      pressure: point.pressure ?? 0.5
+      pressure: point.pressure ?? 0.5,
     }
   }
-  
+
   /**
    * Get current drawing state
    */
   isCurrentlyDrawing(): boolean {
     return this.isDrawing
   }
-  
+
   /**
    * Get current stroke points (for preview/debugging)
    */
   getCurrentStroke(): StrokePoint[] {
     return [...this.currentStroke]
   }
-  
+
   /**
    * Clear current stroke without generating outline
    */
@@ -259,7 +256,7 @@ export class PerfectFreehandService {
     this.isDrawing = false
     this.currentStroke = []
   }
-  
+
   /**
    * Update brush size based on pressure
    */

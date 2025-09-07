@@ -1,6 +1,7 @@
 import { render } from 'preact'
-import { ThemeProvider } from './themes'
+
 import { App } from './app'
+import { ThemeProvider } from './themes'
 
 // Import theme styles
 import './themes/styles/token-variables.css'

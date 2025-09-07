@@ -3,49 +3,27 @@
  * TypeScript definitions for the theme system
  */
 
-import type { 
-  CorePalette, 
-  SemanticColors 
-} from './tokens/colors'
-import type { 
-  FontFamily, 
-  FontSize, 
-  FontWeight, 
-  LineHeight, 
-  LetterSpacing,
-  TypographyPreset 
-} from './tokens/typography'
-import type { 
-  SpacingScale, 
-  SemanticSpacing, 
-  ContainerWidth 
-} from './tokens/spacing'
-import type { 
-  Shadow, 
-  DropShadow, 
-  TextShadow 
-} from './tokens/shadows'
-import type { 
-  Easing, 
-  Duration, 
-  Transition, 
-  Animation, 
-  Keyframe 
-} from './tokens/animations'
-import type { 
-  BorderWidth, 
-  BorderStyle, 
-  BorderRadius, 
-  Border, 
-  Outline, 
-  Divider 
+import type { Easing, Duration, Transition, Animation, Keyframe } from './tokens/animations'
+import type {
+  BorderWidth,
+  BorderStyle,
+  BorderRadius,
+  Border,
+  Outline,
+  Divider,
 } from './tokens/borders'
-import type { 
-  Breakpoint, 
-  MediaQuery, 
-  ResponsiveScale, 
-  Layout 
-} from './tokens/breakpoints'
+import type { Breakpoint, MediaQuery, ResponsiveScale, Layout } from './tokens/breakpoints'
+import type { CorePalette, SemanticColors } from './tokens/colors'
+import type { Shadow, DropShadow, TextShadow } from './tokens/shadows'
+import type { SpacingScale, SemanticSpacing, ContainerWidth } from './tokens/spacing'
+import type {
+  FontFamily,
+  FontSize,
+  FontWeight,
+  LineHeight,
+  LetterSpacing,
+  TypographyPreset,
+} from './tokens/typography'
 
 /**
  * Complete theme interface

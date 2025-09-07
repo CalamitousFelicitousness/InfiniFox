@@ -39,46 +39,46 @@ class ImageStorageService {
   private dbName = 'infinifox-images'
   private dbVersion = 1
   private db: IDBDatabase | null = null
-  
+
   private constructor() {
     this.initDB()
   }
-  
+
   static getInstance(): ImageStorageService {
     if (!ImageStorageService.instance) {
       ImageStorageService.instance = new ImageStorageService()
     }
     return ImageStorageService.instance
   }
-  
+
   /**
    * Initialize IndexedDB for persistent storage
    */
   private async initDB(): Promise<void> {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(this.dbName, this.dbVersion)
-      
+
       request.onerror = () => {
         console.error('Failed to open IndexedDB:', request.error)
         reject(request.error)
       }
-      
+
       request.onsuccess = () => {
         this.db = request.result
         console.log('IndexedDB initialized successfully')
         resolve()
       }
-      
+
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result
-        
+
         // Create object stores if they don't exist
         if (!db.objectStoreNames.contains('images')) {
           const imageStore = db.createObjectStore('images', { keyPath: 'id' })
           imageStore.createIndex('timestamp', 'timestamp')
           imageStore.createIndex('type', 'metadata.type')
         }
-        
+
         if (!db.objectStoreNames.contains('sessions')) {
           const sessionStore = db.createObjectStore('sessions', { keyPath: 'id' })
           sessionStore.createIndex('timestamp', 'timestamp')
@@ -86,25 +86,25 @@ class ImageStorageService {
       }
     })
   }
-  
+
   /**
    * Convert Base64 string to Blob
    */
   private base64ToBlob(base64: string, mimeType: string = 'image/png'): Blob {
     // Remove data URL prefix if present
     const base64Data = base64.includes(',') ? base64.split(',')[1] : base64
-    
+
     const byteCharacters = atob(base64Data)
     const byteNumbers = new Array(byteCharacters.length)
-    
+
     for (let i = 0; i < byteCharacters.length; i++) {
       byteNumbers[i] = byteCharacters.charCodeAt(i)
     }
-    
+
     const byteArray = new Uint8Array(byteNumbers)
     return new Blob([byteArray], { type: mimeType })
   }
-  
+
   /**
    * Create an image from Base64 and return Object URL
    */
@@ -115,94 +115,93 @@ class ImageStorageService {
   ): Promise<StoredImage> {
     // Convert base64 to blob
     const blob = this.base64ToBlob(base64)
-    
+
     // Create object URL for immediate display
     const objectUrl = URL.createObjectURL(blob)
-    
+
     // Track the URL for cleanup
     this.objectUrls.set(id, objectUrl)
-    
+
     const storedImage: StoredImage = {
       id,
       objectUrl,
       blob,
       metadata,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     }
-    
+
     // Save to IndexedDB for persistence
     await this.saveToIndexedDB(storedImage)
-    
+
     return storedImage
   }
-  
+
   /**
    * Create an image from a File object (for uploads)
    */
-  async createFromFile(
-    id: string,
-    file: File,
-    metadata: ImageMetadata
-  ): Promise<StoredImage> {
+  async createFromFile(id: string, file: File, metadata: ImageMetadata): Promise<StoredImage> {
     // Create object URL directly from file
     const objectUrl = URL.createObjectURL(file)
-    
+
     // Track the URL for cleanup
     this.objectUrls.set(id, objectUrl)
-    
+
     const storedImage: StoredImage = {
       id,
       objectUrl,
       blob: file,
       metadata,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     }
-    
+
     // Save to IndexedDB for persistence
     await this.saveToIndexedDB(storedImage)
-    
+
     return storedImage
   }
-  
+
   /**
    * Save image to IndexedDB for persistence
    */
-  private async saveToIndexedDB(image: StoredImage, position?: { x: number; y: number }): Promise<void> {
+  private async saveToIndexedDB(
+    image: StoredImage,
+    position?: { x: number; y: number }
+  ): Promise<void> {
     if (!this.db) {
       await this.initDB()
     }
-    
+
     return new Promise((resolve, reject) => {
       if (!this.db) {
         reject(new Error('Database not initialized'))
         return
       }
-      
+
       const transaction = this.db.transaction(['images'], 'readwrite')
       const store = transaction.objectStore('images')
-      
+
       const persistedImage: PersistedImage = {
         id: image.id,
         blob: image.blob,
         metadata: image.metadata,
         timestamp: image.timestamp,
-        position: position // Save position if provided
+        position: position, // Save position if provided
       }
-      
+
       const request = store.put(persistedImage)
-      
+
       request.onsuccess = () => {
         console.log(`Image ${image.id} saved to IndexedDB${position ? ' with position' : ''}`)
         resolve()
       }
-      
+
       request.onerror = () => {
         console.error(`Failed to save image ${image.id}:`, request.error)
         reject(request.error)
       }
     })
   }
-  
+
   /**
    * Update image position in IndexedDB
    */
@@ -210,28 +209,28 @@ class ImageStorageService {
     if (!this.db) {
       await this.initDB()
     }
-    
+
     return new Promise((resolve, reject) => {
       if (!this.db) {
         reject(new Error('Database not initialized'))
         return
       }
-      
+
       const transaction = this.db.transaction(['images'], 'readwrite')
       const store = transaction.objectStore('images')
       const getRequest = store.get(id)
-      
+
       getRequest.onsuccess = () => {
         const result = getRequest.result as PersistedImage | undefined
         if (result) {
           result.position = { x, y }
           const putRequest = store.put(result)
-          
+
           putRequest.onsuccess = () => {
             console.log(`Updated position for image ${id}: x=${x}, y=${y}`)
             resolve()
           }
-          
+
           putRequest.onerror = () => {
             reject(putRequest.error)
           }
@@ -239,58 +238,60 @@ class ImageStorageService {
           reject(new Error(`Image ${id} not found in IndexedDB`))
         }
       }
-      
+
       getRequest.onerror = () => {
         reject(getRequest.error)
       }
     })
   }
-  
+
   /**
    * Load image from IndexedDB
    */
-  async loadFromIndexedDB(id: string): Promise<(StoredImage & { position?: { x: number; y: number } }) | null> {
+  async loadFromIndexedDB(
+    id: string
+  ): Promise<(StoredImage & { position?: { x: number; y: number } }) | null> {
     if (!this.db) {
       await this.initDB()
     }
-    
+
     return new Promise((resolve, reject) => {
       if (!this.db) {
         reject(new Error('Database not initialized'))
         return
       }
-      
+
       const transaction = this.db.transaction(['images'], 'readonly')
       const store = transaction.objectStore('images')
       const request = store.get(id)
-      
+
       request.onsuccess = () => {
         const result = request.result as PersistedImage | undefined
         if (result) {
           // Create new object URL from stored blob
           const objectUrl = URL.createObjectURL(result.blob)
           this.objectUrls.set(id, objectUrl)
-          
+
           resolve({
             id: result.id,
             objectUrl,
             blob: result.blob,
             metadata: result.metadata,
             timestamp: result.timestamp,
-            position: result.position // Include position in return
+            position: result.position, // Include position in return
           })
         } else {
           resolve(null)
         }
       }
-      
+
       request.onerror = () => {
         console.error(`Failed to load image ${id}:`, request.error)
         reject(request.error)
       }
     })
   }
-  
+
   /**
    * Load all images from IndexedDB
    */
@@ -298,45 +299,45 @@ class ImageStorageService {
     if (!this.db) {
       await this.initDB()
     }
-    
+
     return new Promise((resolve, reject) => {
       if (!this.db) {
         reject(new Error('Database not initialized'))
         return
       }
-      
+
       const transaction = this.db.transaction(['images'], 'readonly')
       const store = transaction.objectStore('images')
       const request = store.getAll()
-      
+
       request.onsuccess = () => {
         const results = request.result as PersistedImage[]
-        const storedImages = results.map(result => {
+        const storedImages = results.map((result) => {
           // Create new object URL from stored blob
           const objectUrl = URL.createObjectURL(result.blob)
           this.objectUrls.set(result.id, objectUrl)
-          
+
           return {
             id: result.id,
             objectUrl,
             blob: result.blob,
             metadata: result.metadata,
             timestamp: result.timestamp,
-            position: result.position // Include position in return
+            position: result.position, // Include position in return
           }
         })
-        
+
         console.log(`Loaded ${storedImages.length} images from IndexedDB`)
         resolve(storedImages)
       }
-      
+
       request.onerror = () => {
         console.error('Failed to load images:', request.error)
         reject(request.error)
       }
     })
   }
-  
+
   /**
    * Delete image from both memory and IndexedDB
    */
@@ -347,69 +348,69 @@ class ImageStorageService {
       URL.revokeObjectURL(objectUrl)
       this.objectUrls.delete(id)
     }
-    
+
     // Delete from IndexedDB
     if (!this.db) {
       await this.initDB()
     }
-    
+
     return new Promise((resolve, reject) => {
       if (!this.db) {
         reject(new Error('Database not initialized'))
         return
       }
-      
+
       const transaction = this.db.transaction(['images'], 'readwrite')
       const store = transaction.objectStore('images')
       const request = store.delete(id)
-      
+
       request.onsuccess = () => {
         console.log(`Image ${id} deleted`)
         resolve()
       }
-      
+
       request.onerror = () => {
         console.error(`Failed to delete image ${id}:`, request.error)
         reject(request.error)
       }
     })
   }
-  
+
   /**
    * Clear all images from memory and database
    */
   async clearAll(): Promise<void> {
     // Revoke all object URLs
-    this.objectUrls.forEach(url => URL.revokeObjectURL(url))
+    this.objectUrls.forEach((url) => URL.revokeObjectURL(url))
     this.objectUrls.clear()
-    
+
     // Clear IndexedDB
     if (!this.db) {
       await this.initDB()
     }
-    
+
     return new Promise((resolve, reject) => {
       if (!this.db) {
         reject(new Error('Database not initialized'))
         return
       }
-      
+
       const transaction = this.db.transaction(['images'], 'readwrite')
       const store = transaction.objectStore('images')
       const request = store.clear()
-      
+
       request.onsuccess = () => {
         console.log('All images cleared')
         resolve()
       }
-      
+
       request.onerror = () => {
         console.error('Failed to clear images:', request.error)
         reject(request.error)
       }
     })
   }
-  
+
   /**
    * Get storage statistics
    */
@@ -421,36 +422,38 @@ class ImageStorageService {
     if (!this.db) {
       await this.initDB()
     }
-    
+
     return new Promise((resolve, reject) => {
       if (!this.db) {
         reject(new Error('Database not initialized'))
         return
       }
-      
+
       const transaction = this.db.transaction(['images'], 'readonly')
       const store = transaction.objectStore('images')
       const countRequest = store.count()
       const getAllRequest = store.getAll()
-      
+
       Promise.all([
-        new Promise(res => countRequest.onsuccess = () => res(countRequest.result)),
-        new Promise(res => getAllRequest.onsuccess = () => res(getAllRequest.result))
-      ]).then(([count, images]) => {
-        const totalSize = (images as PersistedImage[]).reduce(
-          (sum, img) => sum + img.blob.size,
-          0
-        )
-        
-        resolve({
-          imageCount: count as number,
-          totalSize,
-          memoryUrls: this.objectUrls.size
+        new Promise((res) => (countRequest.onsuccess = () => res(countRequest.result))),
+        new Promise((res) => (getAllRequest.onsuccess = () => res(getAllRequest.result))),
+      ])
+        .then(([count, images]) => {
+          const totalSize = (images as PersistedImage[]).reduce(
+            (sum, img) => sum + img.blob.size,
+            0
+          )
+
+          resolve({
+            imageCount: count as number,
+            totalSize,
+            memoryUrls: this.objectUrls.size,
+          })
         })
-      }).catch(reject)
+        .catch(reject)
     })
   }
-  
+
   /**
    * Export image as Base64 (for API requests)
    */
@@ -459,7 +462,7 @@ class ImageStorageService {
     if (!image) {
       throw new Error(`Image ${id} not found`)
     }
-    
+
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.onloadend = () => {
@@ -472,7 +475,7 @@ class ImageStorageService {
       reader.readAsDataURL(image.blob)
     })
   }
-  
+
   /**
    * Get object URL for an image (creates if needed)
    */
@@ -482,18 +485,18 @@ class ImageStorageService {
     if (existingUrl) {
       return existingUrl
     }
-    
+
     // Try to load from IndexedDB
     const image = await this.loadFromIndexedDB(id)
     return image ? image.objectUrl : null
   }
-  
+
   /**
    * Cleanup object URLs (call periodically or on unmount)
    */
   cleanup(): void {
     console.log(`Cleaning up ${this.objectUrls.size} object URLs`)
-    this.objectUrls.forEach(url => URL.revokeObjectURL(url))
+    this.objectUrls.forEach((url) => URL.revokeObjectURL(url))
     this.objectUrls.clear()
   }
 }

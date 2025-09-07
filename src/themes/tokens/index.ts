@@ -14,20 +14,17 @@ export * from './breakpoints'
 export * from './icons'
 
 // Import all token generators
-import { generateColorCSSVariables } from './colors'
-import { generateTypographyCSSVariables } from './typography'
-import { generateSpacingCSSVariables } from './spacing'
-import { generateShadowCSSVariables } from './shadows'
 import { generateAnimationCSS } from './animations'
 import { generateBorderCSSVariables } from './borders'
 import { generateBreakpointCSSVariables } from './breakpoints'
+import { generateColorCSSVariables } from './colors'
 import { generateIconCSSVariables } from './icons'
+import { generateShadowCSSVariables } from './shadows'
+import { generateSpacingCSSVariables } from './spacing'
+import { generateTypographyCSSVariables } from './typography'
 
 // Re-export commonly used tokens for convenience
-export {
-  corePalette,
-  semanticColors,
-} from './colors'
+export { corePalette, semanticColors } from './colors'
 
 export {
   fontFamilies,
@@ -38,47 +35,17 @@ export {
   typographyPresets,
 } from './typography'
 
-export {
-  spacing,
-  semanticSpacing,
-  containerWidths,
-} from './spacing'
+export { spacing, semanticSpacing, containerWidths } from './spacing'
 
-export {
-  shadows,
-  dropShadows,
-  textShadows,
-} from './shadows'
+export { shadows, dropShadows, textShadows } from './shadows'
 
-export {
-  easings,
-  durations,
-  transitions,
-  animations,
-  keyframes,
-} from './animations'
+export { easings, durations, transitions, animations, keyframes } from './animations'
 
-export {
-  borderWidths,
-  borderStyles,
-  borderRadius,
-  borders,
-  outlines,
-  dividers,
-} from './borders'
+export { borderWidths, borderStyles, borderRadius, borders, outlines, dividers } from './borders'
 
-export {
-  breakpoints,
-  mediaQueries,
-  breakpointUtils,
-  layouts,
-} from './breakpoints'
+export { breakpoints, mediaQueries, breakpointUtils, layouts } from './breakpoints'
 
-export {
-  iconSizes,
-  iconSizeValues,
-  iconStrokes,
-} from './icons'
+export { iconSizes, iconSizeValues, iconStrokes } from './icons'
 
 /**
  * Generate all CSS variables for the theme system
@@ -160,13 +127,12 @@ export function batchUpdateCSSVariables(updates: Record<string, string>): void {
 export function clearCSSVariables(): void {
   const root = document.documentElement
   const computedStyle = getComputedStyle(root)
-  
+
   // Get all CSS custom properties
-  const customProps = Array.from(computedStyle)
-    .filter(prop => prop.startsWith('--'))
-  
+  const customProps = Array.from(computedStyle).filter((prop) => prop.startsWith('--'))
+
   // Remove each custom property
-  customProps.forEach(prop => {
+  customProps.forEach((prop) => {
     root.style.removeProperty(prop)
   })
 }
@@ -178,13 +144,13 @@ export function exportCSSVariables(): Record<string, string> {
   const root = document.documentElement
   const computedStyle = getComputedStyle(root)
   const variables: Record<string, string> = {}
-  
+
   // Get all CSS custom properties
   Array.from(computedStyle)
-    .filter(prop => prop.startsWith('--'))
-    .forEach(prop => {
+    .filter((prop) => prop.startsWith('--'))
+    .forEach((prop) => {
       variables[prop] = computedStyle.getPropertyValue(prop).trim()
     })
-  
+
   return variables
 }

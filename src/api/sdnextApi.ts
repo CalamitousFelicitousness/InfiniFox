@@ -37,7 +37,7 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
   const { useStore } = await import('../store/store')
   const apiSettings = useStore.getState().apiSettings
   const API_BASE_URL = apiSettings.apiUrl
-  
+
   const url = `${API_BASE_URL}/${endpoint}`
   const defaultHeaders = {
     'Content-Type': 'application/json',

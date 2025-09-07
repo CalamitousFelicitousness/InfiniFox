@@ -4,23 +4,24 @@
  */
 
 import { ComponentProps, FunctionComponent } from 'preact'
+
 import { defaultIconProps } from './index'
 
 interface IconProps extends Omit<ComponentProps<'svg'>, 'icon'> {
-  icon: FunctionComponent<ComponentProps<'svg'>>  // Lucide icon component
+  icon: FunctionComponent<ComponentProps<'svg'>> // Lucide icon component
   size?: number
   color?: string
   strokeWidth?: number
   className?: string
 }
 
-export function Icon({ 
-  icon: IconComponent, 
+export function Icon({
+  icon: IconComponent,
   size = defaultIconProps.size,
   strokeWidth = defaultIconProps.strokeWidth,
   className = '',
   color,
-  ...props 
+  ...props
 }: IconProps) {
   return (
     <IconComponent
@@ -57,16 +58,10 @@ export function AnimatedIcon({
 }: AnimatedIconProps) {
   const animationClass = `icon-${animation}`
   const style = {
-    '--animation-duration': `${duration}s`
+    '--animation-duration': `${duration}s`,
   }
-  
-  return (
-    <Icon 
-      className={`${className} ${animationClass}`}
-      style={style}
-      {...props}
-    />
-  )
+
+  return <Icon className={`${className} ${animationClass}`} style={style} {...props} />
 }
 
 /**
@@ -84,7 +79,7 @@ export function IconWithTooltip({
   ...props
 }: IconWithTooltipProps) {
   return (
-    <span 
+    <span
       class={`icon-with-tooltip ${className}`}
       title={tooltip}
       data-tooltip={tooltip}
@@ -100,7 +95,7 @@ export function IconWithTooltip({
  */
 interface IconButtonProps extends IconProps {
   onClick?: (e: Event) => void
-  label: string  // For accessibility
+  label: string // For accessibility
   isActive?: boolean
   disabled?: boolean
 }

@@ -5,17 +5,17 @@ import { Stage, Layer, Line, Circle, Image as KonvaImage, Rect } from 'react-kon
 import { Dropdown } from '../../components/common/Dropdown'
 import { Slider } from '../../components/common/Slider'
 import { Tooltip } from '../../components/common/Tooltip'
-import { 
-  BrushIcon, 
-  EraserIcon, 
-  EyeIcon, 
-  EyeOffIcon, 
+import {
+  BrushIcon,
+  EraserIcon,
+  EyeIcon,
+  EyeOffIcon,
   Trash2 as DeleteIcon,
   Plus,
   Download,
   RefreshCw,
   Upload,
-  Droplet
+  Droplet,
 } from '../../components/icons'
 import { LazyBrush } from '../../services/drawing/LazyBrush'
 import {
@@ -565,7 +565,7 @@ export function DrawingPanel() {
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}  // Handle pointer cancel events
+          onPointerCancel={handlePointerUp} // Handle pointer cancel events
           onPointerEnter={handlePointerEnter}
           onPointerLeave={handlePointerLeave}
           style={{

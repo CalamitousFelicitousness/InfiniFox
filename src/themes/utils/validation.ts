@@ -48,7 +48,7 @@ export const WCAG_CONTRAST = {
 export function validateTheme(theme: any): ValidationResult {
   const errors: ValidationError[] = []
   const warnings: ValidationWarning[] = []
-  
+
   // Check required fields
   if (!theme.name) {
     errors.push({
@@ -56,7 +56,7 @@ export function validateTheme(theme: any): ValidationResult {
       message: 'Theme must have a name',
     })
   }
-  
+
   if (!theme.mode || !['light', 'dark', 'auto'].includes(theme.mode)) {
     errors.push({
       path: 'mode',
@@ -64,7 +64,7 @@ export function validateTheme(theme: any): ValidationResult {
       value: theme.mode,
     })
   }
-  
+
   // Validate colors
   if (!theme.colors) {
     errors.push({
@@ -74,7 +74,7 @@ export function validateTheme(theme: any): ValidationResult {
   } else {
     validateColors(theme.colors, errors, warnings)
   }
-  
+
   // Validate typography
   if (!theme.typography) {
     warnings.push({
@@ -85,7 +85,7 @@ export function validateTheme(theme: any): ValidationResult {
   } else {
     validateTypography(theme.typography, errors, warnings)
   }
-  
+
   // Validate spacing
   if (!theme.spacing) {
     warnings.push({
@@ -96,12 +96,12 @@ export function validateTheme(theme: any): ValidationResult {
   } else {
     validateSpacing(theme.spacing, errors, warnings)
   }
-  
+
   // Additional validations
   validateShadows(theme.shadows, warnings)
   validateBorders(theme.borders, warnings)
   validateAnimations(theme.animations, warnings)
-  
+
   return {
     valid: errors.length === 0,
     errors,
@@ -126,8 +126,8 @@ function validateColors(
     'border.primary',
     'interactive.primary',
   ]
-  
-  requiredSemanticColors.forEach(path => {
+
+  requiredSemanticColors.forEach((path) => {
     const [category, key] = path.split('.')
     if (!colors.semantic?.[category]?.[key]) {
       errors.push({
@@ -136,7 +136,7 @@ function validateColors(
       })
     }
   })
-  
+
   // Validate color values
   if (colors.palette) {
     Object.entries(colors.palette).forEach(([key, value]) => {
@@ -177,7 +177,7 @@ function validateTypography(
       message: 'Typography should include font sizes',
     })
   }
-  
+
   // Check font families
   if (typography.families) {
     Object.entries(typography.families).forEach(([key, value]) => {
@@ -190,7 +190,7 @@ function validateTypography(
       }
     })
   }
-  
+
   // Check line heights
   if (typography.lineHeights) {
     Object.entries(typography.lineHeights).forEach(([key, value]) => {
@@ -221,7 +221,7 @@ function validateSpacing(
       suggestion: 'Add spacing scale for consistent spacing values',
     })
   }
-  
+
   // Validate spacing values
   if (spacing.scale) {
     Object.entries(spacing.scale).forEach(([key, value]) => {
@@ -281,21 +281,20 @@ function validateAnimations(animations: any, warnings: ValidationWarning[]): voi
 export function isValidColor(color: string | any): boolean {
   // Type guard - ensure color is a string
   if (typeof color !== 'string') return false
-  
+
   // Check for CSS variables
   if (color.startsWith('var(--')) return true
-  
+
   // Check for common color formats
   const colorPatterns = [
-    /^#[0-9A-Fa-f]{3,8}$/,                          // Hex
-    /^rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)$/,      // RGB
+    /^#[0-9A-Fa-f]{3,8}$/, // Hex
+    /^rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)$/, // RGB
     /^rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[\d.]+\s*\)$/, // RGBA
-    /^hsl\(\s*\d+\s*,\s*\d+%\s*,\s*\d+%\s*\)$/,    // HSL
+    /^hsl\(\s*\d+\s*,\s*\d+%\s*,\s*\d+%\s*\)$/, // HSL
     /^hsla\(\s*\d+\s*,\s*\d+%\s*,\s*\d+%\s*,\s*[\d.]+\s*\)$/, // HSLA
   ]
-  
-  return colorPatterns.some(pattern => pattern.test(color)) ||
-         isNamedColor(color)
+
+  return colorPatterns.some((pattern) => pattern.test(color)) || isNamedColor(color)
 }
 
 /**
@@ -303,8 +302,21 @@ export function isValidColor(color: string | any): boolean {
  */
 function isNamedColor(color: string): boolean {
   const namedColors = [
-    'transparent', 'currentColor', 'black', 'white', 'red', 'green', 'blue',
-    'yellow', 'cyan', 'magenta', 'gray', 'grey', 'orange', 'purple', 'brown',
+    'transparent',
+    'currentColor',
+    'black',
+    'white',
+    'red',
+    'green',
+    'blue',
+    'yellow',
+    'cyan',
+    'magenta',
+    'gray',
+    'grey',
+    'orange',
+    'purple',
+    'brown',
   ]
   return namedColors.includes(color.toLowerCase())
 }
@@ -315,7 +327,7 @@ function isNamedColor(color: string): boolean {
 function isValidSpacing(value: string): boolean {
   // Check for CSS variables
   if (value.startsWith('var(--')) return true
-  
+
   // Check for valid units
   const spacingPattern = /^-?\d+(\.\d+)?(px|rem|em|vh|vw|%|ch|ex|cm|mm|in|pt|pc)$/
   return spacingPattern.test(value) || value === '0' || value === 'auto'
@@ -340,10 +352,8 @@ export function meetsContrastRequirements(
   largeText: boolean = false
 ): boolean {
   const ratio = getContrastRatio(foreground, background)
-  const requirement = largeText 
-    ? WCAG_CONTRAST[`${level}_LARGE`]
-    : WCAG_CONTRAST[`${level}_NORMAL`]
-  
+  const requirement = largeText ? WCAG_CONTRAST[`${level}_LARGE`] : WCAG_CONTRAST[`${level}_NORMAL`]
+
   return ratio >= requirement
 }
 
@@ -353,11 +363,11 @@ export function meetsContrastRequirements(
 export function validateContrast(theme: Theme): ValidationResult {
   const errors: ValidationError[] = []
   const warnings: ValidationWarning[] = []
-  
+
   // Check primary text on backgrounds
   const textPrimary = theme.colors?.semantic?.text?.primary || '#000'
   const bgPrimary = theme.colors?.semantic?.background?.primary || '#fff'
-  
+
   if (!meetsContrastRequirements(textPrimary, bgPrimary)) {
     errors.push({
       path: 'colors.contrast',
@@ -365,10 +375,10 @@ export function validateContrast(theme: Theme): ValidationResult {
       value: `${textPrimary} on ${bgPrimary}`,
     })
   }
-  
+
   // Check secondary text
   const textSecondary = theme.colors?.semantic?.text?.secondary || '#666'
-  
+
   if (!meetsContrastRequirements(textSecondary, bgPrimary)) {
     warnings.push({
       path: 'colors.contrast',
@@ -376,7 +386,7 @@ export function validateContrast(theme: Theme): ValidationResult {
       suggestion: 'Consider darkening secondary text for better readability',
     })
   }
-  
+
   return {
     valid: errors.length === 0,
     errors,
@@ -389,45 +399,45 @@ export function validateContrast(theme: Theme): ValidationResult {
  */
 export function autoFixTheme(theme: Partial<Theme>): Theme {
   const fixed = { ...theme } as Theme
-  
+
   // Ensure required fields
   if (!fixed.name) {
     fixed.name = 'custom-theme'
   }
-  
+
   if (!fixed.mode) {
     fixed.mode = 'dark'
   }
-  
+
   // Ensure basic structure
   if (!fixed.colors) {
     fixed.colors = { palette: {}, semantic: {} }
   }
-  
+
   if (!fixed.typography) {
     fixed.typography = {}
   }
-  
+
   if (!fixed.spacing) {
     fixed.spacing = {}
   }
-  
+
   if (!fixed.shadows) {
     fixed.shadows = {}
   }
-  
+
   if (!fixed.borders) {
     fixed.borders = {}
   }
-  
+
   if (!fixed.animations) {
     fixed.animations = {}
   }
-  
+
   if (!fixed.breakpoints) {
     fixed.breakpoints = {}
   }
-  
+
   return fixed
 }
 
@@ -454,7 +464,7 @@ export function mergeThemes(...themes: Partial<Theme>[]): Theme {
       custom: { ...acc.custom, ...theme.custom },
     }
   }, {} as Partial<Theme>)
-  
+
   return autoFixTheme(merged)
 }
 

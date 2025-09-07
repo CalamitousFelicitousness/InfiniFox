@@ -1,12 +1,12 @@
 import js from '@eslint/js'
-import typescript from 'typescript-eslint'
-import react from 'eslint-plugin-react'
-import reactHooks from 'eslint-plugin-react-hooks'
-import jsxA11y from 'eslint-plugin-jsx-a11y'
-import importPlugin from 'eslint-plugin-import'
-import prettier from 'eslint-plugin-prettier/recommended'
 import tsParser from '@typescript-eslint/parser'
 import type { Linter } from 'eslint'
+import importPlugin from 'eslint-plugin-import'
+import jsxA11y from 'eslint-plugin-jsx-a11y'
+import prettier from 'eslint-plugin-prettier/recommended'
+import react from 'eslint-plugin-react'
+import reactHooks from 'eslint-plugin-react-hooks'
+import typescript from 'typescript-eslint'
 
 const config: Linter.Config[] = [
   // Base JavaScript and TypeScript configs

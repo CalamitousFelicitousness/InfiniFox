@@ -75,8 +75,8 @@ export function generateTransitionCSS(config: TransitionConfig = defaultTransiti
     .map((prop, index) => {
       const delay = config.delay || 0
       const stagger = config.stagger || 0
-      const totalDelay = delay + (stagger * index)
-      
+      const totalDelay = delay + stagger * index
+
       return `${prop} ${config.duration}ms ${config.easing}${
         totalDelay > 0 ? ` ${totalDelay}ms` : ''
       }`
@@ -89,16 +89,16 @@ export function generateTransitionCSS(config: TransitionConfig = defaultTransiti
  */
 export function applyTransition(config: TransitionConfig = defaultTransition): void {
   const transitionCSS = generateTransitionCSS(config)
-  
+
   // Create or update transition style element
   let styleEl = document.getElementById('theme-transition-style') as HTMLStyleElement
-  
+
   if (!styleEl) {
     styleEl = document.createElement('style')
     styleEl.id = 'theme-transition-style'
     document.head.appendChild(styleEl)
   }
-  
+
   styleEl.textContent = `
     * {
       transition: ${transitionCSS} !important;
@@ -142,24 +142,27 @@ export async function transitionTheme(
   return new Promise((resolve) => {
     // Call start callback
     onTransitionStart?.()
-    
+
     // Apply transition styles
     applyTransition(config)
-    
+
     // Wait for next frame to ensure transition is applied
     requestAnimationFrame(() => {
       // Theme will be applied by ThemeProvider
       // We just need to wait for transition to complete
-      
-      setTimeout(() => {
-        // Remove transition styles
-        removeTransition()
-        
-        // Call end callback
-        onTransitionEnd?.()
-        
-        resolve()
-      }, config.duration + (config.delay || 0))
+
+      setTimeout(
+        () => {
+          // Remove transition styles
+          removeTransition()
+
+          // Call end callback
+          onTransitionEnd?.()
+
+          resolve()
+        },
+        config.duration + (config.delay || 0)
+      )
     })
   })
 }
@@ -171,12 +174,12 @@ export async function preloadTheme(theme: Theme): Promise<void> {
   // Preload any custom fonts
   if (theme.typography?.families) {
     const fonts = Object.values(theme.typography.families)
-    
+
     // Use Font Face Observer or similar for actual implementation
     // For now, just simulate loading
     await Promise.all(
-      fonts.map(font => {
-        return new Promise(resolve => {
+      fonts.map((font) => {
+        return new Promise((resolve) => {
           // Check if font is already loaded
           if (document.fonts?.check(`16px ${font}`)) {
             resolve(true)
@@ -188,7 +191,7 @@ export async function preloadTheme(theme: Theme): Promise<void> {
       })
     )
   }
-  
+
   // Preload any images referenced in theme
   // This would scan theme for image URLs and preload them
   // For now, just return
@@ -231,7 +234,7 @@ export function createStaggeredTransition(
  * Reset staggered transition
  */
 export function resetStaggeredTransition(elements: HTMLElement[]): void {
-  elements.forEach(el => {
+  elements.forEach((el) => {
     el.style.transitionDelay = ''
   })
 }
@@ -244,12 +247,12 @@ export function measureThemeSwitch(callback: () => void): number {
   callback()
   const endTime = performance.now()
   const duration = endTime - startTime
-  
+
   // Log performance metric
   if (duration > 50) {
     console.warn(`Theme switch took ${duration.toFixed(2)}ms (target: <50ms)`)
   }
-  
+
   return duration
 }
 
@@ -261,12 +264,12 @@ export function debounceThemeSwitch(
   delay: number = 100
 ): (theme: string) => void {
   let timeoutId: NodeJS.Timeout | null = null
-  
+
   return (theme: string) => {
     if (timeoutId) {
       clearTimeout(timeoutId)
     }
-    
+
     timeoutId = setTimeout(() => {
       switchFn(theme)
       timeoutId = null

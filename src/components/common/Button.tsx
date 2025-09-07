@@ -25,7 +25,7 @@ export function Button({
   className = '',
   fullWidth = false,
   icon,
-  iconPosition = 'left'
+  iconPosition = 'left',
 }: ButtonProps) {
   const isDisabled = disabled || loading
 
@@ -35,26 +35,17 @@ export function Button({
     `btn-${size}`,
     fullWidth && 'btn-block',
     loading && 'btn-loading',
-    className
-  ].filter(Boolean).join(' ')
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return (
-    <button
-      type={type}
-      class={buttonClasses}
-      onClick={onClick}
-      disabled={isDisabled}
-    >
-      {loading && (
-        <span class="btn-spinner" aria-hidden="true" />
-      )}
-      {icon && iconPosition === 'left' && (
-        <span class="btn-icon btn-icon-left">{icon}</span>
-      )}
+    <button type={type} class={buttonClasses} onClick={onClick} disabled={isDisabled}>
+      {loading && <span class="btn-spinner" aria-hidden="true" />}
+      {icon && iconPosition === 'left' && <span class="btn-icon btn-icon-left">{icon}</span>}
       <span class="btn-text">{children}</span>
-      {icon && iconPosition === 'right' && (
-        <span class="btn-icon btn-icon-right">{icon}</span>
-      )}
+      {icon && iconPosition === 'right' && <span class="btn-icon btn-icon-right">{icon}</span>}
     </button>
   )
 }
@@ -81,7 +72,7 @@ export function IconButton({
   loading = false,
   type = 'button',
   className = '',
-  ariaLabel
+  ariaLabel,
 }: IconButtonProps) {
   const isDisabled = disabled || loading
 
@@ -91,8 +82,10 @@ export function IconButton({
     `btn-${variant}`,
     `btn-${size}`,
     loading && 'btn-loading',
-    className
-  ].filter(Boolean).join(' ')
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return (
     <button
@@ -102,11 +95,7 @@ export function IconButton({
       disabled={isDisabled}
       aria-label={ariaLabel}
     >
-      {loading ? (
-        <span class="btn-spinner" aria-hidden="true" />
-      ) : (
-        icon
-      )}
+      {loading ? <span class="btn-spinner" aria-hidden="true" /> : icon}
     </button>
   )
 }
@@ -121,11 +110,7 @@ interface ButtonGroupProps {
 export function ButtonGroup({
   children,
   className = '',
-  orientation = 'horizontal'
+  orientation = 'horizontal',
 }: ButtonGroupProps) {
-  return (
-    <div class={`btn-group btn-group-${orientation} ${className}`}>
-      {children}
-    </div>
-  )
+  return <div class={`btn-group btn-group-${orientation} ${className}`}>{children}</div>
 }

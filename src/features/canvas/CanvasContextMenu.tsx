@@ -40,15 +40,15 @@ export function CanvasContextMenu({
   onClose,
 }: CanvasContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
-  const { 
-    setImageRole, 
-    getImageRole, 
-    clearImageRoles, 
+  const {
+    setImageRole,
+    getImageRole,
+    clearImageRoles,
     activeImageRoles,
     generationFrames,
     removeGenerationFrame,
     lockFrame,
-    generateInFrame
+    generateInFrame,
   } = useStore()
 
   useEffect(() => {
@@ -96,7 +96,7 @@ export function CanvasContextMenu({
 
   const currentRole = imageId ? getImageRole(imageId) : null
   const roleIndicator = currentRole ? ` (Active: ${currentRole})` : ''
-  const currentFrame = frameId ? generationFrames.find(f => f.id === frameId) : null
+  const currentFrame = frameId ? generationFrames.find((f) => f.id === frameId) : null
 
   if (frameId && currentFrame) {
     return (
@@ -206,9 +206,9 @@ export function CanvasContextMenu({
           >
             {(() => {
               // Determine which generation mode will be used
-              const img2imgRole = activeImageRoles.find(r => r.role === 'img2img_init')
-              const inpaintRole = activeImageRoles.find(r => r.role === 'inpaint_image')
-              
+              const img2imgRole = activeImageRoles.find((r) => r.role === 'img2img_init')
+              const inpaintRole = activeImageRoles.find((r) => r.role === 'inpaint_image')
+
               if (inpaintRole) {
                 return 'Quick Inpaint Here'
               } else if (img2imgRole) {
@@ -221,13 +221,12 @@ export function CanvasContextMenu({
           {/* Show info about active image roles */}
           {activeImageRoles.length > 0 && (
             <div class="canvas-context-menu__role-info">
-              {activeImageRoles.map(role => (
+              {activeImageRoles.map((role) => (
                 <div key={role.imageId} class="canvas-context-menu__role-item">
                   <span class="canvas-context-menu__role-text">
                     {role.role === 'img2img_init' && 'Img2Img'}
                     {role.role === 'inpaint_image' && 'Inpaint'}
-                    {role.role === 'controlnet' && 'ControlNet'}
-                    : Image {role.imageId.slice(-6)}
+                    {role.role === 'controlnet' && 'ControlNet'}: Image {role.imageId.slice(-6)}
                   </span>
                 </div>
               ))}

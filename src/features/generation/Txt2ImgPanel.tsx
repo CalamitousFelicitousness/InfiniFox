@@ -84,36 +84,36 @@ export function Txt2ImgPanel() {
         />
 
         <Tooltip content="Use -1 for a random seed">
-        <NumberInput
-          label="Seed"
-          value={seed}
-          onInput={(val) => setSeed(val)}
-          disabled={isLoading}
-        />
+          <NumberInput
+            label="Seed"
+            value={seed}
+            onInput={(val) => setSeed(val)}
+            disabled={isLoading}
+          />
         </Tooltip>
 
         <Tooltip content="More steps = higher quality but slower generation">
-        <Slider
-          label="Steps"
-          value={steps}
-          onInput={(val) => setSteps(val)}
-          min={1}
-          max={100}
-          step={1}
-          disabled={isLoading}
-        />
+          <Slider
+            label="Steps"
+            value={steps}
+            onInput={(val) => setSteps(val)}
+            min={1}
+            max={100}
+            step={1}
+            disabled={isLoading}
+          />
         </Tooltip>
 
         <Tooltip content="How closely to follow the prompt (7-9 is usually best)">
-        <Slider
-          label="CFG Scale"
-          value={cfgScale}
-          onInput={(val) => setCfgScale(val)}
-          min={1}
-          max={30}
-          step={0.5}
-          disabled={isLoading}
-        />
+          <Slider
+            label="CFG Scale"
+            value={cfgScale}
+            onInput={(val) => setCfgScale(val)}
+            min={1}
+            max={30}
+            step={0.5}
+            disabled={isLoading}
+          />
         </Tooltip>
 
         <div class="size-inputs-group">
@@ -143,12 +143,15 @@ export function Txt2ImgPanel() {
               {isLoading ? 'Generating...' : 'Generate'}
             </button>
           </Tooltip>
-          
+
           {isLoading && (
-            <button 
-              type="button" 
-              class="btn btn-secondary btn-block" 
-              onPointerDown={(e) => { e.preventDefault(); handleCancel() }}
+            <button
+              type="button"
+              class="btn btn-secondary btn-block"
+              onPointerDown={(e) => {
+                e.preventDefault()
+                handleCancel()
+              }}
             >
               Cancel
             </button>

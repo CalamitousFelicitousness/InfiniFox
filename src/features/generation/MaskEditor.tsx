@@ -1,9 +1,14 @@
-import { useState, useRef, useEffect } from 'preact/hooks'
 import Konva from 'konva'
-import { Stage, Layer, Image as KonvaImage, Line, Circle, Rect } from 'react-konva'
-import { getPointerInfo, getPressureAdjustedSize, preventDefaultTouch } from '../../utils/pointerEvents'
 import { Brush, Eraser } from 'lucide-preact'
+import { useState, useRef, useEffect } from 'preact/hooks'
+import { Stage, Layer, Image as KonvaImage, Line, Circle, Rect } from 'react-konva'
+
 import { Icon } from '../../components/common/Icon'
+import {
+  getPointerInfo,
+  getPressureAdjustedSize,
+  preventDefaultTouch,
+} from '../../utils/pointerEvents'
 
 import './MaskEditor.css'
 
@@ -24,7 +29,7 @@ export function MaskEditor({ baseImage, onMaskUpdate, disabled = false }: MaskEd
   const [showCursor, setShowCursor] = useState(false)
   const [currentPressure, setCurrentPressure] = useState(0.5)
   const [pointerType, setPointerType] = useState<'mouse' | 'pen' | 'touch'>('mouse')
-  
+
   const stageRef = useRef<Konva.Stage>(null)
   const maskLayerRef = useRef<Konva.Layer>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -52,21 +57,20 @@ export function MaskEditor({ baseImage, onMaskUpdate, disabled = false }: MaskEd
 
   const handlePointerDown = (e: Konva.KonvaEventObject<PointerEvent | MouseEvent | TouchEvent>) => {
     if (disabled) return
-    
+
     // Get pointer info if available
     const evt = e.evt as any
     if ('pointerType' in evt) {
       setPointerType(evt.pointerType)
       setCurrentPressure(evt.pressure || 0.5)
     }
-    
+
     setIsDrawing(true)
     const pos = e.target.getStage()?.getPointerPosition()
     if (pos) {
-      const adjustedSize = pointerType === 'pen' 
-        ? getPressureAdjustedSize(brushSize, currentPressure)
-        : brushSize
-      
+      const adjustedSize =
+        pointerType === 'pen' ? getPressureAdjustedSize(brushSize, currentPressure) : brushSize
+
       setLines([...lines, { tool, points: [pos.x, pos.y], brushSize: adjustedSize }])
     }
   }
@@ -89,7 +93,7 @@ export function MaskEditor({ baseImage, onMaskUpdate, disabled = false }: MaskEd
     const point = stage?.getPointerPosition()
     if (!point) return
 
-    let lastLine = lines[lines.length - 1]
+    const lastLine = lines[lines.length - 1]
     if (lastLine) {
       // Adjust brush size based on pressure for pen
       if (pointerType === 'pen') {
@@ -121,7 +125,7 @@ export function MaskEditor({ baseImage, onMaskUpdate, disabled = false }: MaskEd
 
   const exportMask = () => {
     if (!maskLayerRef.current) return
-    
+
     // Create a temporary stage for the mask
     const tempStage = new Konva.Stage({
       container: document.createElement('div'),
@@ -170,7 +174,7 @@ export function MaskEditor({ baseImage, onMaskUpdate, disabled = false }: MaskEd
   const downloadMask = () => {
     exportMask()
     if (!maskLayerRef.current) return
-    
+
     const dataURL = stageRef.current?.toDataURL()
     if (dataURL) {
       const link = document.createElement('a')
@@ -212,8 +216,10 @@ export function MaskEditor({ baseImage, onMaskUpdate, disabled = false }: MaskEd
 
         <div class="brush-size-control">
           <label>
-            Size: {brushSize}px 
-            {pointerType === 'pen' && <span> (Pressure: {Math.round(currentPressure * 100)}%)</span>}
+            Size: {brushSize}px
+            {pointerType === 'pen' && (
+              <span> (Pressure: {Math.round(currentPressure * 100)}%)</span>
+            )}
           </label>
           <input
             type="range"
@@ -225,9 +231,7 @@ export function MaskEditor({ baseImage, onMaskUpdate, disabled = false }: MaskEd
           />
         </div>
 
-        {pointerType !== 'mouse' && (
-          <div class="input-type-indicator">Using: {pointerType}</div>
-        )}
+        {pointerType !== 'mouse' && <div class="input-type-indicator">Using: {pointerType}</div>}
 
         <div class="mask-actions">
           <button type="button" class="btn btn-ghost" onClick={clearMask} disabled={disabled}>
@@ -247,13 +251,15 @@ export function MaskEditor({ baseImage, onMaskUpdate, disabled = false }: MaskEd
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}  // Handle pointer cancel events
+          onPointerCancel={handlePointerUp} // Handle pointer cancel events
           onPointerEnter={handlePointerEnter}
           onPointerLeave={handlePointerLeave}
           style={{ cursor: disabled ? 'not-allowed' : 'none' }}
         >
           <Layer>
-            {image && <KonvaImage image={image} width={dimensions.width} height={dimensions.height} />}
+            {image && (
+              <KonvaImage image={image} width={dimensions.width} height={dimensions.height} />
+            )}
           </Layer>
           <Layer ref={maskLayerRef} opacity={0.5}>
             {lines.map((line, i) => (
@@ -265,9 +271,7 @@ export function MaskEditor({ baseImage, onMaskUpdate, disabled = false }: MaskEd
                 tension={0.5}
                 lineCap="round"
                 lineJoin="round"
-                globalCompositeOperation={
-                  line.tool === 'brush' ? 'source-over' : 'destination-out'
-                }
+                globalCompositeOperation={line.tool === 'brush' ? 'source-over' : 'destination-out'}
               />
             ))}
           </Layer>

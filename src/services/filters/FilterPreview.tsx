@@ -1,49 +1,51 @@
 /**
  * FilterPreview.tsx - Visual Preview System for Filter Pipeline
- * 
+ *
  * Provides multiple preview modes for comparing original and filtered images:
  * - Split screen (vertical divider)
  * - Side-by-side comparison
  * - Onion skin (transparent overlay)
  * - Difference mode (shows changes)
- * 
+ *
  * Part of Phase 2.2 of the Professional Image Editing Integration Plan
  */
 
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import Konva from 'konva';
-import { Stage, Layer, Image as KonvaImage, Rect, Line, Text, Group } from 'react-konva';
-import { FilterChain } from './FilterChain';
-import { Slider } from '@/components/ui/slider';
-import { Button } from '@/components/ui/button';
-import { 
-  SplitIcon, 
-  LayersIcon, 
-  EyeIcon, 
+import Konva from 'konva'
+import {
+  SplitIcon,
+  LayersIcon,
+  EyeIcon,
   EyeOffIcon,
   RefreshCwIcon,
   DownloadIcon,
-  MaximizeIcon
-} from 'lucide-react';
+  MaximizeIcon,
+} from 'lucide-react'
+import React, { useRef, useEffect, useState, useCallback } from 'react'
+import { Stage, Layer, Image as KonvaImage, Rect, Line, Text, Group } from 'react-konva'
+
+import { FilterChain } from './FilterChain'
+
+import { Button } from '@/components/ui/button'
+import { Slider } from '@/components/ui/slider'
 
 /**
  * Preview modes
  */
-export type PreviewMode = 'split' | 'side-by-side' | 'onion-skin' | 'difference' | 'toggle' | null;
+export type PreviewMode = 'split' | 'side-by-side' | 'onion-skin' | 'difference' | 'toggle' | null
 
 /**
  * Props for FilterPreview component
  */
 interface FilterPreviewProps {
-  image: HTMLImageElement;
-  filterChain: FilterChain;
-  width?: number;
-  height?: number;
-  mode?: PreviewMode;
-  onModeChange?: (mode: PreviewMode) => void;
-  className?: string;
-  showControls?: boolean;
-  autoUpdate?: boolean;
+  image: HTMLImageElement
+  filterChain: FilterChain
+  width?: number
+  height?: number
+  mode?: PreviewMode
+  onModeChange?: (mode: PreviewMode) => void
+  className?: string
+  showControls?: boolean
+  autoUpdate?: boolean
 }
 
 /**
@@ -58,117 +60,117 @@ export const FilterPreview: React.FC<FilterPreviewProps> = ({
   onModeChange,
   className = '',
   showControls = true,
-  autoUpdate = true
+  autoUpdate = true,
 }) => {
-  const stageRef = useRef<Konva.Stage>(null);
-  const originalImageRef = useRef<Konva.Image>(null);
-  const filteredImageRef = useRef<Konva.Image>(null);
-  const dividerRef = useRef<Konva.Line>(null);
-  
-  const [mode, setMode] = useState<PreviewMode>(initialMode);
-  const [splitPosition, setSplitPosition] = useState(width / 2);
-  const [onionOpacity, setOnionOpacity] = useState(0.5);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [showOriginal, setShowOriginal] = useState(false);
-  const [scale, setScale] = useState(1);
-  
+  const stageRef = useRef<Konva.Stage>(null)
+  const originalImageRef = useRef<Konva.Image>(null)
+  const filteredImageRef = useRef<Konva.Image>(null)
+  const dividerRef = useRef<Konva.Line>(null)
+
+  const [mode, setMode] = useState<PreviewMode>(initialMode)
+  const [splitPosition, setSplitPosition] = useState(width / 2)
+  const [onionOpacity, setOnionOpacity] = useState(0.5)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [showOriginal, setShowOriginal] = useState(false)
+  const [scale, setScale] = useState(1)
+
   // Calculate scaled dimensions
-  const scaledWidth = Math.min(width, image.width * scale);
-  const scaledHeight = Math.min(height, image.height * scale);
-  
+  const scaledWidth = Math.min(width, image.width * scale)
+  const scaledHeight = Math.min(height, image.height * scale)
+
   /**
    * Apply filters to the image
    */
   const applyFilters = useCallback(async () => {
     if (!filteredImageRef.current || !filterChain.hasFilters()) {
-      return;
+      return
     }
-    
-    setIsProcessing(true);
-    
+
+    setIsProcessing(true)
+
     try {
       await filterChain.applyToNode(filteredImageRef.current, {
         preview: true,
         progressCallback: (progress) => {
           // Could update a progress bar here
-          console.log(`Processing: ${progress}%`);
-        }
-      });
-      
+          console.log(`Processing: ${progress}%`)
+        },
+      })
+
       // Redraw the stage
-      stageRef.current?.batchDraw();
+      stageRef.current?.batchDraw()
     } catch (error) {
-      console.error('Failed to apply filters:', error);
+      console.error('Failed to apply filters:', error)
     } finally {
-      setIsProcessing(false);
+      setIsProcessing(false)
     }
-  }, [filterChain]);
-  
+  }, [filterChain])
+
   /**
    * Update preview when filter chain changes
    */
   useEffect(() => {
     if (autoUpdate) {
-      applyFilters();
+      applyFilters()
     }
-  }, [filterChain, autoUpdate, applyFilters]);
-  
+  }, [filterChain, autoUpdate, applyFilters])
+
   /**
    * Handle mode change
    */
   const handleModeChange = (newMode: PreviewMode) => {
-    setMode(newMode);
-    onModeChange?.(newMode);
-    
+    setMode(newMode)
+    onModeChange?.(newMode)
+
     // Reset mode-specific states
     if (newMode === 'split') {
-      setSplitPosition(width / 2);
+      setSplitPosition(width / 2)
     } else if (newMode === 'onion-skin') {
-      setOnionOpacity(0.5);
+      setOnionOpacity(0.5)
     }
-  };
-  
+  }
+
   /**
    * Handle split divider drag
    */
   const handleDividerDrag = (e: Konva.KonvaEventObject<DragEvent>) => {
-    const newX = Math.max(0, Math.min(width, e.target.x()));
-    setSplitPosition(newX);
-    e.target.x(newX);
-    
+    const newX = Math.max(0, Math.min(width, e.target.x()))
+    setSplitPosition(newX)
+    e.target.x(newX)
+
     // Update clipping
     if (filteredImageRef.current) {
       filteredImageRef.current.clipFunc((ctx) => {
-        ctx.rect(0, 0, newX, height);
-      });
+        ctx.rect(0, 0, newX, height)
+      })
     }
-  };
-  
+  }
+
   /**
    * Export preview as image
    */
   const exportPreview = () => {
-    if (!stageRef.current) return;
-    
+    if (!stageRef.current) return
+
     const dataURL = stageRef.current.toDataURL({
-      pixelRatio: 2
-    });
-    
+      pixelRatio: 2,
+    })
+
     // Create download link
-    const link = document.createElement('a');
-    link.download = `preview-${Date.now()}.png`;
-    link.href = dataURL;
-    link.click();
-  };
-  
+    const link = document.createElement('a')
+    link.download = `preview-${Date.now()}.png`
+    link.href = dataURL
+    link.click()
+  }
+
   /**
    * Reset filters
    */
   const resetFilters = () => {
-    filterChain.clear();
-    applyFilters();
-  };
-  
+    filterChain.clear()
+    applyFilters()
+  }
+
   /**
    * Render split mode
    */
@@ -183,7 +185,7 @@ export const FilterPreview: React.FC<FilterPreviewProps> = ({
           height={scaledHeight}
         />
       </Layer>
-      
+
       <Layer>
         {/* Filtered image (clipped) */}
         <KonvaImage
@@ -192,10 +194,10 @@ export const FilterPreview: React.FC<FilterPreviewProps> = ({
           width={scaledWidth}
           height={scaledHeight}
           clipFunc={(ctx) => {
-            ctx.rect(splitPosition, 0, scaledWidth - splitPosition, scaledHeight);
+            ctx.rect(splitPosition, 0, scaledWidth - splitPosition, scaledHeight)
           }}
         />
-        
+
         {/* Divider line */}
         <Line
           ref={dividerRef}
@@ -206,11 +208,11 @@ export const FilterPreview: React.FC<FilterPreviewProps> = ({
           draggable
           dragBoundFunc={(pos) => ({
             x: Math.max(0, Math.min(scaledWidth, pos.x)),
-            y: 0
+            y: 0,
           })}
           onDragMove={handleDividerDrag}
         />
-        
+
         {/* Divider handle */}
         <Rect
           x={splitPosition - 20}
@@ -224,18 +226,18 @@ export const FilterPreview: React.FC<FilterPreviewProps> = ({
           draggable
           dragBoundFunc={(pos) => ({
             x: Math.max(-20, Math.min(scaledWidth - 20, pos.x)),
-            y: scaledHeight / 2 - 20
+            y: scaledHeight / 2 - 20,
           })}
           onDragMove={(e) => {
-            const newX = e.target.x() + 20;
-            setSplitPosition(newX);
+            const newX = e.target.x() + 20
+            setSplitPosition(newX)
             if (dividerRef.current) {
-              dividerRef.current.points([newX, 0, newX, scaledHeight]);
+              dividerRef.current.points([newX, 0, newX, scaledHeight])
             }
-            handleDividerDrag(e);
+            handleDividerDrag(e)
           }}
         />
-        
+
         {/* Labels */}
         <Text
           x={10}
@@ -257,14 +259,14 @@ export const FilterPreview: React.FC<FilterPreviewProps> = ({
         />
       </Layer>
     </>
-  );
-  
+  )
+
   /**
    * Render side-by-side mode
    */
   const renderSideBySideMode = () => {
-    const halfWidth = scaledWidth / 2;
-    
+    const halfWidth = scaledWidth / 2
+
     return (
       <Layer>
         <Group>
@@ -287,7 +289,7 @@ export const FilterPreview: React.FC<FilterPreviewProps> = ({
             strokeWidth={0.5}
           />
         </Group>
-        
+
         <Group x={halfWidth + 5}>
           {/* Filtered image (right half) */}
           <KonvaImage
@@ -308,30 +310,21 @@ export const FilterPreview: React.FC<FilterPreviewProps> = ({
             strokeWidth={0.5}
           />
         </Group>
-        
+
         {/* Center divider */}
-        <Line
-          points={[halfWidth, 0, halfWidth, scaledHeight]}
-          stroke="#333"
-          strokeWidth={2}
-        />
+        <Line points={[halfWidth, 0, halfWidth, scaledHeight]} stroke="#333" strokeWidth={2} />
       </Layer>
-    );
-  };
-  
+    )
+  }
+
   /**
    * Render onion skin mode
    */
   const renderOnionSkinMode = () => (
     <Layer>
       {/* Original image */}
-      <KonvaImage
-        ref={originalImageRef}
-        image={image}
-        width={scaledWidth}
-        height={scaledHeight}
-      />
-      
+      <KonvaImage ref={originalImageRef} image={image} width={scaledWidth} height={scaledHeight} />
+
       {/* Filtered image with opacity */}
       <KonvaImage
         ref={filteredImageRef}
@@ -341,21 +334,16 @@ export const FilterPreview: React.FC<FilterPreviewProps> = ({
         opacity={onionOpacity}
       />
     </Layer>
-  );
-  
+  )
+
   /**
    * Render difference mode
    */
   const renderDifferenceMode = () => (
     <Layer>
       {/* Original image */}
-      <KonvaImage
-        ref={originalImageRef}
-        image={image}
-        width={scaledWidth}
-        height={scaledHeight}
-      />
-      
+      <KonvaImage ref={originalImageRef} image={image} width={scaledWidth} height={scaledHeight} />
+
       {/* Filtered image with difference blend */}
       <KonvaImage
         ref={filteredImageRef}
@@ -365,8 +353,8 @@ export const FilterPreview: React.FC<FilterPreviewProps> = ({
         globalCompositeOperation="difference"
       />
     </Layer>
-  );
-  
+  )
+
   /**
    * Render toggle mode
    */
@@ -378,34 +366,34 @@ export const FilterPreview: React.FC<FilterPreviewProps> = ({
         width={scaledWidth}
         height={scaledHeight}
       />
-      
+
       <Text
         x={10}
         y={10}
-        text={showOriginal ? "Original" : "Filtered"}
+        text={showOriginal ? 'Original' : 'Filtered'}
         fontSize={14}
         fill="white"
         stroke="black"
         strokeWidth={0.5}
       />
     </Layer>
-  );
-  
+  )
+
   /**
    * Render based on current mode
    */
   const renderPreview = () => {
     switch (mode) {
       case 'split':
-        return renderSplitMode();
+        return renderSplitMode()
       case 'side-by-side':
-        return renderSideBySideMode();
+        return renderSideBySideMode()
       case 'onion-skin':
-        return renderOnionSkinMode();
+        return renderOnionSkinMode()
       case 'difference':
-        return renderDifferenceMode();
+        return renderDifferenceMode()
       case 'toggle':
-        return renderToggleMode();
+        return renderToggleMode()
       default:
         return (
           <Layer>
@@ -416,10 +404,10 @@ export const FilterPreview: React.FC<FilterPreviewProps> = ({
               height={scaledHeight}
             />
           </Layer>
-        );
+        )
     }
-  };
-  
+  }
+
   return (
     <div className={`filter-preview ${className}`}>
       {showControls && (
@@ -467,7 +455,7 @@ export const FilterPreview: React.FC<FilterPreviewProps> = ({
               <RefreshCwIcon className="w-4 h-4" />
             </Button>
           </div>
-          
+
           {/* Mode-specific controls */}
           {mode === 'onion-skin' && (
             <div className="flex items-center gap-2 ml-4">
@@ -482,7 +470,7 @@ export const FilterPreview: React.FC<FilterPreviewProps> = ({
               />
             </div>
           )}
-          
+
           {mode === 'toggle' && (
             <Button
               size="sm"
@@ -493,42 +481,23 @@ export const FilterPreview: React.FC<FilterPreviewProps> = ({
               Show {showOriginal ? 'Filtered' : 'Original'}
             </Button>
           )}
-          
+
           <div className="flex-1" />
-          
+
           {/* Action buttons */}
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={applyFilters}
-            disabled={isProcessing}
-          >
+          <Button size="sm" variant="outline" onClick={applyFilters} disabled={isProcessing}>
             <RefreshCwIcon className={`w-4 h-4 ${isProcessing ? 'animate-spin' : ''}`} />
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={resetFilters}
-            title="Reset filters"
-          >
+          <Button size="sm" variant="outline" onClick={resetFilters} title="Reset filters">
             Reset
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={exportPreview}
-            title="Export preview"
-          >
+          <Button size="sm" variant="outline" onClick={exportPreview} title="Export preview">
             <DownloadIcon className="w-4 h-4" />
           </Button>
-          
+
           {/* Zoom control */}
           <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setScale(1)}
-            >
+            <Button size="sm" variant="outline" onClick={() => setScale(1)}>
               <MaximizeIcon className="w-4 h-4" />
             </Button>
             <Slider
@@ -543,25 +512,20 @@ export const FilterPreview: React.FC<FilterPreviewProps> = ({
           </div>
         </div>
       )}
-      
+
       <div className="preview-stage border border-gray-300 dark:border-gray-700 rounded-b-lg overflow-hidden">
-        <Stage
-          ref={stageRef}
-          width={scaledWidth}
-          height={scaledHeight}
-          className="bg-checkered"
-        >
+        <Stage ref={stageRef} width={scaledWidth} height={scaledHeight} className="bg-checkered">
           {renderPreview()}
         </Stage>
       </div>
-      
+
       {isProcessing && (
         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="text-white">Processing filters...</div>
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default FilterPreview;
+export default FilterPreview

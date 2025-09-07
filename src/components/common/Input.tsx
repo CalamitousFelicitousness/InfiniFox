@@ -19,7 +19,7 @@ export function Input({
   disabled = false,
   required = false,
   autoFocus = false,
-  className = ''
+  className = '',
 }: InputProps) {
   return (
     <div class={`text-input-group ${className}`}>
@@ -63,7 +63,7 @@ export function Textarea({
   rows = 3,
   disabled = false,
   required = false,
-  className = ''
+  className = '',
 }: TextareaProps) {
   return (
     <div class={`text-input-group ${className}`}>

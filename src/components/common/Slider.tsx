@@ -22,23 +22,23 @@ export function Slider({
   disabled = false,
 }: SliderProps) {
   // Use onChange if provided, otherwise fallback to onInput
-  const handleChange = onChange || onInput || (() => {});
+  const handleChange = onChange || onInput || (() => {})
   const trackRef = useRef<HTMLDivElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [showTooltip, setShowTooltip] = useState(false)
 
   const updateValueFromPointer = (e: PointerEvent) => {
     if (!trackRef.current || disabled) return
-    
+
     const rect = trackRef.current.getBoundingClientRect()
     const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width))
     const percentage = x / rect.width
     const newValue = min + (max - min) * percentage
-    
+
     // Snap to step
     const steppedValue = Math.round(newValue / step) * step
     const clampedValue = Math.max(min, Math.min(max, steppedValue))
-    
+
     handleChange(clampedValue)
   }
 
@@ -90,22 +90,10 @@ export function Slider({
           <span class="slider-value">{value}</span>
         </div>
       )}
-      <div 
-        class="slider-track" 
-        ref={trackRef}
-        onPointerDown={handlePointerDown}
-      >
-        <div 
-          class="slider-fill" 
-          style={{ width: `${percentage}%` }}
-        />
-        <div 
-          class="slider-thumb" 
-          style={{ left: `${percentage}%` }}
-        >
-          {showTooltip && (
-            <div class="slider-tooltip">{value}</div>
-          )}
+      <div class="slider-track" ref={trackRef} onPointerDown={handlePointerDown}>
+        <div class="slider-fill" style={{ width: `${percentage}%` }} />
+        <div class="slider-thumb" style={{ left: `${percentage}%` }}>
+          {showTooltip && <div class="slider-tooltip">{value}</div>}
         </div>
       </div>
       {/* Keep native input as fallback/accessibility */}

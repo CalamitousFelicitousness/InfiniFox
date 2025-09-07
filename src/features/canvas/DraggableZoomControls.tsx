@@ -1,10 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { 
-  Plus, 
-  Minus, 
-  RotateIcon,
-  GripIcon 
-} from '../../components/icons'
+
+import { Plus, Minus, RotateIcon, GripIcon } from '../../components/icons'
 import './DraggableZoomControls.css'
 
 interface DraggableZoomControlsProps {
@@ -14,12 +10,17 @@ interface DraggableZoomControlsProps {
   onReset: () => void
 }
 
-export function DraggableZoomControls({ scale, onZoomIn, onZoomOut, onReset }: DraggableZoomControlsProps) {
+export function DraggableZoomControls({
+  scale,
+  onZoomIn,
+  onZoomOut,
+  onReset,
+}: DraggableZoomControlsProps) {
   const [position, setPosition] = useState({ x: window.innerWidth - 220, y: 20 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const panelRef = useRef<HTMLDivElement>(null)
-  
+
   // Load saved position from localStorage
   useEffect(() => {
     const savedPos = localStorage.getItem('zoomControlsPosition')
@@ -30,98 +31,98 @@ export function DraggableZoomControls({ scale, onZoomIn, onZoomOut, onReset }: D
         const maxY = window.innerHeight - 100
         setPosition({
           x: Math.min(Math.max(20, parsed.x), maxX),
-          y: Math.min(Math.max(20, parsed.y), maxY)
+          y: Math.min(Math.max(20, parsed.y), maxY),
         })
       } catch (e) {
         // Invalid saved position, use default
       }
     } else {
       // Default to top-right corner
-      setPosition({ 
-        x: window.innerWidth - 220, 
-        y: 20 
+      setPosition({
+        x: window.innerWidth - 220,
+        y: 20,
       })
     }
   }, [])
-  
+
   // Save position to localStorage when it changes
   useEffect(() => {
     localStorage.setItem('zoomControlsPosition', JSON.stringify(position))
   }, [position])
-  
+
   // Handle window resize to keep controls in bounds
   useEffect(() => {
     const handleResize = () => {
-      setPosition(prev => ({
+      setPosition((prev) => ({
         x: Math.min(prev.x, window.innerWidth - 220),
-        y: Math.min(prev.y, window.innerHeight - 100)
+        y: Math.min(prev.y, window.innerHeight - 100),
       }))
     }
-    
+
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
-  
+
   // Handle dragging
   const handlePointerDown = (e: PointerEvent) => {
     const target = e.target as HTMLElement
     if (!target.closest('.toolbar-grip')) return
-    
+
     setIsDragging(true)
     setDragOffset({
       x: e.clientX - position.x,
-      y: e.clientY - position.y
+      y: e.clientY - position.y,
     })
     e.preventDefault()
   }
-  
+
   useEffect(() => {
     if (!isDragging) return
-    
+
     const handlePointerMove = (e: PointerEvent) => {
       if (!isDragging) return
-      
+
       const newX = e.clientX - dragOffset.x
       const newY = e.clientY - dragOffset.y
-      
+
       const maxX = window.innerWidth - (panelRef.current?.offsetWidth || 200)
       const maxY = window.innerHeight - (panelRef.current?.offsetHeight || 60)
-      
+
       setPosition({
         x: Math.max(0, Math.min(maxX, newX)),
-        y: Math.max(0, Math.min(maxY, newY))
+        y: Math.max(0, Math.min(maxY, newY)),
       })
     }
-    
+
     const handlePointerUp = () => {
       setIsDragging(false)
     }
-    
+
     document.addEventListener('pointermove', handlePointerMove)
     document.addEventListener('pointerup', handlePointerUp)
-    
+
     return () => {
       document.removeEventListener('pointermove', handlePointerMove)
       document.removeEventListener('pointerup', handlePointerUp)
     }
   }, [isDragging, dragOffset])
-  
+
   return (
     <div
       ref={panelRef}
       class={`zoom-controls toolbar toolbar-horizontal toolbar-floating toolbar-draggable glass-surface ${isDragging ? 'dragging' : ''}`}
       style={{
         left: `${position.x}px`,
-        top: `${position.y}px`
+        top: `${position.y}px`,
       }}
       onPointerDown={handlePointerDown}
     >
       <div class="toolbar-grip" title="Drag to move">
         <GripIcon class="lucide-icon" />
       </div>
-      
+
       <div class="toolbar-separator" />
-      
+
       <div class="toolbar-group">
         <button
           class="toolbar-item"
@@ -131,11 +132,11 @@ export function DraggableZoomControls({ scale, onZoomIn, onZoomOut, onReset }: D
         >
           <Minus class="lucide-icon" />
         </button>
-        
+
         <span class="zoom-value" title="Current zoom level">
           {Math.round(scale * 100)}%
         </span>
-        
+
         <button
           class="toolbar-item"
           onClick={onZoomIn}
@@ -145,9 +146,9 @@ export function DraggableZoomControls({ scale, onZoomIn, onZoomOut, onReset }: D
           <Plus class="lucide-icon" />
         </button>
       </div>
-      
+
       <div class="toolbar-separator" />
-      
+
       <div class="toolbar-group">
         <button
           class="toolbar-item"

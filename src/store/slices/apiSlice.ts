@@ -5,7 +5,7 @@ export interface ApiSlice {
   // State
   apiSettings: ApiSettings
   isLoading: boolean
-  
+
   // Actions
   setApiSettings: (settings: Partial<ApiSettings>) => Promise<void>
   setIsLoading: (loading: boolean) => void
@@ -22,7 +22,7 @@ export const createApiSlice: SliceCreator<ApiSlice> = (set, get) => ({
     apiType: 'sdnext' as const,
   },
   isLoading: false,
-  
+
   // Actions
   setApiSettings: async (settings) => {
     set((state) => ({
@@ -34,9 +34,9 @@ export const createApiSlice: SliceCreator<ApiSlice> = (set, get) => ({
       await progressService.setMethod(settings.progressMethod)
     }
   },
-  
+
   setIsLoading: (isLoading) => set({ isLoading }),
-  
+
   testConnection: async () => {
     const { apiSettings } = get()
     try {
@@ -57,7 +57,7 @@ export const createApiSlice: SliceCreator<ApiSlice> = (set, get) => ({
       return { connected: false, progressMethod: 'none' }
     }
   },
-  
+
   detectApiType: async () => {
     const { apiSettings } = get()
     try {
@@ -87,9 +87,7 @@ export const createApiSlice: SliceCreator<ApiSlice> = (set, get) => ({
 
       // Check for ComfyUI
       try {
-        const response = await fetch(
-          `${apiSettings.apiUrl.replace('/sdapi/v1', '')}/system_stats`
-        )
+        const response = await fetch(`${apiSettings.apiUrl.replace('/sdapi/v1', '')}/system_stats`)
         if (response.ok) {
           return 'comfyui'
         }

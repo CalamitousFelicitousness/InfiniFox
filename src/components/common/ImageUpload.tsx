@@ -80,12 +80,22 @@ export function ImageUpload({ onImageSelect, currentImage, disabled = false }: I
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onPointerDown={(e) => {
-          if (!disabled && e.pointerType === 'mouse' || e.pointerType === 'pen' || e.pointerType === 'touch') {
+          if (
+            (!disabled && e.pointerType === 'mouse') ||
+            e.pointerType === 'pen' ||
+            e.pointerType === 'touch'
+          ) {
             document.getElementById('file-input')?.click()
           }
         }}
       >
-        <input id="file-input" type="file" accept="image/*" onInput={handleFileInput} disabled={disabled} />
+        <input
+          id="file-input"
+          type="file"
+          accept="image/*"
+          onInput={handleFileInput}
+          disabled={disabled}
+        />
         <div class="upload-prompt">
           Drop an image here or <span>click to browse</span>
         </div>

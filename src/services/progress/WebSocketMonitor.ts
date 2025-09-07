@@ -25,7 +25,7 @@ export class WebSocketMonitor extends BaseProgressMonitor {
     try {
       this.url = this.getWsUrl()
       console.log('Testing WebSocket support at:', this.url)
-      
+
       // Try to connect briefly to test support
       return new Promise((resolve) => {
         let testWs: WebSocket | null = null

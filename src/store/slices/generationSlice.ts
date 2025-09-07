@@ -9,7 +9,7 @@ export interface GenerationSlice {
   cfgScale: number
   width: number
   height: number
-  
+
   // Actions
   setPrompt: (prompt: string) => void
   setNegativePrompt: (negativePrompt: string) => void
@@ -29,7 +29,7 @@ export const createGenerationSlice: SliceCreator<GenerationSlice> = (set) => ({
   cfgScale: 7.5,
   width: 512,
   height: 512,
-  
+
   // Actions
   setPrompt: (prompt) => set({ prompt }),
   setNegativePrompt: (negativePrompt) => set({ negativePrompt }),

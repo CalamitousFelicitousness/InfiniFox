@@ -1,5 +1,5 @@
-import { useRef, useState } from 'preact/hooks'
 import { Layers, ChevronRight } from 'lucide-preact'
+import { useRef, useState } from 'preact/hooks'
 
 import { useQueueStore } from '../../store/queueStore'
 
@@ -61,15 +61,13 @@ export function BatchSettingsPanel() {
                 min="1"
                 max="100"
                 value={batchSettings.count}
-                onInput={(e) =>
-                  setBatchSettings({ count: parseInt(e.currentTarget.value) || 1 })
-                }
+                onInput={(e) => setBatchSettings({ count: parseInt(e.currentTarget.value) || 1 })}
               />
             </div>
 
             <div class="batch-variations">
               <h4 class="section-title">Variations</h4>
-              
+
               <div class="form-group">
                 <label class="checkbox-group">
                   <input
@@ -194,9 +192,15 @@ export function BatchSettingsPanel() {
                 Total generations:{' '}
                 <strong class="text-primary">
                   {batchSettings.count *
-                    (batchSettings.variations.prompt ? batchSettings.promptVariations.length || 1 : 1) *
-                    (batchSettings.variations.steps ? batchSettings.stepsVariations.length || 1 : 1) *
-                    (batchSettings.variations.cfgScale ? batchSettings.cfgScaleVariations.length || 1 : 1)}
+                    (batchSettings.variations.prompt
+                      ? batchSettings.promptVariations.length || 1
+                      : 1) *
+                    (batchSettings.variations.steps
+                      ? batchSettings.stepsVariations.length || 1
+                      : 1) *
+                    (batchSettings.variations.cfgScale
+                      ? batchSettings.cfgScaleVariations.length || 1
+                      : 1)}
                 </strong>
               </p>
             </div>

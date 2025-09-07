@@ -1,5 +1,5 @@
-import { ComponentChildren } from 'preact'
 import { X, Minimize2, Maximize2, ChevronDown, ChevronUp } from 'lucide-react'
+import { ComponentChildren } from 'preact'
 
 interface HeaderProps {
   title: string | ComponentChildren
@@ -24,13 +24,11 @@ export function Header({
   onMaximize,
   onCollapse,
   isCollapsed = false,
-  variant = 'default'
+  variant = 'default',
 }: HeaderProps) {
-  const headerClass = [
-    'header',
-    variant !== 'default' && `header-${variant}`,
-    className
-  ].filter(Boolean).join(' ')
+  const headerClass = ['header', variant !== 'default' && `header-${variant}`, className]
+    .filter(Boolean)
+    .join(' ')
 
   return (
     <header class={headerClass}>
@@ -45,14 +43,14 @@ export function Header({
             {isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
           </button>
         )}
-        
+
         <div class="header-title-group">
           <h2 class="header-title">{title}</h2>
           {subtitle && <span class="header-subtitle">{subtitle}</span>}
         </div>
-        
+
         {actions && <div class="header-actions">{actions}</div>}
-        
+
         <div class="header-controls">
           {onMinimize && (
             <button
@@ -63,7 +61,7 @@ export function Header({
               <Minimize2 size={16} />
             </button>
           )}
-          
+
           {onMaximize && (
             <button
               class="header-action header-maximize"
@@ -73,13 +71,9 @@ export function Header({
               <Maximize2 size={16} />
             </button>
           )}
-          
+
           {onClose && (
-            <button
-              class="header-action header-close"
-              onClick={onClose}
-              aria-label="Close"
-            >
+            <button class="header-action header-close" onClick={onClose} aria-label="Close">
               <X size={16} />
             </button>
           )}

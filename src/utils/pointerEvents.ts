@@ -62,10 +62,10 @@ export function getPressureAdjustedSize(
 export function preventDefaultTouch(element: HTMLElement): void {
   // Prevent scrolling
   element.style.touchAction = 'none'
-  
+
   // Prevent context menu on long press
   element.addEventListener('contextmenu', (e) => e.preventDefault())
-  
+
   // Prevent selection
   element.style.userSelect = 'none'
   element.style.webkitUserSelect = 'none'
@@ -85,7 +85,7 @@ export function normalizeEvent(
   event: MouseEvent | TouchEvent | PointerEvent
 ): Partial<PointerEvent> {
   if ('pointerId' in event) return event
-  
+
   if ('touches' in event && event.touches.length > 0) {
     const touch = event.touches[0]
     return {
@@ -97,7 +97,7 @@ export function normalizeEvent(
       pressure: touch.force || 0.5,
     } as Partial<PointerEvent>
   }
-  
+
   return {
     clientX: (event as MouseEvent).clientX,
     clientY: (event as MouseEvent).clientY,
@@ -117,10 +117,10 @@ export function debouncePointer(
 ): (event: PointerEvent) => void {
   let timeoutId: number | null = null
   let lastEvent: PointerEvent | null = null
-  
+
   return (event: PointerEvent) => {
     lastEvent = event
-    
+
     if (timeoutId === null) {
       timeoutId = window.setTimeout(() => {
         if (lastEvent) {

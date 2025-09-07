@@ -6,7 +6,7 @@ import { useEffect, useRef } from 'preact/hooks'
  * requires tracking multiple simultaneous touch points for gesture recognition.
  * The Pointer Events API doesn't provide a direct way to handle multi-touch
  * gestures like pinch, so touch events are necessary here.
- * 
+ *
  * This is an intentional exception to our pointer-events-only approach and
  * does not conflict with the pointer events used elsewhere in the application.
  */
@@ -17,16 +17,8 @@ interface PinchZoomOptions {
   disabled?: boolean
 }
 
-export function usePinchZoom(
-  elementRef: RefObject<HTMLElement>,
-  options: PinchZoomOptions = {}
-) {
-  const {
-    minScale = 0.1,
-    maxScale = 5,
-    onZoom,
-    disabled = false,
-  } = options
+export function usePinchZoom(elementRef: RefObject<HTMLElement>, options: PinchZoomOptions = {}) {
+  const { minScale = 0.1, maxScale = 5, onZoom, disabled = false } = options
 
   const touchesRef = useRef<Map<number, Touch>>(new Map())
   const lastDistanceRef = useRef<number>(0)
@@ -55,7 +47,7 @@ export function usePinchZoom(
       // NOTE: Using touch events here for multi-touch gesture detection
       // Store all touches
       touchesRef.current.clear()
-      Array.from(e.touches).forEach(touch => {
+      Array.from(e.touches).forEach((touch) => {
         touchesRef.current.set(touch.identifier, touch)
       })
 
@@ -75,10 +67,7 @@ export function usePinchZoom(
 
         if (lastDistanceRef.current > 0) {
           const scale = currentDistance / lastDistanceRef.current
-          const newScale = Math.max(
-            minScale,
-            Math.min(maxScale, currentScaleRef.current * scale)
-          )
+          const newScale = Math.max(minScale, Math.min(maxScale, currentScaleRef.current * scale))
 
           if (newScale !== currentScaleRef.current) {
             currentScaleRef.current = newScale

@@ -3,8 +3,8 @@
  * Foundation theme structure that all themes extend from
  */
 
-import type { Theme } from '../types'
 import * as tokens from '../tokens'
+import type { Theme } from '../types'
 
 /**
  * Create the base theme structure with all default tokens
@@ -13,12 +13,12 @@ export const createBaseTheme = (): Theme => ({
   name: 'base',
   description: 'Base theme structure with default tokens',
   mode: 'dark',
-  
+
   colors: {
     palette: tokens.corePalette,
     semantic: tokens.semanticColors,
   },
-  
+
   typography: {
     families: tokens.fontFamilies,
     sizes: tokens.fontSizes,
@@ -27,19 +27,19 @@ export const createBaseTheme = (): Theme => ({
     letterSpacings: tokens.letterSpacings,
     presets: tokens.typographyPresets,
   },
-  
+
   spacing: {
     scale: tokens.spacing,
     semantic: tokens.semanticSpacing,
     containers: tokens.containerWidths,
   },
-  
+
   shadows: {
     box: tokens.shadows,
     drop: tokens.dropShadows,
     text: tokens.textShadows,
   },
-  
+
   animations: {
     easings: tokens.easings,
     durations: tokens.durations,
@@ -47,7 +47,7 @@ export const createBaseTheme = (): Theme => ({
     animations: tokens.animations,
     keyframes: tokens.keyframes,
   },
-  
+
   borders: {
     widths: tokens.borderWidths,
     styles: tokens.borderStyles,
@@ -56,7 +56,7 @@ export const createBaseTheme = (): Theme => ({
     outlines: tokens.outlines,
     dividers: tokens.dividers,
   },
-  
+
   breakpoints: {
     values: tokens.breakpoints,
     queries: tokens.mediaQueries,

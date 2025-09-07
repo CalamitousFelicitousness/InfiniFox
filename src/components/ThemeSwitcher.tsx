@@ -5,8 +5,9 @@
 
 import { h } from 'preact'
 import { useState, useEffect, useCallback } from 'preact/hooks'
-import { useTheme } from '../themes/ThemeProvider'
+
 import { useThemeTransition, useSystemTheme } from '../hooks/useThemeTransition'
+import { useTheme } from '../themes/ThemeProvider'
 import './ThemeSwitcher.css'
 
 export interface ThemeSwitcherProps {
@@ -51,18 +52,25 @@ export function ThemeSwitcher({
     measurePerformance: true,
   })
   const systemTheme = useSystemTheme()
-  
+
   const [isOpen, setIsOpen] = useState(false)
   const [hoveredTheme, setHoveredTheme] = useState<string | null>(null)
   const [selectedMode, setSelectedMode] = useState<'light' | 'dark' | 'system'>(() => {
     const stored = localStorage.getItem('theme-mode')
     return (stored as 'light' | 'dark' | 'system') || 'system'
   })
-  
+
   // Default icons
   const defaultIcons = {
     light: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <circle cx="12" cy="12" r="5" />
         <line x1="12" y1="1" x2="12" y2="3" />
         <line x1="12" y1="21" x2="12" y2="23" />
@@ -75,54 +83,74 @@ export function ThemeSwitcher({
       </svg>
     ),
     dark: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
       </svg>
     ),
     system: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
         <line x1="8" y1="21" x2="16" y2="21" />
         <line x1="12" y1="17" x2="12" y2="21" />
       </svg>
     ),
   }
-  
+
   const themeIcons = {
     light: icons?.light || defaultIcons.light,
     dark: icons?.dark || defaultIcons.dark,
     system: icons?.system || defaultIcons.system,
   }
-  
+
   // Handle theme mode selection
-  const handleModeSelect = useCallback((mode: 'light' | 'dark' | 'system') => {
-    setSelectedMode(mode)
-    localStorage.setItem('theme-mode', mode)
-    
-    if (mode === 'system') {
-      const targetTheme = systemTheme === 'dark' ? 'infinifox-dark' : 'infinifox-light'
-      switchTheme(targetTheme)
-    } else {
-      const targetTheme = mode === 'dark' ? 'infinifox-dark' : 'infinifox-light'
-      switchTheme(targetTheme)
-    }
-    
-    setIsOpen(false)
-  }, [systemTheme, switchTheme])
-  
+  const handleModeSelect = useCallback(
+    (mode: 'light' | 'dark' | 'system') => {
+      setSelectedMode(mode)
+      localStorage.setItem('theme-mode', mode)
+
+      if (mode === 'system') {
+        const targetTheme = systemTheme === 'dark' ? 'infinifox-dark' : 'infinifox-light'
+        switchTheme(targetTheme)
+      } else {
+        const targetTheme = mode === 'dark' ? 'infinifox-dark' : 'infinifox-light'
+        switchTheme(targetTheme)
+      }
+
+      setIsOpen(false)
+    },
+    [systemTheme, switchTheme]
+  )
+
   // Handle theme selection
-  const handleThemeSelect = useCallback((themeName: string) => {
-    switchTheme(themeName)
-    setIsOpen(false)
-    
-    // Update mode based on selected theme
-    if (themeName.includes('light')) {
-      setSelectedMode('light')
-    } else if (themeName.includes('dark')) {
-      setSelectedMode('dark')
-    }
-  }, [switchTheme])
-  
+  const handleThemeSelect = useCallback(
+    (themeName: string) => {
+      switchTheme(themeName)
+      setIsOpen(false)
+
+      // Update mode based on selected theme
+      if (themeName.includes('light')) {
+        setSelectedMode('light')
+      } else if (themeName.includes('dark')) {
+        setSelectedMode('dark')
+      }
+    },
+    [switchTheme]
+  )
+
   // Apply system theme when it changes
   useEffect(() => {
     if (selectedMode === 'system') {
@@ -132,7 +160,7 @@ export function ThemeSwitcher({
       }
     }
   }, [systemTheme, selectedMode, currentThemeName, themes, switchTheme])
-  
+
   // Get current icon
   const getCurrentIcon = () => {
     if (selectedMode === 'system') {
@@ -140,13 +168,13 @@ export function ThemeSwitcher({
     }
     return theme.mode === 'dark' ? themeIcons.dark : themeIcons.light
   }
-  
+
   // Get position classes
   const getPositionClasses = () => {
     if (position === 'custom') return ''
     return `theme-switcher--${position}`
   }
-  
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -154,11 +182,11 @@ export function ThemeSwitcher({
         setIsOpen(false)
       }
     }
-    
+
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isOpen])
-  
+
   // Click outside to close
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -167,13 +195,13 @@ export function ThemeSwitcher({
         setIsOpen(false)
       }
     }
-    
+
     if (isOpen) {
       document.addEventListener('click', handleClickOutside)
       return () => document.removeEventListener('click', handleClickOutside)
     }
   }, [isOpen])
-  
+
   return (
     <div
       className={`theme-switcher ${getPositionClasses()} ${className} ${
@@ -189,16 +217,14 @@ export function ThemeSwitcher({
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
-        <span className="theme-switcher__icon">
-          {getCurrentIcon()}
-        </span>
+        <span className="theme-switcher__icon">{getCurrentIcon()}</span>
         {showLabel && !compact && (
           <span className="theme-switcher__label">
             {selectedMode === 'system' ? 'System' : theme.mode === 'dark' ? 'Dark' : 'Light'}
           </span>
         )}
       </button>
-      
+
       {isOpen && (
         <div className="theme-switcher__dropdown" role="menu">
           {/* Quick mode switcher */}
@@ -214,7 +240,7 @@ export function ThemeSwitcher({
               {themeIcons.light}
               {!compact && <span>Light</span>}
             </button>
-            
+
             <button
               className={`theme-switcher__mode ${
                 selectedMode === 'dark' ? 'theme-switcher__mode--active' : ''
@@ -226,7 +252,7 @@ export function ThemeSwitcher({
               {themeIcons.dark}
               {!compact && <span>Dark</span>}
             </button>
-            
+
             {showSystemOption && (
               <button
                 className={`theme-switcher__mode ${
@@ -241,7 +267,7 @@ export function ThemeSwitcher({
               </button>
             )}
           </div>
-          
+
           {/* Theme list */}
           {Object.keys(themes).length > 2 && (
             <>
@@ -280,18 +306,20 @@ export function ThemeSwitcher({
               </div>
             </>
           )}
-          
+
           {/* Theme preview */}
           {showPreview && hoveredTheme && (
             <div className="theme-switcher__preview">
               <div
                 className="theme-switcher__preview-colors"
-                style={{
-                  '--preview-bg': themes[hoveredTheme]?.colors?.semantic?.background?.primary,
-                  '--preview-text': themes[hoveredTheme]?.colors?.semantic?.text?.primary,
-                  '--preview-primary': themes[hoveredTheme]?.colors?.semantic?.primary?.base,
-                  '--preview-border': themes[hoveredTheme]?.colors?.semantic?.border?.default,
-                } as any}
+                style={
+                  {
+                    '--preview-bg': themes[hoveredTheme]?.colors?.semantic?.background?.primary,
+                    '--preview-text': themes[hoveredTheme]?.colors?.semantic?.text?.primary,
+                    '--preview-primary': themes[hoveredTheme]?.colors?.semantic?.primary?.base,
+                    '--preview-border': themes[hoveredTheme]?.colors?.semantic?.border?.default,
+                  } as any
+                }
               >
                 <div className="theme-switcher__preview-bg" />
                 <div className="theme-switcher__preview-text">Aa</div>

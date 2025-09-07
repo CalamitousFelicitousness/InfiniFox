@@ -209,8 +209,15 @@ export class RestPollingMonitor extends BaseProgressMonitor {
               }
 
               // If we've been through sampling or any significant phase
-              if ((this.lastPhase === 'sampling' || this.lastPhase === 'postprocessing' || this.vaeStarted) && this.completionCheckCount >= 2) {
-                console.log(`Generation likely completed (was in ${this.lastPhase}, no job for ${this.completionCheckCount} checks)`)
+              if (
+                (this.lastPhase === 'sampling' ||
+                  this.lastPhase === 'postprocessing' ||
+                  this.vaeStarted) &&
+                this.completionCheckCount >= 2
+              ) {
+                console.log(
+                  `Generation likely completed (was in ${this.lastPhase}, no job for ${this.completionCheckCount} checks)`
+                )
                 phase = 'completed'
 
                 const message: ProgressMessage = {
@@ -244,7 +251,9 @@ export class RestPollingMonitor extends BaseProgressMonitor {
                 return
               }
 
-              console.log(`Waiting for completion confirmation (${this.completionCheckCount} checks)`)
+              console.log(
+                `Waiting for completion confirmation (${this.completionCheckCount} checks)`
+              )
             } else if (this.completionCheckCount >= 10) {
               // Waited 5 seconds for job to start, give up
               console.log('No job started after 5 seconds, stopping polling')

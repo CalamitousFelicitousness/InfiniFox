@@ -12,18 +12,18 @@ export const fontFamilies = {
 
 // Font Sizes - Using modular scale (1.25 ratio)
 export const fontSizes = {
-  '2xs': '0.625rem',    // 10px
-  xs: '0.75rem',        // 12px
-  sm: '0.875rem',       // 14px
-  base: '1rem',         // 16px
-  lg: '1.125rem',       // 18px
-  xl: '1.25rem',        // 20px
-  '2xl': '1.5rem',      // 24px
-  '3xl': '1.875rem',    // 30px
-  '4xl': '2.25rem',     // 36px
-  '5xl': '3rem',        // 48px
-  '6xl': '3.75rem',     // 60px
-  '7xl': '4.5rem',      // 72px
+  '2xs': '0.625rem', // 10px
+  xs: '0.75rem', // 12px
+  sm: '0.875rem', // 14px
+  base: '1rem', // 16px
+  lg: '1.125rem', // 18px
+  xl: '1.25rem', // 20px
+  '2xl': '1.5rem', // 24px
+  '3xl': '1.875rem', // 30px
+  '4xl': '2.25rem', // 36px
+  '5xl': '3rem', // 48px
+  '6xl': '3.75rem', // 60px
+  '7xl': '4.5rem', // 72px
 } as const
 
 // Font Weights
@@ -235,39 +235,39 @@ export const typographyPresets = {
 // Generate CSS variables from tokens
 export function generateTypographyCSSVariables(): string {
   let css = ':root {\n'
-  
+
   // Font families
   css += '  /* Font Families */\n'
   Object.entries(fontFamilies).forEach(([name, value]) => {
     css += `  --font-family-${name}: ${value};\n`
   })
-  
+
   // Font sizes
   css += '\n  /* Font Sizes */\n'
   Object.entries(fontSizes).forEach(([name, value]) => {
     css += `  --font-size-${name}: ${value};\n`
   })
-  
+
   // Font weights
   css += '\n  /* Font Weights */\n'
   Object.entries(fontWeights).forEach(([name, value]) => {
     css += `  --font-weight-${name}: ${value};\n`
   })
-  
+
   // Line heights
   css += '\n  /* Line Heights */\n'
   Object.entries(lineHeights).forEach(([name, value]) => {
     css += `  --line-height-${name}: ${value};\n`
   })
-  
+
   // Letter spacing
   css += '\n  /* Letter Spacing */\n'
   Object.entries(letterSpacings).forEach(([name, value]) => {
     css += `  --letter-spacing-${name}: ${value};\n`
   })
-  
+
   css += '}\n'
-  
+
   return css
 }
 

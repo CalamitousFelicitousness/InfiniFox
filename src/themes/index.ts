@@ -64,10 +64,12 @@ ${generateAllCSSVariables()}
 }
 
 // Create a function to write the CSS file (for build process)
-export async function writeTokenCSS(path = './src/themes/styles/token-variables.css'): Promise<void> {
+export async function writeTokenCSS(
+  path = './src/themes/styles/token-variables.css'
+): Promise<void> {
   if (typeof window === 'undefined') {
     // Node.js environment
-    const fs = await import('fs').then(m => m.promises)
+    const fs = await import('fs').then((m) => m.promises)
     const cssContent = generateTokenCSS()
     await fs.writeFile(path, cssContent, 'utf-8')
     console.log(`✓ Token CSS variables written to ${path}`)
@@ -82,18 +84,21 @@ export const themeUtils = {
    * Merge multiple themes together
    */
   mergeThemes: (...themes: any[]) => {
-    return themes.reduce((acc, theme) => ({
-      ...acc,
-      ...theme,
-      colors: { ...acc.colors, ...theme.colors },
-      typography: { ...acc.typography, ...theme.typography },
-      spacing: { ...acc.spacing, ...theme.spacing },
-      shadows: { ...acc.shadows, ...theme.shadows },
-      animations: { ...acc.animations, ...theme.animations },
-      borders: { ...acc.borders, ...theme.borders },
-      breakpoints: { ...acc.breakpoints, ...theme.breakpoints },
-      custom: { ...acc.custom, ...theme.custom },
-    }), {})
+    return themes.reduce(
+      (acc, theme) => ({
+        ...acc,
+        ...theme,
+        colors: { ...acc.colors, ...theme.colors },
+        typography: { ...acc.typography, ...theme.typography },
+        spacing: { ...acc.spacing, ...theme.spacing },
+        shadows: { ...acc.shadows, ...theme.shadows },
+        animations: { ...acc.animations, ...theme.animations },
+        borders: { ...acc.borders, ...theme.borders },
+        breakpoints: { ...acc.breakpoints, ...theme.breakpoints },
+        custom: { ...acc.custom, ...theme.custom },
+      }),
+      {}
+    )
   },
 
   /**
@@ -108,7 +113,7 @@ export const themeUtils = {
    */
   validateTheme: (theme: any): boolean => {
     const requiredFields = ['name', 'mode', 'colors', 'typography', 'spacing']
-    return requiredFields.every(field => field in theme)
+    return requiredFields.every((field) => field in theme)
   },
 
   /**
@@ -118,10 +123,10 @@ export const themeUtils = {
     // Simple luminance calculation
     const rgb = backgroundColor.match(/\d+/g)
     if (!rgb || rgb.length < 3) return 'white'
-    
+
     const [r, g, b] = rgb.map(Number)
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-    
+
     return luminance > 0.5 ? 'black' : 'white'
   },
 
