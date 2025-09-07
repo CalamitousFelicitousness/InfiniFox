@@ -20,7 +20,7 @@ export interface ValidationResult {
 export interface ValidationError {
   path: string
   message: string
-  value?: any
+  value?: unknown
 }
 
 /**
@@ -45,7 +45,7 @@ export const WCAG_CONTRAST = {
 /**
  * Validate theme structure
  */
-export function validateTheme(theme: any): ValidationResult {
+export function validateTheme(theme: unknown): ValidationResult {
   const errors: ValidationError[] = []
   const warnings: ValidationWarning[] = []
 
@@ -239,7 +239,7 @@ function validateSpacing(
 /**
  * Validate shadows
  */
-function validateShadows(shadows: any, warnings: ValidationWarning[]): void {
+function validateShadows(shadows: unknown, warnings: ValidationWarning[]): void {
   if (!shadows) {
     warnings.push({
       path: 'shadows',
@@ -252,7 +252,7 @@ function validateShadows(shadows: any, warnings: ValidationWarning[]): void {
 /**
  * Validate borders
  */
-function validateBorders(borders: any, warnings: ValidationWarning[]): void {
+function validateBorders(borders: unknown, warnings: ValidationWarning[]): void {
   if (!borders) {
     warnings.push({
       path: 'borders',
@@ -265,7 +265,7 @@ function validateBorders(borders: any, warnings: ValidationWarning[]): void {
 /**
  * Validate animations
  */
-function validateAnimations(animations: any, warnings: ValidationWarning[]): void {
+function validateAnimations(animations: unknown, warnings: ValidationWarning[]): void {
   if (!animations) {
     warnings.push({
       path: 'animations',
@@ -278,7 +278,7 @@ function validateAnimations(animations: any, warnings: ValidationWarning[]): voi
 /**
  * Check if a value is a valid CSS color
  */
-export function isValidColor(color: string | any): boolean {
+export function isValidColor(color: string | unknown): boolean {
   // Type guard - ensure color is a string
   if (typeof color !== 'string') return false
 
@@ -336,7 +336,7 @@ function isValidSpacing(value: string): boolean {
 /**
  * Calculate contrast ratio between two colors
  */
-export function getContrastRatio(color1: string, color2: string): number {
+export function getContrastRatio(_color1: string, _color2: string): number {
   // This would use a proper color library in production
   // For now, return a mock value
   return 4.5

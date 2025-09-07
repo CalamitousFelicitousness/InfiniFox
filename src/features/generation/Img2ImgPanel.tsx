@@ -31,7 +31,6 @@ export function Img2ImgPanel() {
     exportImageAsBase64,
     images,
     activeImageRoles,
-    setImageRole,
   } = useStore()
 
   const [baseImage, setBaseImage] = useState<string>('')
@@ -61,7 +60,7 @@ export function Img2ImgPanel() {
       setBaseImage('')
       setSelectedImageId(null)
     }
-  }, [activeImageRoles, images])
+  }, [activeImageRoles, images, exportImageAsBase64, setHeight, setWidth])
 
   const handleGenerate = async (e: Event) => {
     e.preventDefault()

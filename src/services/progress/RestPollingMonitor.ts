@@ -15,7 +15,13 @@ export class RestPollingMonitor extends BaseProgressMonitor {
   private vaeCompleted = false // Track if VAE phase has completed
   private completionCheckCount = 0 // Count checks after VAE/final phase
   private maxCompletionChecks = 6 // Wait up to 3 seconds (6 * 500ms) after VAE for final image
-  private lastActiveState: any = null // Store last active state for debugging
+  private lastActiveState: {
+    job?: string
+    job_count?: number
+    job_no?: number
+    sampling_step?: number
+    sampling_steps?: number
+  } | null = null // Store last active state for debugging
 
   constructor() {
     super()

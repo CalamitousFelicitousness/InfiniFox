@@ -1,16 +1,18 @@
 import Konva from 'konva'
 import { Brush, Eraser } from 'lucide-preact'
 import { useState, useRef, useEffect } from 'preact/hooks'
-import { Stage, Layer, Image as KonvaImage, Line, Circle, Rect } from 'react-konva'
+import { Stage, Layer, Image as KonvaImage, Line, Circle } from 'react-konva'
 
 import { Icon } from '../../components/common/Icon'
-import {
-  getPointerInfo,
-  getPressureAdjustedSize,
-  preventDefaultTouch,
-} from '../../utils/pointerEvents'
+import { getPressureAdjustedSize, preventDefaultTouch } from '../../utils/pointerEvents'
 
 import './MaskEditor.css'
+
+interface MaskLine {
+  tool: 'brush' | 'eraser'
+  points: number[]
+  brushSize: number
+}
 
 interface MaskEditorProps {
   baseImage: string
@@ -22,7 +24,7 @@ export function MaskEditor({ baseImage, onMaskUpdate, disabled = false }: MaskEd
   const [tool, setTool] = useState<'brush' | 'eraser'>('brush')
   const [brushSize, setBrushSize] = useState(20)
   const [isDrawing, setIsDrawing] = useState(false)
-  const [lines, setLines] = useState<any[]>([])
+  const [lines, setLines] = useState<MaskLine[]>([])
   const [image, setImage] = useState<HTMLImageElement | null>(null)
   const [dimensions, setDimensions] = useState({ width: 512, height: 512 })
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 })
@@ -59,9 +61,9 @@ export function MaskEditor({ baseImage, onMaskUpdate, disabled = false }: MaskEd
     if (disabled) return
 
     // Get pointer info if available
-    const evt = e.evt as any
+    const evt = e.evt as PointerEvent
     if ('pointerType' in evt) {
-      setPointerType(evt.pointerType)
+      setPointerType(evt.pointerType as 'mouse' | 'pen' | 'touch')
       setCurrentPressure(evt.pressure || 0.5)
     }
 
@@ -83,7 +85,7 @@ export function MaskEditor({ baseImage, onMaskUpdate, disabled = false }: MaskEd
     }
 
     // Update pressure if using pen
-    const evt = e.evt as any
+    const evt = e.evt as PointerEvent
     if ('pressure' in evt && evt.pointerType === 'pen') {
       setCurrentPressure(evt.pressure || 0.5)
     }

@@ -1,10 +1,11 @@
+import type { VNode } from 'preact'
 import { useState } from 'preact/hooks'
 
 import './Tooltip.css'
 
 interface TooltipProps {
   content: string
-  children: any
+  children: VNode | VNode[] | string | number | null
   position?: 'top' | 'bottom' | 'left' | 'right'
   delay?: number
 }

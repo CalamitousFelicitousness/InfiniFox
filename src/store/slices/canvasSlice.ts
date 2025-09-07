@@ -8,8 +8,17 @@ import {
 import type { ImageData, ImageRole, CanvasSelectionMode, SliceCreator } from '../types'
 
 // Store reference will be set after store creation to avoid circular dependency
-let storeRef: any = null
-export const setStoreRef = (store: any) => {
+type StoreRef = {
+  getState: () => {
+    addImageDirect: (image: ImageData) => void
+    removeImageDirect: (id: string) => void
+    updateImagePositionDirect: (id: string, x: number, y: number) => void
+    updateStorageStats?: () => void
+  }
+}
+
+let storeRef: StoreRef | null = null
+export const setStoreRef = (store: StoreRef) => {
   storeRef = store
 }
 

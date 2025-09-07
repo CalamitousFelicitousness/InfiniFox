@@ -72,8 +72,8 @@ export function ColorPicker({ color, onChange, onClose }: ColorPickerProps) {
     const max = Math.max(r, g, b)
     const min = Math.min(r, g, b)
     let h = 0,
-      s = 0,
-      l = (max + min) / 2
+      s = 0
+    const l = (max + min) / 2
 
     if (max !== min) {
       const d = max - min
@@ -110,7 +110,7 @@ export function ColorPicker({ color, onChange, onClose }: ColorPickerProps) {
     const hex = rgbToHex(r, g, b)
     setHexInput(hex)
     onChange(hex)
-  }, [hue, saturation, lightness, alpha])
+  }, [hue, saturation, lightness, alpha, onChange])
 
   // Draw color spectrum
   useEffect(() => {

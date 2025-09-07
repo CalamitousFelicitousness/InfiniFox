@@ -5,6 +5,22 @@ import { PerformanceMonitor } from '../../utils/performanceUtils'
 import { Icon } from '../common/Icon'
 import './PerformanceDebugPanel.css'
 
+// Extend Performance interface for memory property
+interface PerformanceMemory {
+  usedJSHeapSize: number
+  totalJSHeapSize: number
+  jsHeapSizeLimit: number
+}
+
+interface PerformanceWithMemory extends Performance {
+  memory?: PerformanceMemory
+}
+
+// Canvas method parameter types
+type DrawImageParams = Parameters<CanvasRenderingContext2D['drawImage']>
+type FillRectParams = Parameters<CanvasRenderingContext2D['fillRect']>
+type StrokeParams = Parameters<CanvasRenderingContext2D['stroke']>
+
 interface PerformanceMetrics {
   fps: number
   frameTime: number
@@ -53,19 +69,19 @@ export function PerformanceDebugPanel({
     const originalFillRect = CanvasRenderingContext2D.prototype.fillRect
     const originalStroke = CanvasRenderingContext2D.prototype.stroke
 
-    CanvasRenderingContext2D.prototype.drawImage = function (...args: any[]) {
+    CanvasRenderingContext2D.prototype.drawImage = function (...args: DrawImageParams) {
       drawCallsRef.current++
-      return originalDrawImage.apply(this, args as any)
+      return originalDrawImage.apply(this, args)
     }
 
-    CanvasRenderingContext2D.prototype.fillRect = function (...args: any[]) {
+    CanvasRenderingContext2D.prototype.fillRect = function (...args: FillRectParams) {
       drawCallsRef.current++
-      return originalFillRect.apply(this, args as any)
+      return originalFillRect.apply(this, args)
     }
 
-    CanvasRenderingContext2D.prototype.stroke = function (...args: any[]) {
+    CanvasRenderingContext2D.prototype.stroke = function (...args: StrokeParams) {
       drawCallsRef.current++
-      return originalStroke.apply(this, args as any)
+      return originalStroke.apply(this, args)
     }
 
     // Update metrics every second
@@ -84,9 +100,9 @@ export function PerformanceDebugPanel({
 
       // Get memory usage if available
       let memoryUsed = 0
-      if ('memory' in performance && (performance as any).memory) {
-        const memory = (performance as any).memory
-        memoryUsed = Math.round(memory.usedJSHeapSize / 1024 / 1024) // Convert to MB
+      const perf = performance as PerformanceWithMemory
+      if ('memory' in performance && perf.memory) {
+        memoryUsed = Math.round(perf.memory.usedJSHeapSize / 1024 / 1024) // Convert to MB
       }
 
       // Get canvas metrics if provided

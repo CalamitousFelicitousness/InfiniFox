@@ -3,6 +3,8 @@
  * Exports all lucide-preact icons used throughout InfiniFox
  */
 
+import type { FunctionComponent, ComponentProps } from 'preact'
+
 export {
   // Canvas Tools
   MousePointer2 as SelectIcon,
@@ -203,7 +205,7 @@ export const iconCategories = {
 } as const
 
 // Helper function to get icon by name
-export function getIconByName(name: string): any {
+export function getIconByName(name: string): FunctionComponent<ComponentProps<'svg'>> | undefined {
   const icons = {
     SelectIcon,
     BrushIcon,

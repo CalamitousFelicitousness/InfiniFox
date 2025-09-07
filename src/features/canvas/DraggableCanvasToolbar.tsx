@@ -28,7 +28,7 @@ export function DraggableCanvasToolbar({ currentTool, onToolChange }: DraggableC
           x: Math.min(Math.max(20, parsed.x), maxX),
           y: Math.min(Math.max(20, parsed.y), maxY),
         })
-      } catch (e) {
+      } catch {
         // Invalid saved position, use default
       }
     }

@@ -4,7 +4,6 @@
  */
 
 import { Brush, Pencil, Search, Undo2 } from 'lucide-preact'
-import { h } from 'preact'
 import { useState } from 'preact/hooks'
 
 import { useTheme } from '../themes/ThemeProvider'

@@ -8,6 +8,29 @@ import type {
 } from '../types/sdnext'
 
 /**
+ * Configuration options that can be sent to the SD API
+ * This is a subset of common options - extend as needed
+ */
+interface SdOptions {
+  sd_model_checkpoint?: string
+  sd_vae?: string
+  CLIP_stop_at_last_layers?: number
+  sd_hypernetwork?: string
+  sd_hypernetwork_strength?: number
+  img2img_fix_steps?: boolean
+  enable_hr?: boolean
+  denoising_strength?: number
+  firstphase_width?: number
+  firstphase_height?: number
+  hr_scale?: number
+  hr_upscaler?: string
+  hr_second_pass_steps?: number
+  hr_resize_x?: number
+  hr_resize_y?: number
+  [key: string]: string | number | boolean | undefined
+}
+
+/**
  * A custom error class for API-related issues.
  * This helps in distinguishing API errors from other runtime errors.
  */
@@ -107,7 +130,7 @@ class SdnextApiClient {
     return fetchApi<SdModel[]>('sd-models')
   }
 
-  public async setOptions(payload: Record<string, any>): Promise<void> {
+  public async setOptions(payload: SdOptions): Promise<void> {
     return fetchApi<void>('options', {
       method: 'POST',
       body: JSON.stringify(payload),

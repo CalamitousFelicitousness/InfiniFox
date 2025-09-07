@@ -39,7 +39,7 @@ export interface Theme {
   animations: ThemeAnimations
   borders: ThemeBorders
   breakpoints: ThemeBreakpoints
-  custom?: Record<string, any>
+  custom?: Record<string, unknown>
 }
 
 /**
@@ -60,8 +60,8 @@ export interface ThemeTypography {
   weights?: Partial<Record<FontWeight, number>>
   lineHeights?: Partial<Record<LineHeight, number>>
   letterSpacings?: Partial<Record<LetterSpacing, string>>
-  presets?: Partial<Record<TypographyPreset, any>>
-  custom?: Record<string, any>
+  presets?: Partial<Record<TypographyPreset, StyleObject>>
+  custom?: Record<string, string | number | StyleObject>
 }
 
 /**
@@ -92,8 +92,8 @@ export interface ThemeAnimations {
   durations?: Partial<Record<Duration, string>>
   transitions?: Partial<Record<Transition, string>>
   animations?: Partial<Record<Animation, string>>
-  keyframes?: Partial<Record<Keyframe, any>>
-  custom?: Record<string, any>
+  keyframes?: Partial<Record<Keyframe, Record<string, StyleObject>>>
+  custom?: Record<string, string | StyleObject>
 }
 
 /**
@@ -105,8 +105,8 @@ export interface ThemeBorders {
   radius?: Partial<Record<BorderRadius, string>>
   borders?: Partial<Record<Border, string>>
   outlines?: Partial<Record<Outline, string>>
-  dividers?: Partial<Record<Divider, any>>
-  custom?: Record<string, any>
+  dividers?: Partial<Record<Divider, string | StyleObject>>
+  custom?: Record<string, string | StyleObject>
 }
 
 /**
@@ -116,8 +116,8 @@ export interface ThemeBreakpoints {
   values?: Partial<Record<Breakpoint, string>>
   queries?: Partial<Record<MediaQuery, string>>
   scale?: Partial<Record<ResponsiveScale, number>>
-  layouts?: Partial<Record<Layout, any>>
-  custom?: Record<string, any>
+  layouts?: Partial<Record<Layout, StyleObject>>
+  custom?: Record<string, string | number | StyleObject>
 }
 
 /**
@@ -192,7 +192,7 @@ export interface UseThemeReturn {
  */
 export interface ThemeTokens {
   color: (path: string) => string
-  typography: (path: string) => any
+  typography: (path: string) => unknown
   spacing: (scale: SpacingScale) => string
   shadow: (type: Shadow) => string
   border: (type: Border) => string
@@ -206,12 +206,12 @@ export interface ThemeTokens {
 /**
  * CSS-in-JS style object
  */
-export type StyleObject = Record<string, any>
+export type StyleObject = Record<string, string | number | boolean | StyleObject | undefined>
 
 /**
  * Theme style generator function
  */
-export type StyleGenerator<P = {}> = (theme: Theme, props?: P) => StyleObject
+export type StyleGenerator<P = object> = (theme: Theme, props?: P) => StyleObject
 
 /**
  * Component theme overrides
@@ -250,7 +250,7 @@ export interface CreateThemeOptions {
   base?: string // Base theme to extend from
   tokens?: Partial<Theme>
   components?: ComponentThemes
-  custom?: Record<string, any>
+  custom?: Record<string, unknown>
 }
 
 /**
@@ -261,7 +261,7 @@ export interface ThemeUtils {
   createVariant: (base: Theme, variant: Partial<Theme>) => Theme
   generateCSSVariables: (theme: Theme) => string
   parseTheme: (themeString: string) => Theme
-  validateTheme: (theme: any) => theme is Theme
+  validateTheme: (theme: unknown) => theme is Theme
   getContrastColor: (backgroundColor: string) => string
   getColorShade: (color: string, shade: number) => string
   responsive: <T>(values: Partial<Record<Breakpoint, T>>) => T

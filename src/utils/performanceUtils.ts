@@ -5,14 +5,14 @@
 /**
  * Throttle function execution to limit calls per frame
  */
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: unknown[]) => unknown>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {
   let inThrottle = false
   let lastArgs: Parameters<T> | null = null
 
-  return function (this: any, ...args: Parameters<T>) {
+  return function (this: unknown, ...args: Parameters<T>) {
     if (!inThrottle) {
       func.apply(this, args)
       inThrottle = true
@@ -32,13 +32,13 @@ export function throttle<T extends (...args: any[]) => any>(
 /**
  * RequestAnimationFrame-based throttle for smooth 60fps updates
  */
-export function rafThrottle<T extends (...args: any[]) => any>(
+export function rafThrottle<T extends (...args: unknown[]) => unknown>(
   func: T
 ): (...args: Parameters<T>) => void {
   let rafId: number | null = null
   let lastArgs: Parameters<T> | null = null
 
-  return function (this: any, ...args: Parameters<T>) {
+  return function (this: unknown, ...args: Parameters<T>) {
     lastArgs = args
     if (rafId === null) {
       rafId = requestAnimationFrame(() => {
@@ -54,13 +54,13 @@ export function rafThrottle<T extends (...args: any[]) => any>(
 /**
  * Debounce function execution
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
   let timeout: NodeJS.Timeout | null = null
 
-  return function (this: any, ...args: Parameters<T>) {
+  return function (this: unknown, ...args: Parameters<T>) {
     if (timeout) clearTimeout(timeout)
     timeout = setTimeout(() => {
       func.apply(this, args)

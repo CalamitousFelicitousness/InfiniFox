@@ -37,7 +37,7 @@ export class WebSocketMonitor extends BaseProgressMonitor {
 
         try {
           testWs = new WebSocket(this.url)
-        } catch (error) {
+        } catch {
           // Immediate connection error - likely not supported
           clearTimeout(timeout)
           console.log('WebSocket not available at this endpoint')
@@ -129,7 +129,7 @@ export class WebSocketMonitor extends BaseProgressMonitor {
     }, delay)
   }
 
-  send(data: any): void {
+  send(data: unknown): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(data))
     } else {

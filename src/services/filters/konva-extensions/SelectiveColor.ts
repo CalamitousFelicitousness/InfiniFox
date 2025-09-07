@@ -112,30 +112,6 @@ function cmykToRgb(c: number, m: number, y: number, k: number): [number, number,
 }
 
 /**
- * Determine which color range a pixel belongs to
- */
-function getColorRange(r: number, g: number, b: number): ColorRange | null {
-  const [h, s, l] = rgbToHsl(r, g, b)
-
-  // Whites, neutrals, and blacks based on saturation and lightness
-  if (s < 10) {
-    if (l > 80) return ColorRange.Whites
-    if (l < 20) return ColorRange.Blacks
-    return ColorRange.Neutrals
-  }
-
-  // Color ranges based on hue
-  if (h >= 345 || h < 15) return ColorRange.Reds
-  if (h >= 15 && h < 45) return ColorRange.Yellows
-  if (h >= 45 && h < 165) return ColorRange.Greens
-  if (h >= 165 && h < 195) return ColorRange.Cyans
-  if (h >= 195 && h < 285) return ColorRange.Blues
-  if (h >= 285 && h < 345) return ColorRange.Magentas
-
-  return null
-}
-
-/**
  * Calculate the influence of a color range on a pixel
  * Returns a value between 0 and 1 based on how much the pixel belongs to the range
  */
@@ -174,7 +150,7 @@ function getColorRangeInfluence(r: number, g: number, b: number, range: ColorRan
   const rangeData = hueRanges[range]
   if (!rangeData) return 0
 
-  const [center, width, min, max] = rangeData
+  const [center, width] = rangeData
 
   // Handle hue wrap-around for reds
   let hueDistance: number
@@ -272,7 +248,7 @@ function applyCMYKAdjustment(
  */
 Konva.Filters.SelectiveColor = function (imageData: ImageData) {
   const data = imageData.data
-  const node = this as any
+  const node = this as Konva.Node
   const adjustments = node.selectiveColor()
 
   if (!adjustments) return

@@ -1,6 +1,6 @@
 import { useStore } from '../../store/store'
 
-import type { ProgressMonitor, ProgressHandler, ProgressMessage } from './ProgressMonitor'
+import type { ProgressMonitor, ProgressHandler } from './ProgressMonitor'
 import { RestPollingMonitor } from './RestPollingMonitor'
 import { WebSocketMonitor } from './WebSocketMonitor'
 
@@ -182,14 +182,14 @@ export class ProgressService {
   // Start polling for REST-based progress (called when generation starts)
   startPolling(jobId?: string): void {
     if (this.activeMonitor && 'startPolling' in this.activeMonitor) {
-      ;(this.activeMonitor as any).startPolling(jobId)
+      ;(this.activeMonitor as RestPollingMonitor).startPolling(jobId)
     }
   }
 
   // Stop polling for REST-based progress
   stopPolling(forceComplete: boolean = false): void {
     if (this.activeMonitor && 'stopPolling' in this.activeMonitor) {
-      ;(this.activeMonitor as any).stopPolling(forceComplete)
+      ;(this.activeMonitor as RestPollingMonitor).stopPolling(forceComplete)
     }
   }
 }

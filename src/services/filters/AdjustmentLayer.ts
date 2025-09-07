@@ -10,7 +10,7 @@
 import Konva from 'konva'
 import { v4 as uuidv4 } from 'uuid'
 
-import { FilterChain, FilterConfig, FilterPreset } from './FilterChain'
+import { FilterChain } from './FilterChain'
 
 /**
  * Types of adjustment layers
@@ -621,7 +621,7 @@ export class AdjustmentLayerManager {
     if (!this.stage) return null
 
     // Get all visible layers
-    const visibleLayers = this.getAllLayers().filter((l) => l.config.visible)
+    // Note: visibility is handled by tempStage cloning below
 
     // Create temporary stage for merging
     const tempStage = this.stage.clone()

@@ -186,7 +186,7 @@ export class PerfectFreehandService {
   /**
    * Generate a smooth path from stroke points (for advanced usage)
    */
-  generateSmoothPath(points: StrokePoint[]): any[] {
+  generateSmoothPath(points: StrokePoint[]): StrokePoint[] {
     const inputPoints = points.map((p) => ({
       x: p.x,
       y: p.y,
@@ -199,7 +199,7 @@ export class PerfectFreehandService {
   /**
    * Generate outline points from smooth path (for advanced usage)
    */
-  generateOutlineFromPath(pathPoints: any[]): number[][] {
+  generateOutlineFromPath(pathPoints: StrokePoint[]): number[][] {
     return getStrokeOutlinePoints(pathPoints, this.currentOptions)
   }
 

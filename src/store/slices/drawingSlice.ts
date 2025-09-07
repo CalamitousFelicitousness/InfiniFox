@@ -1,7 +1,5 @@
 import type { StateCreator } from 'zustand'
 
-import type { DrawingStrokeOptions } from '../../services/drawing/PerfectFreehandService'
-
 export interface DrawingStroke {
   id: string
   tool: 'brush' | 'eraser'
@@ -150,7 +148,7 @@ export const createDrawingSlice: StateCreator<DrawingSlice, [], [], DrawingSlice
     return ''
   },
 
-  importDrawing: (dataUrl) => {
+  importDrawing: (_dataUrl) => {
     // This will be implemented to import a drawing from a data URL
     console.warn('Import drawing not yet implemented')
   },

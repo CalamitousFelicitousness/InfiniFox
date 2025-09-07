@@ -16,10 +16,23 @@ class AddImageCommand implements Command {
   type = 'ADD_IMAGE'
   timestamp: number
   description: string
-  private image: any
-  private store: any
+  private image: { id: string; src: string; x: number; y: number }
+  private store: {
+    getState: () => {
+      addImageDirect: (img: unknown) => void
+      removeImageDirect: (id: string) => void
+    }
+  }
 
-  constructor(image: any, store: any) {
+  constructor(
+    image: { id: string; src: string; x: number; y: number },
+    store: {
+      getState: () => {
+        addImageDirect: (img: unknown) => void
+        removeImageDirect: (id: string) => void
+      }
+    }
+  ) {
     this.id = `cmd-${Date.now()}-${Math.random()}`
     this.timestamp = Date.now()
     this.image = image
@@ -41,10 +54,23 @@ class RemoveImageCommand implements Command {
   type = 'REMOVE_IMAGE'
   timestamp: number
   description: string
-  private image: any
-  private store: any
+  private image: { id: string; src: string; x: number; y: number }
+  private store: {
+    getState: () => {
+      addImageDirect: (img: unknown) => void
+      removeImageDirect: (id: string) => void
+    }
+  }
 
-  constructor(image: any, store: any) {
+  constructor(
+    image: { id: string; src: string; x: number; y: number },
+    store: {
+      getState: () => {
+        addImageDirect: (img: unknown) => void
+        removeImageDirect: (id: string) => void
+      }
+    }
+  ) {
     this.id = `cmd-${Date.now()}-${Math.random()}`
     this.timestamp = Date.now()
     this.image = image
@@ -69,13 +95,17 @@ class MoveImageCommand implements Command {
   private imageId: string
   private oldPos: { x: number; y: number }
   private newPos: { x: number; y: number }
-  private store: any
+  private store: {
+    getState: () => { updateImagePositionDirect: (id: string, x: number, y: number) => void }
+  }
 
   constructor(
     imageId: string,
     oldPos: { x: number; y: number },
     newPos: { x: number; y: number },
-    store: any
+    store: {
+      getState: () => { updateImagePositionDirect: (id: string, x: number, y: number) => void }
+    }
   ) {
     this.id = `cmd-${Date.now()}-${Math.random()}`
     this.timestamp = Date.now()

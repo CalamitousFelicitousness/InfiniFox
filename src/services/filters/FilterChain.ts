@@ -24,7 +24,7 @@ export interface FilterConfig {
   enabled: boolean
   opacity: number // 0-1, allows for partial application
   blendMode?: string // Optional blend mode for the filter
-  params: Record<string, any>
+  params: Record<string, string | number | boolean>
   order: number
 }
 
@@ -214,7 +214,7 @@ export class FilterChain {
    * Apply the filter chain to a Konva node
    */
   async applyToNode(node: Konva.Node, options: ApplyOptions = {}): Promise<void> {
-    const { preview = false, progressCallback, useCache = true } = options
+    const { preview = false, progressCallback } = options
 
     // Get sorted filters
     const sortedFilters = this.getSortedFilters()
@@ -237,8 +237,8 @@ export class FilterChain {
     }
 
     // Build filter array for Konva
-    const konvaFilters: any[] = []
-    const filterParams: Record<string, any> = {}
+    const konvaFilters: ((this: Konva.Node, imageData: ImageData) => void)[] = []
+    const filterParams: Record<string, string | number | boolean> = {}
 
     let progress = 0
     const progressStep = 100 / enabledFilters.length
@@ -314,7 +314,7 @@ export class FilterChain {
   /**
    * Apply split screen preview (left: original, right: filtered)
    */
-  private applySplitPreview(node: Konva.Node): void {
+  private applySplitPreview(_node: Konva.Node): void {
     // Implementation would create a mask to show half original, half filtered
     console.log('Split preview mode - to be implemented with canvas masking')
   }
@@ -322,7 +322,7 @@ export class FilterChain {
   /**
    * Apply side-by-side preview
    */
-  private applySideBySidePreview(node: Konva.Node): void {
+  private applySideBySidePreview(_node: Konva.Node): void {
     console.log('Side-by-side preview mode - to be implemented')
   }
 
@@ -338,7 +338,7 @@ export class FilterChain {
   /**
    * Apply difference preview (shows what changed)
    */
-  private applyDifferencePreview(node: Konva.Node): void {
+  private applyDifferencePreview(_node: Konva.Node): void {
     console.log('Difference preview mode - to be implemented with blend modes')
   }
 
@@ -468,7 +468,7 @@ export class FilterChain {
       name,
       description,
       category,
-      filters: this.getSortedFilters().map(({ id, ...filter }) => filter),
+      filters: this.getSortedFilters().map(({ id: _id, ...filter }) => filter),
       metadata: {
         created: new Date(),
         version: this.version,

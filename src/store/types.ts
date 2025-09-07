@@ -91,8 +91,7 @@ export interface AppState {
     memoryUrls: number
   }
 
-  // All actions from slices will be added here
-  [key: string]: any
+  // All actions from slices will be added here through intersection types
 }
 
 // Helper type for creating slices

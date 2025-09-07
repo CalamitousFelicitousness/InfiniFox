@@ -122,7 +122,7 @@ function applyLevels(
  */
 Konva.Filters.Levels = function (imageData: ImageData) {
   const data = imageData.data
-  const node = this as any
+  const node = this as Konva.Node
   const levels = node.levels()
 
   if (!levels) return

@@ -45,7 +45,7 @@ export function App() {
       console.log('Cleaning up object URLs...')
       imageStorage.cleanup()
     }
-  }, [])
+  }, [loadImagesFromStorage, testConnection, updateStorageStats])
 
   // Periodic cleanup of unused object URLs (every 5 minutes)
   useEffect(() => {

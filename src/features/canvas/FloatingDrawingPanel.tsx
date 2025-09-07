@@ -110,7 +110,7 @@ export function FloatingDrawingPanel({ visible, tool }: FloatingDrawingPanelProp
     if (savedPos) {
       try {
         setPosition(JSON.parse(savedPos))
-      } catch (e) {
+      } catch {
         // Invalid saved position, use default
       }
     }
@@ -224,7 +224,7 @@ export function FloatingDrawingPanel({ visible, tool }: FloatingDrawingPanelProp
           {/* Brush Presets */}
           <div class="preset-section">
             <div class="preset-control">
-              {Object.entries(BRUSH_PRESETS).map(([key, preset]) => (
+              {Object.entries(BRUSH_PRESETS).map(([key, _preset]) => (
                 <button
                   key={key}
                   class={`preset-button ${brushPreset === key ? 'active' : ''}`}

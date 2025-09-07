@@ -168,7 +168,11 @@ export class KonvaTokenBridge {
     const style = parts[1] || 'solid'
     const color = parts.slice(2).join(' ') || '#000000'
 
-    const result: any = {
+    const result: {
+      stroke: string
+      strokeWidth: number
+      dash?: number[]
+    } = {
       stroke: color.startsWith('var(')
         ? this.getColor(color.match(/var\((--[^)]+)\)/)?.[1] || '')
         : color,

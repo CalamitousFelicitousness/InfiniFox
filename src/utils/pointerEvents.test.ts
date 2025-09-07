@@ -1,7 +1,7 @@
 // Test file for verifying pointer events implementation
 // Run these tests manually on different devices
 
-import { describe, it, expect } from '@jest/globals'
+import { describe, it } from '@jest/globals'
 
 describe('Pointer Events Implementation Tests', () => {
   describe('Canvas Component', () => {
@@ -161,51 +161,45 @@ export async function runPointerEventChecks() {
 
 async function checkNoTouchHandlers() {
   // Verify no onTouchStart, onTouchMove, onTouchEnd in components
-  const components = [
-    'Canvas.tsx',
-    'MaskEditor.tsx',
-    'DrawingPanel.tsx',
-    'NumberInput.tsx',
-    'Dropdown.tsx',
-    'Slider.tsx',
-  ]
+  // const components = [
+  //   'Canvas.tsx',
+  //   'MaskEditor.tsx',
+  //   'DrawingPanel.tsx',
+  //   'NumberInput.tsx',
+  //   'Dropdown.tsx',
+  //   'Slider.tsx',
+  // ]
 
-  for (const component of components) {
-    // Check component doesn't have touch handlers
-    // This would be implemented with actual file reading
-    // Return false if any touch handlers found
-  }
+  // Check components don't have touch handlers
+  // This would be implemented with actual file reading
+  // Return false if any touch handlers found
 
   return true
 }
 
 async function checkAllCancelHandlers() {
   // Verify all interactive components have pointercancel handlers
-  const requiredComponents = [
-    { file: 'Canvas.tsx', handler: 'onPointerCancel' },
-    { file: 'MaskEditor.tsx', handler: 'onPointerCancel' },
-    { file: 'DrawingPanel.tsx', handler: 'onPointerCancel' },
-    { file: 'NumberInput.tsx', handler: 'pointercancel' },
-    { file: 'Dropdown.tsx', handler: 'pointercancel' },
-    { file: 'Slider.tsx', handler: 'pointercancel' },
-  ]
+  // const requiredComponents = [
+  //   { file: 'Canvas.tsx', handler: 'onPointerCancel' },
+  //   { file: 'MaskEditor.tsx', handler: 'onPointerCancel' },
+  //   { file: 'DrawingPanel.tsx', handler: 'onPointerCancel' },
+  //   { file: 'NumberInput.tsx', handler: 'pointercancel' },
+  //   { file: 'Dropdown.tsx', handler: 'pointercancel' },
+  //   { file: 'Slider.tsx', handler: 'pointercancel' },
+  // ]
 
-  for (const component of requiredComponents) {
-    // Check component has required cancel handler
-    // Return false if missing
-  }
+  // Check components have required cancel handlers
+  // Return false if missing
 
   return true
 }
 
 async function checkPointerUtilsImported() {
   // Verify components using pointer events import utilities
-  const componentsUsingPointer = ['MaskEditor.tsx']
+  // const componentsUsingPointer = ['MaskEditor.tsx']
 
-  for (const component of componentsUsingPointer) {
-    // Check for import statement
-    // import { getPointerInfo, ... } from '../../utils/pointerEvents'
-  }
+  // Check for import statements
+  // import { getPointerInfo, ... } from '../../utils/pointerEvents'
 
   return true
 }

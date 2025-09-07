@@ -1,8 +1,9 @@
+import type Konva from 'konva'
 import { useEffect, useRef, useState, useCallback, useMemo } from 'preact/hooks'
 import './CanvasMinimap.css'
 
 interface MinimapProps {
-  stageRef: any // Konva Stage ref
+  stageRef: React.MutableRefObject<Konva.Stage | null> | null
   scale: number
   position: { x: number; y: number }
   images: Array<{
@@ -44,7 +45,6 @@ export function CanvasMinimap({
   const panelRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationFrameRef = useRef<number>()
-  const lastUpdateRef = useRef({ scale, position, imageCount: images.length })
 
   // Constants for performance
   const MINIMAP_ZOOM = 0.3 // Zoom out factor (0.3 provides good balance)
@@ -71,7 +71,7 @@ export function CanvasMinimap({
         // if (parsed.minimized !== undefined) {
         //   setIsMinimized(parsed.minimized)
         // }
-      } catch (e) {
+      } catch {
         // Invalid saved state, use defaults
       }
     } else {
@@ -336,7 +336,7 @@ export function CanvasMinimap({
         cancelAnimationFrame(animationFrameRef.current)
       }
     }
-  }, [renderMinimap, isMinimized, position, scale]) // Add position and scale as direct dependencies
+  }, [renderMinimap, isMinimized, position, scale, stageRef, memoizedImages]) // Add all dependencies
 
   // Force initial render with restored viewport values
   useEffect(() => {
@@ -348,7 +348,7 @@ export function CanvasMinimap({
     }, 100) // Small delay to ensure stage is ready
 
     return () => clearTimeout(timer)
-  }, []) // Only on mount
+  }, [isMinimized, stageRef, renderMinimap]) // Added missing dependencies
 
   // Handle minimap click for navigation
   const handleMinimapClick = (e: MouseEvent) => {

@@ -3,19 +3,29 @@
  * Enforces consistent sizing using theme tokens
  */
 
-import type { FunctionComponent } from 'preact'
+import type { FunctionComponent, JSX } from 'preact'
 
 import { iconSizeValues, iconStrokes } from '../../themes/tokens/icons'
 
 type IconSize = keyof typeof iconSizeValues
 type IconStroke = keyof typeof iconStrokes
 
-interface IconProps {
-  icon: FunctionComponent<any>
+// Common props that lucide-preact icons accept
+interface LucideIconProps {
+  size?: number | string
+  strokeWidth?: number | string
+  stroke?: string
+  fill?: string
+  strokeLinecap?: 'butt' | 'round' | 'square'
+  strokeLinejoin?: 'miter' | 'round' | 'bevel'
+  className?: string
+  style?: JSX.CSSProperties
+}
+
+interface IconProps extends Omit<LucideIconProps, 'size' | 'strokeWidth'> {
+  icon: FunctionComponent<LucideIconProps>
   size?: IconSize
   strokeWidth?: IconStroke
-  className?: string
-  [key: string]: any // Allow other props to pass through
 }
 
 export function Icon({

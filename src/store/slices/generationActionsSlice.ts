@@ -26,8 +26,6 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       width,
       height,
       generationFrames,
-      removeGenerationFrame,
-      updateGenerationFrame,
     } = get()
 
     if (!prompt) {

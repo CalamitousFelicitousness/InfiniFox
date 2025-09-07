@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 
-import { getPointerInfo, PointerInfo } from '../utils/pointerEvents'
+import { getPointerInfo } from '../utils/pointerEvents'
 
 interface DragState {
   isDragging: boolean
@@ -96,7 +96,7 @@ export function usePointerDrag(
       element.removeEventListener('pointerup', handlePointerUp)
       element.removeEventListener('pointercancel', handlePointerUp)
     }
-  }, [elementRef, options.disabled])
+  }, [elementRef, options])
 
   return dragState
 }

@@ -6,14 +6,12 @@
 import { useState, useCallback, useRef, useEffect } from 'preact/hooks'
 
 import { useTheme } from '../themes/ThemeProvider'
-import type { Theme } from '../themes/types'
 import {
   transitionTheme,
   getTransitionConfig,
   measureThemeSwitch,
   preloadTheme,
   defaultTransition,
-  instantTransition,
 } from '../themes/utils/transitions'
 import type { TransitionConfig } from '../themes/utils/transitions'
 
@@ -354,10 +352,11 @@ export function useThemePersistence(storageKey: string = 'infinifox-theme'): {
  * Hook for keyboard shortcuts
  */
 export function useThemeShortcuts(shortcuts: Record<string, () => void> = {}): void {
+  const { toggleTheme } = useTheme()
+
   useEffect(() => {
     const defaultShortcuts = {
       'ctrl+shift+l': () => {
-        const { toggleTheme } = useTheme()
         toggleTheme()
       },
       ...shortcuts,
@@ -383,5 +382,5 @@ export function useThemeShortcuts(shortcuts: Record<string, () => void> = {}): v
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [shortcuts])
+  }, [shortcuts, toggleTheme])
 }

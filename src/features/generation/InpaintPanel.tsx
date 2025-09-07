@@ -23,15 +23,10 @@ export function InpaintPanel() {
     setSteps,
     cfgScale,
     setCfgScale,
-    width,
-    setWidth,
-    height,
-    setHeight,
     generateInpaint,
     isLoading,
     images,
     activeImageRoles,
-    setImageRole,
     exportImageAsBase64,
   } = useStore()
 
@@ -39,7 +34,7 @@ export function InpaintPanel() {
   const [maskImage, setMaskImage] = useState<string>('')
   const [denoisingStrength, setDenoisingStrength] = useState(0.75)
   const [maskBlur, setMaskBlur] = useState(4)
-  const [selectedImageId, setSelectedImageId] = useState<string | null>(null)
+
   const [inpaintingFill, setInpaintingFill] = useState<
     'fill' | 'original' | 'latent_noise' | 'latent_nothing'
   >('original')
@@ -55,11 +50,7 @@ export function InpaintPanel() {
         exportImageAsBase64(roleImage.imageId)
           .then((base64) => {
             setBaseImage(base64)
-            setSelectedImageId(roleImage.imageId)
-            if (image.width && image.height) {
-              setWidth(image.width)
-              setHeight(image.height)
-            }
+            // Image dimensions can be handled by the mask editor
           })
           .catch((error) => {
             console.error('Failed to load role-assigned image:', error)
@@ -67,10 +58,9 @@ export function InpaintPanel() {
       }
     } else {
       setBaseImage('')
-      setSelectedImageId(null)
       setMaskImage('')
     }
-  }, [activeImageRoles, images])
+  }, [activeImageRoles, images, exportImageAsBase64])
 
   const handleMaskDrawn = (maskDataUrl: string) => {
     // Convert data URL to base64
@@ -159,7 +149,9 @@ export function InpaintPanel() {
         <Dropdown
           label="Inpainting Fill Mode"
           value={inpaintingFill}
-          onInput={(val) => setInpaintingFill(val as any)}
+          onInput={(val) =>
+            setInpaintingFill(val as 'fill' | 'original' | 'latent_noise' | 'latent_nothing')
+          }
           options={['fill', 'original', 'latent_noise', 'latent_nothing']}
           disabled={isLoading}
         />

@@ -1,5 +1,5 @@
 import Konva from 'konva'
-import React, { useEffect, useState, useRef } from 'preact/compat'
+import React, { useEffect, useState, useRef, useCallback } from 'preact/compat'
 import {
   Stage,
   Layer,
@@ -74,21 +74,15 @@ export function Canvas() {
     removeGenerationFrame,
     updateGenerationFrame,
     updateFramePosition,
-    updateFrameSize,
-    lockFrame,
-    convertPlaceholderToActive,
-    getNextEmptyFrame,
+
     // Generation parameters
     width,
     height,
     generateTxt2Img,
     isLoading,
-    progress,
-    previewImage,
+
     // Drawing state from store
-    isDrawingMode,
     isDrawingActive,
-    drawingTool,
     brushSize,
     brushOpacity,
     brushColor,
@@ -142,12 +136,12 @@ export function Canvas() {
   })
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 })
   const [showDrawingCursor, setShowDrawingCursor] = useState(false)
-  const [currentPressure, setCurrentPressure] = useState(0.5)
+  const [, setCurrentPressure] = useState(0.5)
   const strokePointsRef = useRef<{ x: number; y: number; pressure: number }[]>([])
   const [isPanning, setIsPanning] = useState(false)
   const [activeGenerationFrameId, setActiveGenerationFrameId] = useState<string | null>(null)
   const [contextMenuFrameId, setContextMenuFrameId] = useState<string | null>(null)
-  const [selectedFrameId, setSelectedFrameId] = useState<string | null>(null)
+  const [, setSelectedFrameId] = useState<string | null>(null)
 
   const stageRef = useRef<Konva.Stage>(null)
   const transformerRef = useRef<Konva.Transformer>(null)
@@ -211,7 +205,7 @@ export function Canvas() {
     return () => {
       unsubscribe()
     }
-  }, [activeGenerationFrameId, updateGenerationFrame, removeGenerationFrame])
+  }, [activeGenerationFrameId, generationFrames, updateGenerationFrame, removeGenerationFrame])
 
   // Cleanup orphaned frames when generation completes
   useEffect(() => {
@@ -227,7 +221,7 @@ export function Canvas() {
         }
       })
     }
-  }, [isLoading])
+  }, [isLoading, generationFrames, updateGenerationFrame, removeGenerationFrame])
 
   // Initialize drawing services
   useEffect(() => {
@@ -244,7 +238,7 @@ export function Canvas() {
     return () => {
       pressureManagerRef.current?.cleanup()
     }
-  }, [])
+  }, [position, scale, brushPreset, brushSize, smoothing])
 
   // No longer needed - tool selection directly manages drawing mode
 
@@ -272,7 +266,7 @@ export function Canvas() {
       stageRef.current.position(position)
       stageRef.current.scale({ x: scale, y: scale })
     }
-  }, [])
+  }, [position, scale])
 
   // Update cursor visibility based on tool and manage stage draggability
   useEffect(() => {
@@ -294,15 +288,18 @@ export function Canvas() {
   }, [])
 
   // Handle image file upload - define before use in drag-drop handlers
-  const handleImageFile = async (file: File, x: number, y: number) => {
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file')
-      return
-    }
+  const handleImageFile = useCallback(
+    async (file: File, x: number, y: number) => {
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file')
+        return
+      }
 
-    // Use the new uploadImageToCanvas function from the store
-    await uploadImageToCanvas(file, x, y)
-  }
+      // Use the new uploadImageToCanvas function from the store
+      await uploadImageToCanvas(file, x, y)
+    },
+    [uploadImageToCanvas]
+  )
 
   // Setup drag and drop handlers
   useEffect(() => {
@@ -353,7 +350,7 @@ export function Canvas() {
       container.removeEventListener('dragleave', handleDragLeave)
       container.removeEventListener('drop', handleDrop)
     }
-  }, [scale])
+  }, [scale, handleImageFile])
 
   const getImageBorderColor = (imageId: string) => {
     const role = activeImageRoles.find((r) => r.imageId === imageId)
@@ -557,14 +554,14 @@ export function Canvas() {
     // Handle different tools
     switch (currentTool) {
       case CanvasTool.BRUSH:
-      case CanvasTool.ERASER:
+      case CanvasTool.ERASER: {
         // Initialize drawing
         if (lazyBrushRef.current) {
           lazyBrushRef.current.initializePositions({ x: canvasX, y: canvasY })
         }
 
         // Get pressure from pointer event if available
-        const evt = e.evt as any
+        const evt = e.evt as PointerEvent
         const pressure = evt && 'pressure' in evt ? evt.pressure : 0.5
         setCurrentPressure(pressure)
 
@@ -586,8 +583,9 @@ export function Canvas() {
         })
         setDrawingActive(true)
         break
+      }
 
-      case CanvasTool.SELECT:
+      case CanvasTool.SELECT: {
         // Don't handle anything here if we clicked on an image
         // Let the image's own handlers take care of selection
         if (e.target.className === 'Image') {
@@ -617,6 +615,7 @@ export function Canvas() {
           setSelectedFrameId(null)
         }
         break
+      }
 
       case CanvasTool.PAN:
         // isPanning will be set by handleStageDragStart when actual dragging begins
@@ -650,7 +649,7 @@ export function Canvas() {
       isDrawingActive
     ) {
       // Get pressure from pointer event if available
-      const evt = e.evt as any
+      const evt = e.evt as PointerEvent
       const pressure = evt && 'pressure' in evt ? evt.pressure : 0.5
       setCurrentPressure(pressure)
 
@@ -680,7 +679,7 @@ export function Canvas() {
   }
 
   const handleStagePointerUp = (
-    e?: Konva.KonvaEventObject<PointerEvent | MouseEvent | TouchEvent>
+    _e?: Konva.KonvaEventObject<PointerEvent | MouseEvent | TouchEvent>
   ) => {
     // Handle drawing tools
     if (
@@ -705,13 +704,13 @@ export function Canvas() {
     }
   }
 
-  const handleStagePointerEnter = () => {
+  const handleStagePointerEnter = (_e: Konva.KonvaEventObject<PointerEvent>) => {
     if (currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER) {
       setShowDrawingCursor(true)
     }
   }
 
-  const handleStagePointerLeave = () => {
+  const handleStagePointerLeave = (_e: Konva.KonvaEventObject<PointerEvent>) => {
     setShowDrawingCursor(false)
 
     // End any active drawing
@@ -1029,7 +1028,7 @@ export function Canvas() {
                 draggable={Boolean(
                   frame.isPlaceholder && !frame.locked && currentTool === CanvasTool.SELECT
                 )}
-                onPointerDown={(e) => {
+                onPointerDown={() => {
                   if (currentTool === CanvasTool.SELECT && frame.isPlaceholder) {
                     setSelectedFrameId(frame.id)
                     setSelectedId(null)
@@ -1053,7 +1052,7 @@ export function Canvas() {
                     container.style.cursor = ''
                   }
                 }}
-                onMouseEnter={(e) => {
+                onMouseEnter={() => {
                   if (frame.isPlaceholder && !frame.locked && currentTool === CanvasTool.SELECT) {
                     const container = containerRef.current
                     if (container) {
@@ -1061,7 +1060,7 @@ export function Canvas() {
                     }
                   }
                 }}
-                onMouseLeave={(e) => {
+                onMouseLeave={() => {
                   const container = containerRef.current
                   if (container) {
                     container.style.cursor = ''
@@ -1233,7 +1232,7 @@ export function Canvas() {
               }
               // dragBoundFunc removed to prevent conflicts
               dragDistance={1} // Small threshold to prevent accidental drags
-              onPointerDown={(e) => {
+              onPointerDown={(_e) => {
                 // Select on pointer down to enable click-and-drag
                 if (currentTool === CanvasTool.SELECT) {
                   setSelectedId(img.id)

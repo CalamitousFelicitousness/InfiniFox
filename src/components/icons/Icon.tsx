@@ -4,6 +4,7 @@
  */
 
 import { ComponentProps, FunctionComponent } from 'preact'
+import { memo } from 'preact/compat'
 
 import { defaultIconProps } from './index'
 
@@ -38,8 +39,6 @@ export function Icon({
  * Memoized Icon for performance optimization
  * Use this for icons that are frequently re-rendered
  */
-import { memo } from 'preact/compat'
-
 export const MemoizedIcon = memo(Icon)
 
 /**

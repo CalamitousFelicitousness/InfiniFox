@@ -2,6 +2,7 @@ import { Settings, ChevronRight, CheckCircle, XCircle } from 'lucide-preact'
 import { useState, useEffect } from 'preact/hooks'
 
 import { progressService } from '../../services/progress/ProgressService'
+import type { ProgressMethod } from '../../services/progress/types'
 import { useStore } from '../../store/store'
 import { Dropdown } from '../common/Dropdown'
 import { Input } from '../common/Input'
@@ -62,7 +63,7 @@ export function SettingsPanel() {
     } else {
       // Detect API type
       const detectedType = await detectApiType()
-      setApiType(detectedType as any)
+      setApiType(detectedType)
       setDetectedProgressMethod(result.progressMethod)
     }
 
@@ -138,7 +139,7 @@ export function SettingsPanel() {
               <Dropdown
                 label="Progress Monitoring"
                 value={progressMethod}
-                onInput={(val) => setProgressMethod(val as any)}
+                onInput={(val) => setProgressMethod(val as ProgressMethod)}
                 options={['auto', 'websocket', 'rest', 'none']}
               />
               <div class="form-help">Auto will detect the best available method</div>
@@ -148,7 +149,7 @@ export function SettingsPanel() {
               <Dropdown
                 label="API Type"
                 value={apiType}
-                onInput={(val) => setApiType(val as any)}
+                onInput={(val) => setApiType(val as 'sdnext' | 'a1111' | 'comfyui' | 'custom')}
                 options={['sdnext', 'a1111', 'comfyui', 'custom']}
               />
               <div class="form-help">

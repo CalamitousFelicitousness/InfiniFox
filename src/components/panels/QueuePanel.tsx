@@ -16,6 +16,7 @@ import {
 } from 'lucide-preact'
 import { useRef, useState } from 'preact/hooks'
 
+import type { QueueItem } from '../../store/queueStore'
 import { useQueueStore } from '../../store/queueStore'
 
 export function QueuePanel() {
@@ -60,7 +61,7 @@ export function QueuePanel() {
     return date.toLocaleTimeString()
   }
 
-  const getItemDescription = (item: any) => {
+  const getItemDescription = (item: QueueItem) => {
     const prompt = item.params.prompt
     const truncated = prompt.length > 50 ? prompt.substring(0, 50) + '...' : prompt
     return `${item.type}: ${truncated}`

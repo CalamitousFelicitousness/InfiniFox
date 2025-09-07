@@ -5,16 +5,15 @@
 
 // Export all tokens
 export * from './tokens'
-
 // Export types
 export * from './types'
-
 // Import and export ThemeProvider and context
 import { ThemeProvider, ThemeContext, useTheme } from './ThemeProvider'
 export { ThemeProvider, ThemeContext, useTheme }
 
-// Export all hooks
-export {
+// Import and export all hooks
+import {
+  useThemeTokens,
   useToken,
   useBreakpoint,
   useMediaQuery,
@@ -27,6 +26,19 @@ export {
 } from './hooks'
 
 export {
+  useThemeTokens,
+  useToken,
+  useBreakpoint,
+  useMediaQuery,
+  useResponsive,
+  useUserPreferences,
+  useThemeStyles,
+  useComponentVariant,
+  useCSSVariable,
+  useContrastColor,
+}
+
+export {
   useThemeTransition,
   useSystemTheme,
   useThemePersistence,
@@ -37,19 +49,10 @@ export {
 import { baseTheme } from './themes/base'
 import { darkTheme, darkThemeOverrides } from './themes/dark'
 import { lightTheme, lightThemeOverrides } from './themes/light'
-export { baseTheme, darkTheme, darkThemeOverrides, lightTheme, lightThemeOverrides }
+import { generateAllCSSVariables } from './tokens'
+import type { Theme } from './types'
 
-// Import and export token generation functions
-import {
-  generateColorCSSVariables,
-  generateTypographyCSSVariables,
-  generateSpacingCSSVariables,
-  generateShadowCSSVariables,
-  generateAnimationCSS,
-  generateBorderCSSVariables,
-  generateBreakpointCSSVariables,
-  generateAllCSSVariables,
-} from './tokens'
+export { baseTheme, darkTheme, darkThemeOverrides, lightTheme, lightThemeOverrides }
 
 // Create a function to generate the CSS file content
 export function generateTokenCSS(): string {
@@ -83,7 +86,7 @@ export const themeUtils = {
   /**
    * Merge multiple themes together
    */
-  mergeThemes: (...themes: any[]) => {
+  mergeThemes: (...themes: Partial<Theme>[]) => {
     return themes.reduce(
       (acc, theme) => ({
         ...acc,
@@ -104,14 +107,14 @@ export const themeUtils = {
   /**
    * Create a theme variant
    */
-  createVariant: (base: any, variant: any) => {
+  createVariant: (base: Partial<Theme>, variant: Partial<Theme>) => {
     return themeUtils.mergeThemes(base, variant)
   },
 
   /**
    * Validate theme structure
    */
-  validateTheme: (theme: any): boolean => {
+  validateTheme: (theme: unknown): boolean => {
     const requiredFields = ['name', 'mode', 'colors', 'typography', 'spacing']
     return requiredFields.every((field) => field in theme)
   },
@@ -150,6 +153,7 @@ export const themeUtils = {
 export default {
   ThemeProvider,
   useTheme,
+  useThemeTokens,
   darkTheme,
   generateTokenCSS,
   themeUtils,

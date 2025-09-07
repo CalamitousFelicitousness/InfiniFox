@@ -2,7 +2,6 @@ import Konva from 'konva'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { Stage, Layer, Line, Circle, Image as KonvaImage, Rect } from 'react-konva'
 
-import { Dropdown } from '../../components/common/Dropdown'
 import { Slider } from '../../components/common/Slider'
 import { Tooltip } from '../../components/common/Tooltip'
 import {
@@ -84,8 +83,7 @@ export function DrawingPanel() {
 
   // Color settings
   const [currentColor, setCurrentColor] = useState('#000000')
-  const [colorPalette, setColorPalette] = useState(DEFAULT_PALETTE)
-  const [showColorPicker, setShowColorPicker] = useState(false)
+  const [colorPalette] = useState(DEFAULT_PALETTE)
   const [recentColors, setRecentColors] = useState<string[]>([])
 
   // Canvas state
@@ -106,9 +104,10 @@ export function DrawingPanel() {
 
   // Initialize services
   useEffect(() => {
-    pressureManagerRef.current.initialize()
+    const pressureManager = pressureManagerRef.current
+    pressureManager.initialize()
     return () => {
-      pressureManagerRef.current.cleanup()
+      pressureManager.cleanup()
     }
   }, [])
 
@@ -129,7 +128,7 @@ export function DrawingPanel() {
   }, [smoothingRadius])
 
   // Handle drawing start
-  const handlePointerDown = (e: Konva.KonvaEventObject<PointerEvent>) => {
+  const handlePointerDown = (_e: Konva.KonvaEventObject<PointerEvent>) => {
     setIsDrawing(true)
     const stage = stageRef.current
     if (!stage) return
@@ -164,7 +163,7 @@ export function DrawingPanel() {
   }
 
   // Handle drawing move
-  const handlePointerMove = (e: Konva.KonvaEventObject<PointerEvent>) => {
+  const handlePointerMove = (_e: Konva.KonvaEventObject<PointerEvent>) => {
     const stage = stageRef.current
     if (!stage) return
 
@@ -204,7 +203,7 @@ export function DrawingPanel() {
     setIsDrawing(false)
 
     // End perfect freehand stroke
-    const outline = perfectFreehandRef.current.endStroke()
+    perfectFreehandRef.current.endStroke()
 
     // If using perfect freehand, we could convert the outline to a more optimized shape here
     // For now, we'll keep the simple line approach
@@ -308,26 +307,6 @@ export function DrawingPanel() {
     if (file && file.type.startsWith('image/')) {
       loadBackgroundImage(file)
     }
-  }
-
-  // Smudge tool implementation (simplified)
-  const applySmudge = (x: number, y: number) => {
-    // This is a simplified smudge effect
-    // In a real implementation, you'd sample pixels and blend them
-    const smudgeEffect = {
-      tool: 'smudge' as const,
-      points: [x - 10, y - 10, x + 10, y + 10],
-      color: currentColor,
-      opacity: 0.5,
-      strokeWidth: brushSize,
-      globalCompositeOperation: 'multiply' as GlobalCompositeOperation,
-    }
-
-    setLayers((prev) => {
-      const newLayers = [...prev]
-      newLayers[currentLayer].lines.push(smudgeEffect)
-      return newLayers
-    })
   }
 
   // Get cursor radius based on current settings
@@ -465,7 +444,7 @@ export function DrawingPanel() {
                 <div class="recent-colors">
                   {recentColors.map((color, index) => (
                     <button
-                      key={index}
+                      key={`recent-${index}`}
                       class="color-swatch"
                       style={{ backgroundColor: color }}
                       onClick={() => setCurrentColor(color)}
@@ -611,7 +590,7 @@ export function DrawingPanel() {
           </Layer>
 
           {/* Drawing Layers */}
-          {layers.map((layer, index) => (
+          {layers.map((layer, _index) => (
             <Layer key={layer.id} visible={layer.visible} opacity={layer.opacity}>
               {layer.lines.map((line, i) => (
                 <Line

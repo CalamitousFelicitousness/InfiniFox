@@ -27,7 +27,7 @@ Konva.Filters.ChromaticAberration = function (imageData: ImageData) {
   const data = imageData.data
   const width = imageData.width
   const height = imageData.height
-  const node = this as any
+  const node = this as Konva.Node
   const config = node.chromaticAberration() || {}
 
   // Extract configuration with defaults
@@ -121,30 +121,10 @@ Konva.Filters.ChromaticAberration = function (imageData: ImageData) {
 
         // Calculate zoomed positions for each channel
         const zoomedRX = centerX + dx * (1 + zoomFactor * 0.02)
-        const zoomedRY = centerY + dy * (1 + zoomFactor * 0.02)
         const zoomedBX = centerX + dx * (1 - zoomFactor * 0.015)
-        const zoomedBY = centerY + dy * (1 - zoomFactor * 0.015)
 
         offsetR = zoomedRX - x
         offsetB = zoomedBX - x
-      }
-
-      // Sample from offset positions for each channel
-      const samplePixel = (
-        channel: Uint8ClampedArray,
-        xOffset: number,
-        yOffset: number,
-        channelIndex: number
-      ) => {
-        const sampleX = Math.round(x + xOffset)
-        const sampleY = Math.round(y + yOffset)
-
-        // Check bounds
-        if (sampleX >= 0 && sampleX < width && sampleY >= 0 && sampleY < height) {
-          const sampleIndex = (sampleY * width + sampleX) * 4 + channelIndex
-          return channel[sampleIndex]
-        }
-        return 0
       }
 
       // Bilinear interpolation for smoother results

@@ -31,14 +31,14 @@ export interface Img2ImgPayload extends Txt2ImgPayload {
 
 export interface GenerationApiResponse {
   images: string[] // Array of base64 encoded image strings
-  parameters: Record<string, any>
+  parameters: Record<string, unknown>
   info: string // A JSON string containing generation info
 }
 
 export interface Sampler {
   name: string
   aliases: string[]
-  options: Record<string, any>
+  options: Record<string, unknown>
 }
 
 export interface SdModel {

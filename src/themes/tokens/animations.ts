@@ -289,7 +289,7 @@ export function generateAnimationCSS(): string {
     css += `@keyframes ${name} {\n`
     Object.entries(frames).forEach(([key, value]) => {
       css += `  ${key} {\n`
-      Object.entries(value as any).forEach(([prop, val]) => {
+      Object.entries(value as Record<string, string | number>).forEach(([prop, val]) => {
         css += `    ${prop}: ${val};\n`
       })
       css += '  }\n'

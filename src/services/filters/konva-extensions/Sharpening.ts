@@ -196,7 +196,7 @@ Konva.Filters.Sharpening = function (imageData: ImageData) {
   const data = imageData.data
   const width = imageData.width
   const height = imageData.height
-  const node = this as any
+  const node = this as Konva.Node
   const config = node.sharpening() || {}
 
   // Extract configuration with defaults

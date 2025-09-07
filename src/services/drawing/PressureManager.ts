@@ -8,8 +8,7 @@
  * handle touch events. All actual event handling uses Pointer Events API.
  */
 
-import { getPointerInfo, supportsPressure } from '../../utils/pointerEvents'
-import type { PointerInfo } from '../../utils/pointerEvents'
+import { getPointerInfo } from '../../utils/pointerEvents'
 
 export interface PressureState {
   current: number // 0.0 to 1.0
@@ -121,7 +120,7 @@ export class PressureManager {
     } else if (info.type === 'touch' && 'force' in event) {
       // Some touch devices report force
       this.state.isSupported = true
-      const force = (event as any).force || 0
+      const force = (event as PointerEvent & { force?: number }).force || 0
       this.updatePressure(force)
     } else if (this.config.enablePolyfill) {
       // Use polyfill for devices without pressure support
@@ -142,7 +141,7 @@ export class PressureManager {
   processTouchEvent(event: TouchEvent): PressureState {
     if (event.touches.length > 0) {
       const touch = event.touches[0]
-      const force = 'force' in touch ? (touch as any).force : 0.5
+      const force = 'force' in touch ? (touch as Touch & { force?: number }).force : 0.5
 
       this.state.inputType = 'touch'
       this.state.isSupported = 'force' in touch
@@ -242,7 +241,7 @@ export class PressureManager {
   /**
    * Smooth value using historical data
    */
-  private smoothValue(current: number): number {
+  private smoothValue(_current: number): number {
     const factor = this.config.smoothingFactor
     const history = this.state.history
     const weights = history.map((_, i) => Math.pow(factor, history.length - i - 1))

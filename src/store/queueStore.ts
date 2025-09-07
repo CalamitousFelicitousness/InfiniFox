@@ -1,12 +1,13 @@
 import { create } from 'zustand'
 
 import { sdnextApi } from '../api/sdnextApi'
+import type { Txt2ImgPayload, Img2ImgPayload } from '../types/sdnext'
 
 export interface QueueItem {
   id: string
   type: 'txt2img' | 'img2img' | 'inpaint'
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled'
-  params: any
+  params: Txt2ImgPayload | Img2ImgPayload | (Img2ImgPayload & { maskImage: string })
   result?: string
   error?: string
   progress?: number
@@ -43,7 +44,10 @@ interface QueueState {
 
   // Queue management
   addToQueue: (item: Omit<QueueItem, 'id' | 'createdAt' | 'retryCount' | 'maxRetries'>) => void
-  addBatch: (baseParams: any, type: 'txt2img' | 'img2img' | 'inpaint') => void
+  addBatch: (
+    baseParams: Txt2ImgPayload | Img2ImgPayload,
+    type: 'txt2img' | 'img2img' | 'inpaint'
+  ) => void
   removeFromQueue: (id: string) => void
   clearQueue: () => void
   moveInQueue: (id: string, direction: 'up' | 'down') => void

@@ -12,7 +12,7 @@ import type { Theme, UseThemeReturn, ThemeTokens, Breakpoint, MediaQuery } from 
 /**
  * Main theme hook with enhanced functionality
  */
-export function useTheme(): UseThemeReturn {
+export function useThemeTokens(): UseThemeReturn {
   const context = useContext(ThemeContext)
 
   if (!context) {
@@ -30,51 +30,51 @@ export function useTheme(): UseThemeReturn {
     () => ({
       color: (path: string) => {
         const parts = path.split('.')
-        let value: any = theme.colors
+        let value: string | Record<string, unknown> = theme.colors
         for (const part of parts) {
-          value = value?.[part]
+          value = (value as Record<string, unknown>)?.[part] as string | Record<string, unknown>
         }
-        return value || ''
+        return (typeof value === 'string' ? value : '') || ''
       },
 
       typography: (path: string) => {
         const parts = path.split('.')
-        let value: any = theme.typography
+        let value: unknown = theme.typography
         for (const part of parts) {
-          value = value?.[part]
+          value = (value as Record<string, unknown>)?.[part]
         }
         return value
       },
 
-      spacing: (scale: any) => {
+      spacing: (scale: keyof typeof theme.spacing.scale) => {
         return theme.spacing?.scale?.[scale] || '0'
       },
 
-      shadow: (type: any) => {
+      shadow: (type: keyof typeof theme.shadows.box) => {
         return theme.shadows?.box?.[type] || 'none'
       },
 
-      border: (type: any) => {
+      border: (type: keyof typeof theme.borders.borders) => {
         return theme.borders?.borders?.[type] || 'none'
       },
 
-      radius: (size: any) => {
+      radius: (size: keyof typeof theme.borders.radius) => {
         return theme.borders?.radius?.[size] || '0'
       },
 
-      duration: (speed: any) => {
+      duration: (speed: keyof typeof theme.animations.durations) => {
         return theme.animations?.durations?.[speed] || '0ms'
       },
 
-      easing: (type: any) => {
+      easing: (type: keyof typeof theme.animations.easings) => {
         return theme.animations?.easings?.[type] || 'linear'
       },
 
-      breakpoint: (size: any) => {
+      breakpoint: (size: keyof typeof theme.breakpoints.values) => {
         return theme.breakpoints?.values?.[size] || '0px'
       },
 
-      mediaQuery: (query: any) => {
+      mediaQuery: (query: keyof typeof theme.breakpoints.queries) => {
         return theme.breakpoints?.queries?.[query] || ''
       },
     }),
@@ -96,14 +96,14 @@ export function useTheme(): UseThemeReturn {
  * Hook to access specific token values
  */
 export function useToken<T = string>(category: keyof Theme, path: string): T | undefined {
-  const { theme } = useTheme()
+  const { theme } = useThemeTokens()
 
   const value = useMemo(() => {
     const parts = path.split('.')
-    let result: any = theme[category]
+    let result: unknown = theme[category]
 
     for (const part of parts) {
-      result = result?.[part]
+      result = (result as Record<string, unknown>)?.[part]
     }
 
     return result as T
@@ -134,7 +134,7 @@ export function useBreakpoint(): Breakpoint {
  * Hook to check if a media query matches
  */
 export function useMediaQuery(query: MediaQuery | string): boolean {
-  const { tokens } = useTheme()
+  const { tokens } = useThemeTokens()
 
   // Get the actual media query string
   const mediaQueryString = useMemo(() => {
@@ -176,7 +176,7 @@ export function useMediaQuery(query: MediaQuery | string): boolean {
  */
 export function useResponsive<T>(values: Partial<Record<Breakpoint, T>>): T | undefined {
   const breakpoint = useBreakpoint()
-  const { theme } = useTheme()
+  const { theme } = useThemeTokens()
 
   const value = useMemo(() => {
     const breakpoints = Object.keys(theme.breakpoints?.values || {}) as Breakpoint[]
@@ -256,8 +256,10 @@ export function useUserPreferences() {
 /**
  * Hook for theme-aware styles
  */
-export function useThemeStyles<T extends Record<string, any>>(stylesFn: (theme: Theme) => T): T {
-  const { theme } = useTheme()
+export function useThemeStyles<T extends Record<string, unknown>>(
+  stylesFn: (theme: Theme) => T
+): T {
+  const { theme } = useThemeTokens()
 
   return useMemo(() => stylesFn(theme), [theme, stylesFn])
 }
@@ -266,7 +268,7 @@ export function useThemeStyles<T extends Record<string, any>>(stylesFn: (theme: 
  * Hook for component variants based on theme
  */
 export function useComponentVariant(component: string, variant?: string, size?: string) {
-  const { theme } = useTheme()
+  const { theme } = useThemeTokens()
 
   const styles = useMemo(() => {
     const componentTheme = theme.custom?.components?.[component]

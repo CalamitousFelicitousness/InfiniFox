@@ -1,6 +1,6 @@
 import Konva from 'konva'
 
-import { rafThrottle, simplifyPoints, calculateBoundingBox } from '../../utils/performanceUtils'
+import { simplifyPoints, calculateBoundingBox } from '../../utils/performanceUtils'
 
 interface PerformanceConfig {
   enablePixelRatio: boolean
@@ -196,7 +196,7 @@ export class CanvasPerformanceManager {
     if (oldClip) {
       layer.clip(oldClip)
     } else {
-      layer.clip(undefined as any)
+      layer.clip(undefined as Konva.RectConfig | undefined)
     }
   }
 

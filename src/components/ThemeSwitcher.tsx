@@ -46,7 +46,7 @@ export function ThemeSwitcher({
   showSystemOption = true,
   icons,
 }: ThemeSwitcherProps) {
-  const { theme, themes, currentThemeName, setTheme } = useTheme()
+  const { theme, themes, currentThemeName } = useTheme()
   const { switchTheme, isTransitioning } = useThemeTransition({
     duration: animated ? 300 : 0,
     measurePerformance: true,
@@ -318,7 +318,7 @@ export function ThemeSwitcher({
                     '--preview-text': themes[hoveredTheme]?.colors?.semantic?.text?.primary,
                     '--preview-primary': themes[hoveredTheme]?.colors?.semantic?.primary?.base,
                     '--preview-border': themes[hoveredTheme]?.colors?.semantic?.border?.default,
-                  } as any
+                  } as h.JSX.CSSProperties & Record<string, string | undefined>
                 }
               >
                 <div className="theme-switcher__preview-bg" />

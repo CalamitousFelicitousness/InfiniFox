@@ -42,13 +42,14 @@ export const CustomFilters = {
 // Export a helper to check if custom filters are loaded
 export const areCustomFiltersLoaded = (): boolean => {
   try {
-    const Konva = require('konva')
+    // @ts-expect-error - Konva may be on window or global depending on environment
+    const Konva = window.Konva || global.Konva
     return !!(
-      Konva.Filters.Curves &&
-      Konva.Filters.Levels &&
-      Konva.Filters.SelectiveColor &&
-      Konva.Filters.ChromaticAberration &&
-      Konva.Filters.Sharpening
+      Konva?.Filters?.Curves &&
+      Konva?.Filters?.Levels &&
+      Konva?.Filters?.SelectiveColor &&
+      Konva?.Filters?.ChromaticAberration &&
+      Konva?.Filters?.Sharpening
     )
   } catch {
     return false

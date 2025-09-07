@@ -79,7 +79,7 @@ export function usePinchZoom(elementRef: RefObject<HTMLElement>, options: PinchZ
       }
     }
 
-    const handleTouchEnd = (e: TouchEvent) => {
+    const handleTouchEnd = (_e: TouchEvent) => {
       touchesRef.current.clear()
       lastDistanceRef.current = 0
     }

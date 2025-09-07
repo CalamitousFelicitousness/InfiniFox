@@ -57,9 +57,7 @@ function generateLUT(controlPoints: Array<{ x: number; y: number }>): Uint8Array
     const p1Next = sortedPoints[Math.min(sortedPoints.length - 1, currentPoint + 2)]
 
     const tension = 0.5 // Adjust for curve smoothness
-    const cp1x = p0.x + (p1.x - p0Prev.x) * tension
     const cp1y = p0.y + (p1.y - p0Prev.y) * tension
-    const cp2x = p1.x - (p1Next.x - p0.x) * tension
     const cp2y = p1.y - (p1Next.y - p0.y) * tension
 
     // Calculate t parameter for current x position
@@ -94,7 +92,7 @@ export interface CurveChannel {
  */
 Konva.Filters.Curves = function (imageData: ImageData) {
   const data = imageData.data
-  const node = this as any
+  const node = this as Konva.Node
   const curves = node.curves()
 
   if (!curves) return

@@ -9,16 +9,14 @@ import { useContext, useEffect, useState, useCallback, useRef } from 'preact/hoo
 
 import darkTheme from './themes/dark'
 import lightTheme from './themes/light'
-import { applyTokensToDocument, generateAllCSSVariables } from './tokens'
+import { applyTokensToDocument } from './tokens'
 import type { Theme, ThemeConfig, ThemeContextValue } from './types'
 import {
   applyTransition,
   removeTransition,
   preloadTheme,
-  measureThemeSwitch,
   getTransitionConfig,
   defaultTransition,
-  instantTransition,
 } from './utils/transitions'
 import { validateTheme, validateContrast, autoFixTheme, mergeThemes } from './utils/validation'
 
@@ -133,7 +131,7 @@ export function ThemeProvider({
 
   // Apply theme to document with performance tracking
   const applyTheme = useCallback(
-    (theme: Theme, skipTransition = false) => {
+    (theme: Theme, _skipTransition = false) => {
       const startTime = performance.now()
 
       // Generate and apply CSS variables
@@ -389,7 +387,7 @@ export function ThemeProvider({
     // Apply theme without transition on mount
     applyTheme(theme, true)
     initialRenderRef.current = false
-  }, []) // Only on mount
+  }, [theme, applyTheme]) // Include dependencies
 
   // Listen for system theme changes
   useEffect(() => {
@@ -466,7 +464,7 @@ function generateThemeVariables(theme: Theme): Record<string, string> {
   const variables: Record<string, string> = {}
 
   // Helper to flatten nested objects
-  const flatten = (obj: any, prefix = '') => {
+  const flatten = (obj: Record<string, unknown>, prefix = '') => {
     Object.entries(obj).forEach(([key, value]) => {
       const varName = prefix ? `${prefix}-${key}` : key
 

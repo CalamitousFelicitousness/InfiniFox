@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'preact/hooks'
+import { useRef, useState, useEffect, useCallback } from 'preact/hooks'
 
 interface SliderProps {
   label?: string
@@ -22,25 +22,34 @@ export function Slider({
   disabled = false,
 }: SliderProps) {
   // Use onChange if provided, otherwise fallback to onInput
-  const handleChange = onChange || onInput || (() => {})
+  const handleChange = useCallback(
+    (val: number) => {
+      if (onChange) onChange(val)
+      else if (onInput) onInput(val)
+    },
+    [onChange, onInput]
+  )
   const trackRef = useRef<HTMLDivElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [showTooltip, setShowTooltip] = useState(false)
 
-  const updateValueFromPointer = (e: PointerEvent) => {
-    if (!trackRef.current || disabled) return
+  const updateValueFromPointer = useCallback(
+    (e: PointerEvent) => {
+      if (!trackRef.current || disabled) return
 
-    const rect = trackRef.current.getBoundingClientRect()
-    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width))
-    const percentage = x / rect.width
-    const newValue = min + (max - min) * percentage
+      const rect = trackRef.current.getBoundingClientRect()
+      const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width))
+      const percentage = x / rect.width
+      const newValue = min + (max - min) * percentage
 
-    // Snap to step
-    const steppedValue = Math.round(newValue / step) * step
-    const clampedValue = Math.max(min, Math.min(max, steppedValue))
+      // Snap to step
+      const steppedValue = Math.round(newValue / step) * step
+      const clampedValue = Math.max(min, Math.min(max, steppedValue))
 
-    handleChange(clampedValue)
-  }
+      handleChange(clampedValue)
+    },
+    [disabled, min, max, step, handleChange]
+  )
 
   useEffect(() => {
     const handlePointerMove = (e: PointerEvent) => {
@@ -69,7 +78,7 @@ export function Slider({
       document.removeEventListener('pointerup', handlePointerUp)
       document.removeEventListener('pointercancel', handlePointerUp)
     }
-  }, [isDragging])
+  }, [isDragging, updateValueFromPointer])
 
   const handlePointerDown = (e: PointerEvent) => {
     if (disabled) return
