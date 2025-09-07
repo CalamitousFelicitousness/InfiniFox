@@ -11,6 +11,7 @@ interface CanvasContextMenuProps {
   x: number
   y: number
   imageId: string | null
+  frameId?: string | null
   onDelete: () => void
   onDuplicate: () => void
   onSendToImg2Img: () => void
@@ -18,6 +19,7 @@ interface CanvasContextMenuProps {
   onDownload: () => void
   onUploadImage: () => void
   onGenerateHere: () => void
+  onPlaceEmptyFrame: () => void
   onClose: () => void
 }
 
@@ -26,6 +28,7 @@ export function CanvasContextMenu({
   x,
   y,
   imageId,
+  frameId,
   onDelete,
   onDuplicate,
   onSendToImg2Img,
@@ -33,10 +36,20 @@ export function CanvasContextMenu({
   onDownload,
   onUploadImage,
   onGenerateHere,
+  onPlaceEmptyFrame,
   onClose,
 }: CanvasContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
-  const { setImageRole, getImageRole, clearImageRoles, activeImageRoles } = useStore()
+  const { 
+    setImageRole, 
+    getImageRole, 
+    clearImageRoles, 
+    activeImageRoles,
+    generationFrames,
+    removeGenerationFrame,
+    lockFrame,
+    generateInFrame
+  } = useStore()
 
   useEffect(() => {
     const handlePointerDown = (e: PointerEvent) => {
@@ -83,6 +96,57 @@ export function CanvasContextMenu({
 
   const currentRole = imageId ? getImageRole(imageId) : null
   const roleIndicator = currentRole ? ` (Active: ${currentRole})` : ''
+  const currentFrame = frameId ? generationFrames.find(f => f.id === frameId) : null
+
+  if (frameId && currentFrame) {
+    return (
+      <div
+        ref={menuRef}
+        class="menu canvas-context-menu"
+        style={{
+          position: 'absolute',
+          left: `${x}px`,
+          top: `${y}px`,
+        }}
+      >
+        {currentFrame.isPlaceholder && (
+          <>
+            <button
+              class="menu-item"
+              onPointerDown={(e) => {
+                e.preventDefault()
+                generateInFrame(frameId)
+                onClose()
+              }}
+            >
+              Generate in Frame
+            </button>
+            <button
+              class="menu-item"
+              onPointerDown={(e) => {
+                e.preventDefault()
+                lockFrame(frameId, !currentFrame.locked)
+                onClose()
+              }}
+            >
+              {currentFrame.locked ? 'Unlock' : 'Lock'} Frame
+            </button>
+            <hr class="menu-divider" />
+          </>
+        )}
+        <button
+          class="menu-item menu-item-danger"
+          onPointerDown={(e) => {
+            e.preventDefault()
+            removeGenerationFrame(frameId)
+            onClose()
+          }}
+        >
+          Delete Frame
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div
@@ -123,6 +187,15 @@ export function CanvasContextMenu({
             </>
           )}
           <hr class="menu-divider" />
+          <button
+            class="menu-item"
+            onPointerDown={(e) => {
+              e.preventDefault()
+              onPlaceEmptyFrame()
+            }}
+          >
+            Place Empty Frame
+          </button>
           <button
             class="menu-item"
             onPointerDown={(e) => {

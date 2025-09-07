@@ -23,6 +23,9 @@ export interface GenerationFrame {
   previewImage?: string
   isGenerating: boolean
   error?: string
+  isPlaceholder?: boolean
+  locked?: boolean
+  label?: string
 }
 
 export interface CanvasViewport {
@@ -60,10 +63,16 @@ export interface CanvasSlice {
   uploadImageToCanvas: (file: File, x?: number, y?: number) => Promise<void>
   updateCanvasViewport: (scale: number, position: { x: number; y: number }) => void
   // Generation frame actions
-  addGenerationFrame: (x: number, y: number, width: number, height: number) => string
+  addGenerationFrame: (x: number, y: number, width: number, height: number, isPlaceholder?: boolean) => string
   removeGenerationFrame: (id: string) => void
   updateGenerationFrame: (id: string, updates: Partial<GenerationFrame>) => void
   clearGenerationFrames: () => void
+  getNextEmptyFrame: () => GenerationFrame | null
+  updateFramePosition: (id: string, x: number, y: number) => void
+  updateFrameSize: (id: string, width: number, height: number) => void
+  lockFrame: (id: string, locked: boolean) => void
+  labelFrame: (id: string, label: string) => void
+  convertPlaceholderToActive: (id: string) => void
 }
 
 export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
@@ -394,7 +403,7 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
   },
   
   // Generation frame actions
-  addGenerationFrame: (x: number, y: number, width: number, height: number) => {
+  addGenerationFrame: (x: number, y: number, width: number, height: number, isPlaceholder = false) => {
     const id = `frame-${Date.now()}`
     set((state) => ({
       generationFrames: [
@@ -407,6 +416,7 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
           height,
           progress: 0,
           isGenerating: false,
+          isPlaceholder,
         },
       ],
     }))
@@ -429,5 +439,50 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
   
   clearGenerationFrames: () => {
     set({ generationFrames: [] })
+  },
+  
+  getNextEmptyFrame: () => {
+    const frames = get().generationFrames
+    return frames.find(f => f.isPlaceholder && !f.isGenerating && !f.error) || null
+  },
+  
+  updateFramePosition: (id: string, x: number, y: number) => {
+    set((state) => ({
+      generationFrames: state.generationFrames.map((f) =>
+        f.id === id ? { ...f, x, y } : f
+      ),
+    }))
+  },
+  
+  updateFrameSize: (id: string, width: number, height: number) => {
+    set((state) => ({
+      generationFrames: state.generationFrames.map((f) =>
+        f.id === id ? { ...f, width, height } : f
+      ),
+    }))
+  },
+  
+  lockFrame: (id: string, locked: boolean) => {
+    set((state) => ({
+      generationFrames: state.generationFrames.map((f) =>
+        f.id === id ? { ...f, locked } : f
+      ),
+    }))
+  },
+  
+  labelFrame: (id: string, label: string) => {
+    set((state) => ({
+      generationFrames: state.generationFrames.map((f) =>
+        f.id === id ? { ...f, label } : f
+      ),
+    }))
+  },
+  
+  convertPlaceholderToActive: (id: string) => {
+    set((state) => ({
+      generationFrames: state.generationFrames.map((f) =>
+        f.id === id ? { ...f, isPlaceholder: false, isGenerating: true } : f
+      ),
+    }))
   },
 })

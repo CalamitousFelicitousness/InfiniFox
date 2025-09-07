@@ -1,10 +1,9 @@
 /**
- * Image Size Indicator Styles
- * Minimalistic size display for selected images
- * Uses theme tokens for consistent styling
+ * Size Indicator Styles
+ * Shows dimensions for selected canvas elements (images, frames)
  */
 
-.image-size-indicator {
+.size-indicator {
   position: fixed;
   display: flex;
   align-items: center;
@@ -37,13 +36,22 @@
   margin-left: var(--spacing-0-5);
 }
 
+.size-indicator--frame {
+  background: rgba(136, 136, 136, 0.9);
+  border-color: #888;
+}
+
+.size-indicator--frame .size-value {
+  color: #fff;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
-  .image-size-indicator {
+  .size-indicator {
     font-size: var(--font-size-2xs);
     padding: var(--spacing-1) var(--spacing-2);
   }
-  
+
   .size-label {
     font-size: calc(var(--font-size-2xs) * 0.9);
   }

@@ -7,6 +7,7 @@ import type { InpaintParams, SliceCreator } from '../types'
 export interface GenerationActionsSlice {
   // Actions
   generateTxt2Img: () => Promise<void>
+  generateInFrame: (frameId: string) => Promise<void>
   generateImg2Img: (baseImage: string, denoisingStrength: number) => Promise<void>
   generateInpaint: (params: InpaintParams) => Promise<void>
   loadImagesFromStorage: () => Promise<void>
@@ -15,12 +16,25 @@ export interface GenerationActionsSlice {
 
 export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> = (set, get) => ({
   generateTxt2Img: async () => {
-    const { prompt, negativePrompt, sampler, seed, steps, cfgScale, width, height, generationFrames } = get()
+    const { 
+      prompt, 
+      negativePrompt, 
+      sampler, 
+      seed, 
+      steps, 
+      cfgScale, 
+      width, 
+      height, 
+      generationFrames,
+      removeGenerationFrame,
+      updateGenerationFrame
+    } = get()
 
     if (!prompt) {
       alert('Please enter a prompt.')
       return
     }
+    
     set({ isLoading: true })
 
     const params = {
@@ -70,7 +84,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
         }
       )
 
-      // Check if there's an active generation frame
+      // Check for active generation frame
       const activeFrame = generationFrames.find(f => f.isGenerating)
       const x = activeFrame ? activeFrame.x : Math.random() * (window.innerWidth - 200)
       const y = activeFrame ? activeFrame.y : Math.random() * (window.innerHeight - 200)
@@ -103,6 +117,112 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
     } finally {
       set({ isLoading: false })
       console.log('Generation finished, loading state cleared')
+    }
+  },
+
+  generateInFrame: async (frameId: string) => {
+    const { 
+      prompt, 
+      negativePrompt, 
+      sampler, 
+      seed, 
+      steps, 
+      cfgScale,
+      generationFrames,
+      convertPlaceholderToActive,
+      removeGenerationFrame,
+      updateGenerationFrame
+    } = get()
+
+    const frame = generationFrames.find(f => f.id === frameId)
+    if (!frame) {
+      console.error('Frame not found:', frameId)
+      return
+    }
+
+    if (!prompt) {
+      alert('Please enter a prompt.')
+      return
+    }
+    
+    // Convert placeholder to active
+    convertPlaceholderToActive?.(frameId)
+    
+    set({ isLoading: true })
+
+    const params = {
+      prompt,
+      negative_prompt: negativePrompt,
+      sampler_name: sampler,
+      seed,
+      steps,
+      cfg_scale: cfgScale,
+      width: frame.width,
+      height: frame.height,
+    }
+
+    // Check if batch mode is enabled
+    const { batchSettings } = useQueueStore.getState()
+    if (batchSettings.enabled) {
+      useQueueStore.getState().addBatch(params, 'txt2img')
+      set({ isLoading: false })
+      return
+    }
+
+    try {
+      progressService.startPolling()
+      const response = await sdnextApi.txt2img(params)
+      
+      const imageId = `img-${Date.now()}`
+      const storedImage = await imageStorage.createFromBase64(
+        imageId,
+        response.images[0],
+        {
+          type: 'generated',
+          prompt,
+          negativePrompt,
+          seed,
+          steps,
+          cfgScale,
+          width: frame.width,
+          height: frame.height,
+          sampler,
+          usedIn: new Set()
+        }
+      )
+
+      const newImage = {
+        id: imageId,
+        src: storedImage.objectUrl,
+        x: frame.x,
+        y: frame.y,
+        width: frame.width,
+        height: frame.height,
+        metadata: storedImage.metadata,
+        blobId: imageId,
+        isTemporary: false
+      }
+      
+      get().addImage(newImage)
+      
+      // Remove frame after successful generation
+      removeGenerationFrame?.(frameId)
+      
+      await get().updateStorageStats()
+      progressService.stopPolling(true)
+    } catch (error) {
+      console.error('Failed to generate image:', error)
+      alert('Failed to generate image. Check console for details.')
+      
+      // Mark frame as error
+      updateGenerationFrame?.(frameId, {
+        isGenerating: false,
+        error: error.message || 'Generation failed',
+      })
+      
+      progressService.stopPolling(false)
+    } finally {
+      set({ isLoading: false })
     }
   },
 

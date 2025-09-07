@@ -6,8 +6,9 @@ import jsxA11y from 'eslint-plugin-jsx-a11y'
 import importPlugin from 'eslint-plugin-import'
 import prettier from 'eslint-plugin-prettier/recommended'
 import tsParser from '@typescript-eslint/parser'
+import type { Linter } from 'eslint'
 
-export default [
+const config: Linter.Config[] = [
   // Base JavaScript and TypeScript configs
   js.configs.recommended,
   ...typescript.configs.recommended,
@@ -17,7 +18,7 @@ export default [
 
   // Global ignores
   {
-    ignores: ['dist/**', 'build/**', 'node_modules/**', '*.config.js', '*.config.ts'],
+    ignores: ['dist/**', 'build/**', 'node_modules/**', '*.config.js'],
   },
 
   // Main configuration
@@ -32,8 +33,9 @@ export default [
     },
 
     languageOptions: {
-      ecmaVersion: 'latest',
-      sourceType: 'module',
+      ecmaVersion: 'latest' as const,
+      sourceType: 'module' as const,
+      parser: tsParser,
       parserOptions: {
         ecmaFeatures: {
           jsx: true,
@@ -76,9 +78,9 @@ export default [
         'error',
         {
           groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
-          'newlines-between': 'always',
+          'newlines-between': 'always' as const,
           alphabetize: {
-            order: 'asc',
+            order: 'asc' as const,
             caseInsensitive: true,
           },
         },
@@ -93,3 +95,5 @@ export default [
     },
   },
 ]
+
+export default config
