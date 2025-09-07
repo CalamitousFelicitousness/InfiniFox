@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'preact/hooks'
 
 import { Dropdown } from '../../components/common/Dropdown'
-import { ImageUpload } from '../../components/common/ImageUpload'
 import { NumberInput } from '../../components/common/NumberInput'
 import { Slider } from '../../components/common/Slider'
 import { useStore } from '../../store/store'
@@ -30,51 +29,46 @@ export function InpaintPanel() {
     setHeight,
     generateInpaint,
     isLoading,
-    startCanvasSelection,
     images,
+    activeImageRoles,
+    setImageRole,
+    exportImageAsBase64,
   } = useStore()
 
   const [baseImage, setBaseImage] = useState<string>('')
   const [maskImage, setMaskImage] = useState<string>('')
   const [denoisingStrength, setDenoisingStrength] = useState(0.75)
   const [maskBlur, setMaskBlur] = useState(4)
-  const [maskMode, setMaskMode] = useState<'draw' | 'upload'>('draw')
-  const [imageSourceMode, setImageSourceMode] = useState<'upload' | 'canvas'>('upload')
+  const [selectedImageId, setSelectedImageId] = useState<string | null>(null)
   const [inpaintingFill, setInpaintingFill] = useState<'fill' | 'original' | 'latent_noise' | 'latent_nothing'>('original')
   const [inpaintFullRes, setInpaintFullRes] = useState(true)
   const [inpaintFullResPadding, setInpaintFullResPadding] = useState(32)
 
-  const handleImageSelect = (base64: string, imgWidth: number, imgHeight: number) => {
-    setBaseImage(base64)
-    if (imgWidth && imgHeight) {
-      setWidth(imgWidth)
-      setHeight(imgHeight)
-    }
-  }
-
-  const handleSelectFromCanvas = () => {
-    setImageSourceMode('canvas')
-    startCanvasSelection('inpaint', (imageId: string, imageSrc: string) => {
-      // Remove data URL prefix if present
-      const base64 = imageSrc.includes('base64,') 
-        ? imageSrc.split(',')[1] 
-        : imageSrc
-      
-      // Get image dimensions
-      const img = new Image()
-      img.onload = () => {
-        setBaseImage(base64)
-        setWidth(img.width)
-        setHeight(img.height)
-        setImageSourceMode('upload')
+  // Auto-load image with inpaint_image role
+  useEffect(() => {
+    const roleImage = activeImageRoles.find(r => r.role === 'inpaint_image')
+    if (roleImage) {
+      const image = images.find(img => img.id === roleImage.imageId)
+      if (image) {
+        exportImageAsBase64(roleImage.imageId)
+          .then(base64 => {
+            setBaseImage(base64)
+            setSelectedImageId(roleImage.imageId)
+            if (image.width && image.height) {
+              setWidth(image.width)
+              setHeight(image.height)
+            }
+          })
+          .catch(error => {
+            console.error('Failed to load role-assigned image:', error)
+          })
       }
-      img.src = imageSrc.includes('data:image') ? imageSrc : `data:image/png;base64,${imageSrc}`
-    })
-  }
-
-  const handleMaskSelect = (base64: string) => {
-    setMaskImage(base64)
-  }
+    } else {
+      setBaseImage('')
+      setSelectedImageId(null)
+      setMaskImage('')
+    }
+  }, [activeImageRoles, images])
 
   const handleMaskDrawn = (maskDataUrl: string) => {
     // Convert data URL to base64
@@ -85,11 +79,11 @@ export function InpaintPanel() {
   const handleGenerate = (e: Event) => {
     e.preventDefault()
     if (!baseImage) {
-      alert('Please upload an image first')
+      alert('Please select an image from canvas first')
       return
     }
     if (!maskImage) {
-      alert('Please draw or upload a mask')
+      alert('Please draw a mask')
       return
     }
     if (!isLoading) {
@@ -109,64 +103,15 @@ export function InpaintPanel() {
     <div class="generation-panel">
       <h3 class="generation-panel-header">Inpainting</h3>
       <form class="generation-form" onSubmit={handleGenerate}>
-        <div class="image-source-section">
-          <label class="prompt-label">Base Image</label>
-          
-          {images.length > 0 && (
-            <div class="toggle-group">
-              <button
-                type="button"
-                class={imageSourceMode === 'upload' ? 'active' : ''}
-                onClick={() => setImageSourceMode('upload')}
-                disabled={isLoading}
-              >
-                Upload New
-              </button>
-              <button
-                type="button"
-                class={imageSourceMode === 'canvas' ? 'active' : ''}
-                onClick={handleSelectFromCanvas}
-                disabled={isLoading}
-              >
-                Select from Canvas ({images.length})
-              </button>
-            </div>
-          )}
-          
-          <ImageUpload onImageSelect={handleImageSelect} currentImage={baseImage ? `data:image/png;base64,${baseImage}` : undefined} disabled={isLoading} />
-        </div>
+
 
         {baseImage && (
           <div class="mask-section">
-            <div class="toggle-group toggle-group-compact">
-              <button
-                type="button"
-                class={maskMode === 'draw' ? 'active' : ''}
-                onClick={() => setMaskMode('draw')}
-              >
-                Draw Mask
-              </button>
-              <button
-                type="button"
-                class={maskMode === 'upload' ? 'active' : ''}
-                onClick={() => setMaskMode('upload')}
-              >
-                Upload Mask
-              </button>
-            </div>
-
-            {maskMode === 'draw' ? (
-              <MaskEditor
-                baseImage={`data:image/png;base64,${baseImage}`}
-                onMaskUpdate={handleMaskDrawn}
-                disabled={isLoading}
-              />
-            ) : (
-              <ImageUpload
-                onImageSelect={(base64) => handleMaskSelect(base64)}
-                disabled={isLoading}
-              />
-            )}
+            <MaskEditor
+              baseImage={`data:image/png;base64,${baseImage}`}
+              onMaskUpdate={handleMaskDrawn}
+              disabled={isLoading}
+            />
           </div>
         )}
 

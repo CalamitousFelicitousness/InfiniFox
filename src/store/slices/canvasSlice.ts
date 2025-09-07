@@ -13,6 +13,18 @@ export const setStoreRef = (store: any) => {
   storeRef = store
 }
 
+export interface GenerationFrame {
+  id: string
+  x: number
+  y: number
+  width: number
+  height: number
+  progress: number
+  previewImage?: string
+  isGenerating: boolean
+  error?: string
+}
+
 export interface CanvasViewport {
   scale: number
   position: { x: number; y: number }
@@ -24,6 +36,7 @@ export interface CanvasSlice {
   activeImageRoles: ImageRole[]
   canvasSelectionMode: CanvasSelectionMode
   canvasViewport: CanvasViewport
+  generationFrames: GenerationFrame[]
   
   // Actions
   addImage: (image: ImageData) => void
@@ -46,6 +59,11 @@ export interface CanvasSlice {
   exportImageAsBase64: (id: string) => Promise<string>
   uploadImageToCanvas: (file: File, x?: number, y?: number) => Promise<void>
   updateCanvasViewport: (scale: number, position: { x: number; y: number }) => void
+  // Generation frame actions
+  addGenerationFrame: (x: number, y: number, width: number, height: number) => string
+  removeGenerationFrame: (id: string) => void
+  updateGenerationFrame: (id: string, updates: Partial<GenerationFrame>) => void
+  clearGenerationFrames: () => void
 }
 
 export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
@@ -61,6 +79,7 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
     scale: 1,
     position: { x: 0, y: 0 }
   },
+  generationFrames: [],
   
   // Actions
   addImage: (image: ImageData) => {
@@ -372,5 +391,43 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
     set({ 
       canvasViewport: { scale, position } 
     })
-  }
+  },
+  
+  // Generation frame actions
+  addGenerationFrame: (x: number, y: number, width: number, height: number) => {
+    const id = `frame-${Date.now()}`
+    set((state) => ({
+      generationFrames: [
+        ...state.generationFrames,
+        {
+          id,
+          x,
+          y,
+          width,
+          height,
+          progress: 0,
+          isGenerating: false,
+        },
+      ],
+    }))
+    return id
+  },
+  
+  removeGenerationFrame: (id: string) => {
+    set((state) => ({
+      generationFrames: state.generationFrames.filter((f) => f.id !== id),
+    }))
+  },
+  
+  updateGenerationFrame: (id: string, updates: Partial<GenerationFrame>) => {
+    set((state) => ({
+      generationFrames: state.generationFrames.map((f) =>
+        f.id === id ? { ...f, ...updates } : f
+      ),
+    }))
+  },
+  
+  clearGenerationFrames: () => {
+    set({ generationFrames: [] })
+  },
 })

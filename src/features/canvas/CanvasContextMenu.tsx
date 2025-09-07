@@ -1,7 +1,7 @@
-import { useEffect, useRef } from 'preact/hooks'
 import { Check } from 'lucide-preact'
-import { Icon } from '../../components/common/Icon'
+import { useEffect, useRef } from 'preact/hooks'
 
+import { Icon } from '../../components/common/Icon'
 import { useStore } from '../../store/store'
 
 import './CanvasContextMenu.css'
@@ -17,6 +17,7 @@ interface CanvasContextMenuProps {
   onInpaint: () => void
   onDownload: () => void
   onUploadImage: () => void
+  onGenerateHere: () => void
   onClose: () => void
 }
 
@@ -31,6 +32,7 @@ export function CanvasContextMenu({
   onInpaint,
   onDownload,
   onUploadImage,
+  onGenerateHere,
   onClose,
 }: CanvasContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
@@ -67,7 +69,7 @@ export function CanvasContextMenu({
     if (imageId) {
       setImageRole(imageId, 'img2img_init')
       onSendToImg2Img()
-      onClose()  // Close menu after setting role
+      onClose() // Close menu after setting role
     }
   }
 
@@ -75,7 +77,7 @@ export function CanvasContextMenu({
     if (imageId) {
       setImageRole(imageId, 'inpaint_image')
       onInpaint()
-      onClose()  // Close menu after setting role
+      onClose() // Close menu after setting role
     }
   }
 
@@ -95,74 +97,144 @@ export function CanvasContextMenu({
       {imageId === null ? (
         // Context menu for empty canvas space
         <>
-          <button class="menu-item" onPointerDown={(e) => { 
-            e.preventDefault(); 
-            onUploadImage();
-            onClose()
-          }}>
+          <button
+            class="menu-item"
+            onPointerDown={(e) => {
+              e.preventDefault()
+              onUploadImage()
+              onClose()
+            }}
+          >
             Upload Image
           </button>
           {activeImageRoles.length > 0 && (
             <>
               <hr class="menu-divider" />
-              <button class="menu-item" onPointerDown={(e) => { 
-                e.preventDefault(); 
-                clearImageRoles();
-                onClose()
-              }}>
+              <button
+                class="menu-item"
+                onPointerDown={(e) => {
+                  e.preventDefault()
+                  clearImageRoles()
+                  onClose()
+                }}
+              >
                 Clear All Image Roles ({activeImageRoles.length} active)
               </button>
             </>
           )}
           <hr class="menu-divider" />
-          <button class="menu-item" onPointerDown={(e) => { e.preventDefault(); /* TODO: Quick generate */ }} disabled>
-            Generate Here (Coming Soon)
+          <button
+            class="menu-item"
+            onPointerDown={(e) => {
+              e.preventDefault()
+              onGenerateHere()
+              onClose()
+            }}
+          >
+            {(() => {
+              // Determine which generation mode will be used
+              const img2imgRole = activeImageRoles.find(r => r.role === 'img2img_init')
+              const inpaintRole = activeImageRoles.find(r => r.role === 'inpaint_image')
+              
+              if (inpaintRole) {
+                return 'Quick Inpaint Here'
+              } else if (img2imgRole) {
+                return 'Quick Img2Img Here'
+              } else {
+                return 'Quick Generate Here'
+              }
+            })()}
           </button>
+          {/* Show info about active image roles */}
+          {activeImageRoles.length > 0 && (
+            <div class="canvas-context-menu__role-info">
+              {activeImageRoles.map(role => (
+                <div key={role.imageId} class="canvas-context-menu__role-item">
+                  <span class="canvas-context-menu__role-text">
+                    {role.role === 'img2img_init' && 'Img2Img'}
+                    {role.role === 'inpaint_image' && 'Inpaint'}
+                    {role.role === 'controlnet' && 'ControlNet'}
+                    : Image {role.imageId.slice(-6)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </>
       ) : (
         // Context menu for image
         <>
-      <button class="menu-item" onPointerDown={(e) => { e.preventDefault(); handleSendToImg2Img() }}>
-        Send to img2img{currentRole === 'img2img_init' ? <Icon icon={Check} size="sm" className="inline-icon" /> : ''}
-      </button>
-      <button class="menu-item" onPointerDown={(e) => { e.preventDefault(); handleSendToInpaint() }}>
-        Send to Inpaint{currentRole === 'inpaint_image' ? <Icon icon={Check} size="sm" className="inline-icon" /> : ''}
-      </button>
-      <hr class="menu-divider" />
-      {currentRole && (
-        <>
-          <button class="menu-item" onPointerDown={(e) => { 
-            e.preventDefault(); 
-            setImageRole(imageId, null);
-            onClose()  // Close menu after clearing role
-          }}>
-            Clear Role{roleIndicator}
+          <button
+            class="menu-item"
+            onPointerDown={(e) => {
+              e.preventDefault()
+              handleSendToImg2Img()
+            }}
+          >
+            Set as Img2Img Init
+            {currentRole === 'img2img_init' && (
+              <Icon icon={Check} size="sm" className="menu-item__check-inline" />
+            )}
+          </button>
+          <button
+            class="menu-item"
+            onPointerDown={(e) => {
+              e.preventDefault()
+              handleSendToInpaint()
+            }}
+          >
+            Set as Inpaint Init
+            {currentRole === 'inpaint_image' && (
+              <Icon icon={Check} size="sm" className="menu-item__check-inline" />
+            )}
           </button>
           <hr class="menu-divider" />
-        </>
-      )}
-      <button class="menu-item" onPointerDown={(e) => { 
-        e.preventDefault(); 
-        onDuplicate();
-        onClose()
-      }}>
-        Duplicate
-      </button>
-      <button class="menu-item" onPointerDown={(e) => { 
-        e.preventDefault(); 
-        onDownload();
-        onClose()
-      }}>
-        Download
-      </button>
-      <hr class="menu-divider" />
-      <button class="menu-item menu-item-danger" onPointerDown={(e) => { 
-        e.preventDefault(); 
-        onDelete();
-        onClose()
-      }}>
-        Delete
-      </button>
+          {currentRole && (
+            <>
+              <button
+                class="menu-item"
+                onPointerDown={(e) => {
+                  e.preventDefault()
+                  setImageRole(imageId, null)
+                  onClose() // Close menu after clearing role
+                }}
+              >
+                Clear Role{roleIndicator}
+              </button>
+              <hr class="menu-divider" />
+            </>
+          )}
+          <button
+            class="menu-item"
+            onPointerDown={(e) => {
+              e.preventDefault()
+              onDuplicate()
+              onClose()
+            }}
+          >
+            Duplicate
+          </button>
+          <button
+            class="menu-item"
+            onPointerDown={(e) => {
+              e.preventDefault()
+              onDownload()
+              onClose()
+            }}
+          >
+            Download
+          </button>
+          <hr class="menu-divider" />
+          <button
+            class="menu-item menu-item-danger"
+            onPointerDown={(e) => {
+              e.preventDefault()
+              onDelete()
+              onClose()
+            }}
+          >
+            Delete
+          </button>
         </>
       )}
     </div>

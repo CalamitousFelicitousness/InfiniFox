@@ -15,7 +15,7 @@ export interface GenerationActionsSlice {
 
 export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> = (set, get) => ({
   generateTxt2Img: async () => {
-    const { prompt, negativePrompt, sampler, seed, steps, cfgScale, width, height } = get()
+    const { prompt, negativePrompt, sampler, seed, steps, cfgScale, width, height, generationFrames } = get()
 
     if (!prompt) {
       alert('Please enter a prompt.')
@@ -70,12 +70,17 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
         }
       )
 
+      // Check if there's an active generation frame
+      const activeFrame = generationFrames.find(f => f.isGenerating)
+      const x = activeFrame ? activeFrame.x : Math.random() * (window.innerWidth - 200)
+      const y = activeFrame ? activeFrame.y : Math.random() * (window.innerHeight - 200)
+
       // Add image to canvas with object URL instead of base64
       const newImage = {
         id: imageId,
         src: storedImage.objectUrl,  // Use object URL instead of base64
-        x: Math.random() * (window.innerWidth - 200),
-        y: Math.random() * (window.innerHeight - 200),
+        x,
+        y,
         width,
         height,
         metadata: storedImage.metadata,
@@ -102,7 +107,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
   },
 
   generateImg2Img: async (baseImage: string, denoisingStrength: number) => {
-    const { prompt, negativePrompt, sampler, seed, steps, cfgScale, width, height } = get()
+    const { prompt, negativePrompt, sampler, seed, steps, cfgScale, width, height, generationFrames } = get()
 
     if (!prompt) {
       alert('Please enter a prompt.')
@@ -164,12 +169,17 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
         }
       )
 
+      // Check if there's an active generation frame
+      const activeFrame = generationFrames.find(f => f.isGenerating)
+      const x = activeFrame ? activeFrame.x : Math.random() * (window.innerWidth - 200)
+      const y = activeFrame ? activeFrame.y : Math.random() * (window.innerHeight - 200)
+
       // Add image to canvas with object URL
       const newImage = {
         id: imageId,
         src: storedImage.objectUrl,
-        x: Math.random() * (window.innerWidth - 200),
-        y: Math.random() * (window.innerHeight - 200),
+        x,
+        y,
         width,
         height,
         metadata: storedImage.metadata,
@@ -195,7 +205,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
   },
 
   generateInpaint: async (params: InpaintParams) => {
-    const { prompt, negativePrompt, sampler, seed, steps, cfgScale, width, height } = get()
+    const { prompt, negativePrompt, sampler, seed, steps, cfgScale, width, height, generationFrames } = get()
 
     if (!prompt) {
       alert('Please enter a prompt.')
@@ -265,12 +275,17 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
         }
       )
 
+      // Check if there's an active generation frame
+      const activeFrame = generationFrames.find(f => f.isGenerating)
+      const x = activeFrame ? activeFrame.x : Math.random() * (window.innerWidth - 200)
+      const y = activeFrame ? activeFrame.y : Math.random() * (window.innerHeight - 200)
+
       // Add image to canvas with object URL
       const newImage = {
         id: imageId,
         src: storedImage.objectUrl,
-        x: Math.random() * (window.innerWidth - 200),
-        y: Math.random() * (window.innerHeight - 200),
+        x,
+        y,
         width,
         height,
         metadata: storedImage.metadata,

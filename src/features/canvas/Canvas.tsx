@@ -1,6 +1,6 @@
 import Konva from 'konva'
-import { useEffect, useState, useRef } from 'preact/hooks'
-import { Stage, Layer, Image as KonvaImage, Transformer, Line, Circle } from 'react-konva'
+import React, { useEffect, useState, useRef } from 'preact/compat'
+import { Stage, Layer, Image as KonvaImage, Transformer, Line, Circle, Rect, Text } from 'react-konva'
 
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
 import { useStore } from '../../store/store'
@@ -16,6 +16,7 @@ import { DraggableZoomControls } from './DraggableZoomControls'
 import { DraggableCanvasToolbar } from './DraggableCanvasToolbar'
 import { CanvasMinimap } from './CanvasMinimap'
 import { ImageSizeIndicator } from './ImageSizeIndicator'
+import { progressService } from '../../services/progress/ProgressService'
 import './Canvas.css'
 
 // Tool types enum for better mode management
@@ -52,6 +53,18 @@ export function Canvas() {
     setImageRole,
     canvasViewport,
     updateCanvasViewport,
+    // Generation frames
+    generationFrames,
+    addGenerationFrame,
+    removeGenerationFrame,
+    updateGenerationFrame,
+    // Generation parameters
+    width,
+    height,
+    generateTxt2Img,
+    isLoading,
+    progress,
+    previewImage,
     // Drawing state from store
     isDrawingMode,
     isDrawingActive,
@@ -112,6 +125,7 @@ export function Canvas() {
   const [currentPressure, setCurrentPressure] = useState(0.5)
   const strokePointsRef = useRef<{ x: number, y: number, pressure: number }[]>([])
   const [isPanning, setIsPanning] = useState(false)
+  const [activeGenerationFrameId, setActiveGenerationFrameId] = useState<string | null>(null)
   
   const stageRef = useRef<Konva.Stage>(null)
   const transformerRef = useRef<Konva.Transformer>(null)
@@ -130,6 +144,67 @@ export function Canvas() {
       updateCanvasViewport(scale, position)
     }, 250) // Debounce for 250ms
   ).current
+  
+  // Monitor progress for active generation frame
+  useEffect(() => {
+    if (!activeGenerationFrameId) return
+    
+    const unsubscribe = progressService.onProgress((message) => {
+      // Handle different message formats from progress service
+      if (message.phase === 'sampling' || message.type === 'progress') {
+        const progress = message.total > 0 ? (message.current / message.total) * 100 : message.progress || 0
+        updateGenerationFrame(activeGenerationFrameId, {
+          progress,
+          previewImage: message.preview ? `data:image/png;base64,${message.preview}` : undefined,
+        })
+      } else if (message.phase === 'vae' || message.phase === 'postprocessing') {
+        updateGenerationFrame(activeGenerationFrameId, {
+          progress: 95,
+          previewImage: message.preview ? `data:image/png;base64,${message.preview}` : undefined,
+        })
+      } else if (message.phase === 'completed' || message.type === 'complete') {
+        updateGenerationFrame(activeGenerationFrameId, {
+          isGenerating: false,
+          progress: 100,
+        })
+        // Cleanup frame after completion
+        setTimeout(() => {
+          removeGenerationFrame(activeGenerationFrameId)
+          setActiveGenerationFrameId(null)
+        }, 500)
+      } else if (message.type === 'error') {
+        updateGenerationFrame(activeGenerationFrameId, {
+          isGenerating: false,
+          error: message.error || 'Generation failed',
+        })
+        // Keep error frames visible longer
+        setTimeout(() => {
+          removeGenerationFrame(activeGenerationFrameId)
+          setActiveGenerationFrameId(null)
+        }, 3000)
+      }
+    })
+    
+    return () => {
+      unsubscribe()
+    }
+  }, [activeGenerationFrameId, updateGenerationFrame, removeGenerationFrame])
+  
+  // Cleanup orphaned frames when generation completes
+  useEffect(() => {
+    if (!isLoading && generationFrames.length > 0) {
+      generationFrames.forEach(frame => {
+        if (frame.isGenerating) {
+          // Mark as complete if generation stopped
+          updateGenerationFrame(frame.id, {
+            isGenerating: false,
+            progress: 100,
+          })
+          setTimeout(() => removeGenerationFrame(frame.id), 500)
+        }
+      })
+    }
+  }, [isLoading])
   
   // Initialize drawing services
   useEffect(() => {
@@ -686,6 +761,70 @@ export function Canvas() {
     }
   }
 
+  const handleGenerateHere = async () => {
+    const stagePos = stageRef.current?.position()
+    if (!stagePos) return
+    
+    const canvasX = (contextMenu.x - stagePos.x) / scale
+    const canvasY = (contextMenu.y - stagePos.y) / scale
+    
+    const frameId = addGenerationFrame(canvasX, canvasY, width, height)
+    setActiveGenerationFrameId(frameId)
+    updateGenerationFrame(frameId, { isGenerating: true })
+    
+    try {
+      // Check for active image roles to determine generation mode
+      const img2imgRole = activeImageRoles.find(r => r.role === 'img2img_init')
+      const inpaintRole = activeImageRoles.find(r => r.role === 'inpaint_image')
+      
+      if (inpaintRole) {
+        // Use inpainting mode if an inpaint image is set
+        const inpaintImage = images.find(img => img.id === inpaintRole.imageId)
+        if (inpaintImage) {
+          // Get base64 representation of the image
+          const baseImageBase64 = await useStore.getState().exportImageAsBase64(inpaintImage.id)
+          
+          // For now, use the same image as mask (you might want to add mask drawing functionality)
+          // This is a basic implementation - you should implement proper mask drawing
+          await useStore.getState().generateInpaint({
+            baseImage: baseImageBase64,
+            maskImage: baseImageBase64, // TODO: Implement proper mask drawing
+            denoisingStrength: 0.75,
+            maskBlur: 4,
+            inpaintingFill: 'original',
+            inpaintFullRes: false,
+            inpaintFullResPadding: 32,
+          })
+        } else {
+          throw new Error('Inpaint image not found')
+        }
+      } else if (img2imgRole) {
+        // Use img2img mode if an img2img init image is set
+        const img2imgImage = images.find(img => img.id === img2imgRole.imageId)
+        if (img2imgImage) {
+          // Get base64 representation of the image
+          const baseImageBase64 = await useStore.getState().exportImageAsBase64(img2imgImage.id)
+          
+          // Use default denoising strength (you might want to make this configurable)
+          await useStore.getState().generateImg2Img(baseImageBase64, 0.5)
+        } else {
+          throw new Error('Img2Img init image not found')
+        }
+      } else {
+        // Default to txt2img if no image roles are set
+        await generateTxt2Img()
+      }
+      
+      // Generated image will be placed at frame position by generation system
+    } catch (error) {
+      updateGenerationFrame(frameId, {
+        isGenerating: false,
+        error: error.message,
+      })
+      console.error('Generation failed:', error)
+    }
+  }
+
   const handleUploadImage = () => {
     fileInputRef.current?.click()
     setContextMenu({ ...contextMenu, visible: false })
@@ -816,6 +955,92 @@ export function Canvas() {
         onDragMove={handleStageDragMove}
         onDragEnd={handleStageDragEnd}
       >
+        {/* Generation Frames Layer */}
+        <Layer>
+          {generationFrames.map((frame) => (
+            <React.Fragment key={frame.id}>
+              <Rect
+                x={frame.x}
+                y={frame.y}
+                width={frame.width}
+                height={frame.height}
+                stroke={frame.error ? '#ff0000' : '#646cff'}
+                strokeWidth={2}
+                fill="rgba(100, 108, 255, 0.1)"
+                dash={[10, 5]}
+                listening={false}
+              />
+              
+              {frame.isGenerating && (
+                <>
+                  <Rect
+                    x={frame.x}
+                    y={frame.y - 25}
+                    width={frame.width}
+                    height={20}
+                    fill="rgba(0, 0, 0, 0.7)"
+                    cornerRadius={4}
+                    listening={false}
+                  />
+                  
+                  <Rect
+                    x={frame.x + 2}
+                    y={frame.y - 23}
+                    width={(frame.width - 4) * (frame.progress / 100)}
+                    height={16}
+                    fill="#646cff"
+                    cornerRadius={3}
+                    listening={false}
+                  />
+                  
+                  <Text
+                    x={frame.x}
+                    y={frame.y - 20}
+                    width={frame.width}
+                    height={20}
+                    text={`${Math.round(frame.progress)}%`}
+                    fontSize={12}
+                    fontFamily="monospace"
+                    fill="white"
+                    align="center"
+                    listening={false}
+                  />
+                </>
+              )}
+              
+              {frame.previewImage && (
+                <KonvaImage
+                  x={frame.x}
+                  y={frame.y}
+                  width={frame.width}
+                  height={frame.height}
+                  image={(() => {
+                    const img = new window.Image()
+                    img.src = frame.previewImage
+                    return img
+                  })()}
+                  opacity={0.8}
+                  listening={false}
+                />
+              )}
+              
+              {frame.error && (
+                <Text
+                  x={frame.x}
+                  y={frame.y + frame.height / 2 - 10}
+                  width={frame.width}
+                  text={frame.error}
+                  fontSize={14}
+                  fontFamily="sans-serif"
+                  fill="red"
+                  align="center"
+                  listening={false}
+                />
+              )}
+            </React.Fragment>
+          ))}
+        </Layer>
+        
         {/* Images Layer */}
         <Layer>
           {konvaImages.map((img) => (
@@ -1072,6 +1297,7 @@ export function Canvas() {
         }}
         onDownload={handleDownload}
         onUploadImage={handleUploadImage}
+        onGenerateHere={handleGenerateHere}
       />
     </div>
   )

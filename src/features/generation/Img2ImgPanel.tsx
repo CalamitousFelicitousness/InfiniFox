@@ -1,7 +1,6 @@
-import { useState } from 'preact/hooks'
+import { useState, useEffect } from 'preact/hooks'
 
 import { Dropdown } from '../../components/common/Dropdown'
-import { ImageUpload } from '../../components/common/ImageUpload'
 import { NumberInput } from '../../components/common/NumberInput'
 import { Slider } from '../../components/common/Slider'
 import { useStore } from '../../store/store'
@@ -29,51 +28,40 @@ export function Img2ImgPanel() {
     setHeight,
     generateImg2Img,
     isLoading,
-    startCanvasSelection,
     exportImageAsBase64,
     images,
+    activeImageRoles,
+    setImageRole,
   } = useStore()
 
   const [baseImage, setBaseImage] = useState<string>('')
   const [denoisingStrength, setDenoisingStrength] = useState(0.75)
-  const [selectionMode, setSelectionMode] = useState<'upload' | 'canvas'>('upload')
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null)
 
-  const handleImageSelect = (base64: string, imgWidth: number, imgHeight: number) => {
-    setBaseImage(base64)
-    setSelectedImageId(null) // Clear canvas selection
-    if (imgWidth && imgHeight) {
-      // Optionally update dimensions to match source image
-      setWidth(imgWidth)
-      setHeight(imgHeight)
-    }
-  }
-
-  const handleSelectFromCanvas = () => {
-    setSelectionMode('canvas')
-    startCanvasSelection('img2img', async (imageId: string, imageSrc: string) => {
-      try {
-        // Export the image as base64 for API usage
-        const base64 = await exportImageAsBase64(imageId)
-        
-        // Get image dimensions from the canvas image
-        const selectedImage = images.find(img => img.id === imageId)
-        if (selectedImage) {
-          setBaseImage(base64)
-          setSelectedImageId(imageId)
-          if (selectedImage.width && selectedImage.height) {
-            setWidth(selectedImage.width)
-            setHeight(selectedImage.height)
-          }
-        }
-        
-        setSelectionMode('upload')
-      } catch (error) {
-        console.error('Failed to export image:', error)
-        alert('Failed to export image for img2img')
+  // Auto-load image with img2img_init role
+  useEffect(() => {
+    const roleImage = activeImageRoles.find(r => r.role === 'img2img_init')
+    if (roleImage) {
+      const image = images.find(img => img.id === roleImage.imageId)
+      if (image) {
+        exportImageAsBase64(roleImage.imageId)
+          .then(base64 => {
+            setBaseImage(base64)
+            setSelectedImageId(roleImage.imageId)
+            if (image.width && image.height) {
+              setWidth(image.width)
+              setHeight(image.height)
+            }
+          })
+          .catch(error => {
+            console.error('Failed to load role-assigned image:', error)
+          })
       }
-    })
-  }
+    } else {
+      setBaseImage('')
+      setSelectedImageId(null)
+    }
+  }, [activeImageRoles, images])
 
   const handleGenerate = async (e: Event) => {
     e.preventDefault()
@@ -91,7 +79,7 @@ export function Img2ImgPanel() {
     }
     
     if (!finalBase64) {
-      alert('Please upload an image first')
+      alert('Please select an image from canvas first')
       return
     }
     
@@ -104,42 +92,7 @@ export function Img2ImgPanel() {
     <div class="generation-panel">
       <h3 class="generation-panel-header">Image to Image</h3>
       <form class="generation-form" onSubmit={handleGenerate}>
-        <div class="image-source-section">
-          <label class="prompt-label">Source Image</label>
-          
-          {images.length > 0 && (
-            <div class="toggle-group">
-              <button
-                type="button"
-                class={selectionMode === 'upload' ? 'active' : ''}
-                onClick={() => setSelectionMode('upload')}
-                disabled={isLoading}
-              >
-                Upload New
-              </button>
-              <button
-                type="button"
-                class={selectionMode === 'canvas' ? 'active' : ''}
-                onClick={handleSelectFromCanvas}
-                disabled={isLoading}
-              >
-                Select from Canvas ({images.length})
-              </button>
-            </div>
-          )}
-          
-          {selectedImageId && (
-            <div class="selected-image-info">
-              Selected: {selectedImageId}
-            </div>
-          )}
-          
-          <ImageUpload 
-            onImageSelect={handleImageSelect} 
-            currentImage={baseImage ? `data:image/png;base64,${baseImage}` : undefined} 
-            disabled={isLoading} 
-          />
-        </div>
+
 
         <div class="prompt-group">
           <label class="prompt-label">Prompt</label>

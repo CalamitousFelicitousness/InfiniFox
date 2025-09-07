@@ -7,3 +7,28 @@
 .canvas-context-menu {
   /* Additional canvas-specific styles if needed */
 }
+
+/* Check mark for active state */
+.menu-item__check-inline {
+  display: inline-block;
+  margin-left: var(--spacing-2);
+  color: var(--color-primary);
+  vertical-align: middle;
+}
+
+/* Active role information section */
+.canvas-context-menu__role-info {
+  padding: var(--spacing-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  border-top: var(--border-width-thin) solid var(--color-border-default);
+  line-height: var(--line-height-relaxed);
+}
+
+.canvas-context-menu__role-item {
+  padding: var(--spacing-1) 0;
+}
+
+.canvas-context-menu__role-text {
+  color: var(--color-text-secondary);
+}
