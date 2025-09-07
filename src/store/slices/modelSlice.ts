@@ -60,20 +60,28 @@ export const createModelSlice: SliceCreator<ModelSlice> = (set, get) => ({
   fetchSdModels: async () => {
     try {
       const models = await sdnextApi.getSdModels()
-      set({ sdModels: models })
+      // Sort models: directories first, then alphabetically within each group
+      const modelsWithDirs = models.filter(m => m.model_name.includes('/'))
+      const modelsWithoutDirs = models.filter(m => !m.model_name.includes('/'))
+      
+      modelsWithDirs.sort((a, b) => a.model_name.localeCompare(b.model_name))
+      modelsWithoutDirs.sort((a, b) => a.model_name.localeCompare(b.model_name))
+      
+      const sortedModels = [...modelsWithDirs, ...modelsWithoutDirs]
+      set({ sdModels: sortedModels })
       
       const currentModel = get().sdModel
       if (currentModel) {
         // Check if we have an old title stored instead of model_name
-        const modelByTitle = models.find(m => m.title === currentModel)
-        if (modelByTitle && !models.find(m => m.model_name === currentModel)) {
+        const modelByTitle = sortedModels.find(m => m.title === currentModel)
+        if (modelByTitle && !sortedModels.find(m => m.model_name === currentModel)) {
           // Migrate from title to model_name
           console.log('Migrating model selection from title to model_name')
           set({ sdModel: modelByTitle.model_name })
         }
-      } else if (models.length > 0) {
+      } else if (sortedModels.length > 0) {
         // No model selected, use first one
-        set({ sdModel: models[0].model_name })
+        set({ sdModel: sortedModels[0].model_name })
       }
     } catch (error) {
       console.error('Failed to fetch models:', error)

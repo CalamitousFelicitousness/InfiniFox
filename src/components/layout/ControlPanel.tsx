@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'preact/hooks'
 
+import InfiniFoxIcon from '../../assets/InfiniFox.svg'
 import { Img2ImgPanel } from '../../features/generation/Img2ImgPanel'
-import { Txt2ImgPanel } from '../../features/generation/Txt2ImgPanel'
 import { InpaintPanel } from '../../features/generation/InpaintPanel'
-
+import { Txt2ImgPanel } from '../../features/generation/Txt2ImgPanel'
 import { useStore } from '../../store/store'
 import { Dropdown } from '../common/Dropdown'
 import { BatchSettingsPanel } from '../panels/BatchSettingsPanel'
@@ -31,7 +31,7 @@ export function ControlPanel() {
   return (
     <aside class="control-panel">
       <div class="panel-header">
-        <h2>InfiniFox</h2>
+        <img src={InfiniFoxIcon} alt="InfiniFox" style="height: 64px; width: auto;" />
         <Dropdown
           label=""
           value={sdModel}
@@ -41,7 +41,7 @@ export function ControlPanel() {
           isLoading={isModelLoading}
         />
       </div>
-      
+
       <div class="control-panel-content">
         <div class="tab-panel">
           <Tabs tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />

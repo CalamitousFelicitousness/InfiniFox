@@ -18,7 +18,6 @@ export interface QueueItem {
 }
 
 interface BatchSettings {
-  enabled: boolean
   seedIncrement: number
   variations: {
     seed: boolean
@@ -58,7 +57,6 @@ interface QueueState {
   
   // Batch settings
   setBatchSettings: (settings: Partial<BatchSettings>) => void
-  toggleBatchMode: () => void
   
   // Stats
   getQueueStats: () => {
@@ -80,7 +78,6 @@ export const useQueueStore = create<QueueState>((set, get) => ({
   completedCount: 0,
   failedCount: 0,
   batchSettings: {
-    enabled: false,
     seedIncrement: 1,
     variations: {
       seed: true,
@@ -91,7 +88,7 @@ export const useQueueStore = create<QueueState>((set, get) => ({
     promptVariations: [],
     stepsVariations: [20],
     cfgScaleVariations: [7.5],
-    count: 4,
+    count: 1,
   },
 
   addToQueue: (item) => {
@@ -118,7 +115,7 @@ export const useQueueStore = create<QueueState>((set, get) => ({
     const { batchSettings } = get()
     const items: QueueItem[] = []
     
-    if (!batchSettings.enabled) {
+    if (batchSettings.count <= 1) {
       // Just add single item
       get().addToQueue({ type, status: 'pending', params: baseParams })
       return
@@ -339,15 +336,6 @@ export const useQueueStore = create<QueueState>((set, get) => ({
   setBatchSettings: (settings) => {
     set((state) => ({
       batchSettings: { ...state.batchSettings, ...settings },
-    }))
-  },
-
-  toggleBatchMode: () => {
-    set((state) => ({
-      batchSettings: {
-        ...state.batchSettings,
-        enabled: !state.batchSettings.enabled,
-      },
     }))
   },
 

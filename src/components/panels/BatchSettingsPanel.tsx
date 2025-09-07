@@ -5,7 +5,7 @@ import { useQueueStore } from '../../store/queueStore'
 
 export function BatchSettingsPanel() {
   const [isExpanded, setIsExpanded] = useState(false)
-  const { batchSettings, setBatchSettings, toggleBatchMode } = useQueueStore()
+  const { batchSettings, setBatchSettings } = useQueueStore()
   const panelRef = useRef<HTMLDivElement>(null)
 
   const handlePromptVariationsChange = (value: string) => {
@@ -37,25 +37,6 @@ export function BatchSettingsPanel() {
           <h3 class="panel-title">Batch Settings</h3>
         </div>
         <div class="d-flex items-center gap-2">
-          <label 
-            class="toggle-group"
-            onPointerDown={(e) => {
-              e.preventDefault()
-              toggleBatchMode()
-            }}
-          >
-            <div class="toggle-switch">
-              <input
-                type="checkbox"
-                class="toggle-input"
-                checked={batchSettings.enabled}
-                onChange={toggleBatchMode}
-                tabIndex={-1}
-              />
-              <div class="toggle-slider"></div>
-            </div>
-            <span class="toggle-label">Enable</span>
-          </label>
           <button
             class="settings-toggle"
             onPointerDown={(e) => {
@@ -69,8 +50,8 @@ export function BatchSettingsPanel() {
         </div>
       </div>
 
-      <div class={`panel-content ${!isExpanded || !batchSettings.enabled ? 'collapsed' : ''}`}>
-        {isExpanded && batchSettings.enabled && (
+      <div class={`panel-content ${!isExpanded ? 'collapsed' : ''}`}>
+        {isExpanded && (
           <>
             <div class="form-group">
               <label class="form-label">Batch Count</label>

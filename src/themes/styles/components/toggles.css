@@ -3,13 +3,13 @@
  * Shared styles for mode toggles and button groups
  */
 
-.toggle-group {
+.toggle-group:not(label) {
   display: flex;
   gap: var(--spacing-2);
   margin-bottom: 0;
 }
 
-.toggle-group button {
+.toggle-group:not(label) button {
   flex: 1;
   padding: var(--spacing-3);
   background-color: var(--color-surface-primary);
@@ -21,30 +21,30 @@
   font-size: var(--font-size-sm);
 }
 
-.toggle-group button:hover:not(:disabled) {
+.toggle-group:not(label) button:hover:not(:disabled) {
   background-color: var(--color-surface-hover);
   border-color: var(--color-primary-400);
   color: var(--color-text-primary);
 }
 
-.toggle-group button.active {
+.toggle-group:not(label) button.active {
   background-color: var(--color-primary-500);
   border-color: var(--color-primary-500);
   color: var(--color-text-on-primary);
 }
 
-.toggle-group button:disabled {
+.toggle-group:not(label) button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.toggle-group button:focus-visible {
+.toggle-group:not(label) button:focus-visible {
   outline: var(--ring-base);
   outline-offset: var(--outline-offset-base);
 }
 
 /* Compact variant */
-.toggle-group-compact button {
+.toggle-group-compact:not(label) button {
   padding: var(--spacing-2);
 }
 
@@ -71,3 +71,70 @@
   cursor: pointer;
   accent-color: var(--color-primary-500);
 }
+
+/* Toggle Switch */
+.toggle-switch {
+  display: inline-block;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  position: relative;
+}
+
+.toggle-switch-slider {
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  background-color: var(--color-surface-secondary);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 24px;
+  position: relative;
+  transition: background-color var(--duration-base) var(--easing-base),
+              border-color var(--duration-base) var(--easing-base);
+}
+
+.toggle-switch-slider::before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: var(--color-surface-primary);
+  border-radius: 50%;
+  transition: transform var(--duration-base) var(--easing-base),
+              background-color var(--duration-base) var(--easing-base);
+}
+
+.toggle-switch[aria-checked="true"] .toggle-switch-slider {
+  background-color: var(--color-primary-500);
+  border-color: var(--color-primary-600);
+}
+
+.toggle-switch[aria-checked="true"] .toggle-switch-slider::before {
+  transform: translateY(-50%) translateX(20px);
+  background-color: white;
+}
+
+.toggle-switch:hover .toggle-switch-slider {
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-border-hover);
+}
+
+.toggle-switch[aria-checked="true"]:hover .toggle-switch-slider {
+  background-color: var(--color-primary-600);
+  border-color: var(--color-primary-700);
+}
+
+.toggle-switch:focus-visible {
+  outline: none;
+}
+
+.toggle-switch:focus-visible .toggle-switch-slider {
+  outline: var(--ring-base);
+  outline-offset: var(--outline-offset-base);
+}
+
+
