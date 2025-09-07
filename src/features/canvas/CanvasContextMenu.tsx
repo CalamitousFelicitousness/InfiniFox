@@ -87,7 +87,7 @@ export function CanvasContextMenu({
       ref={menuRef}
       class="menu canvas-context-menu"
       style={{
-        position: 'fixed',
+        position: 'absolute',
         left: `${x}px`,
         top: `${y}px`,
       }}
@@ -148,19 +148,19 @@ export function CanvasContextMenu({
       }}>
         Duplicate
       </button>
-      <button onPointerDown={(e) => { 
+      <button class="menu-item" onPointerDown={(e) => { 
         e.preventDefault(); 
         onDownload();
         onClose()
       }}>
         Download
       </button>
-      <hr />
-      <button onPointerDown={(e) => { 
+      <hr class="menu-divider" />
+      <button class="menu-item menu-item-danger" onPointerDown={(e) => { 
         e.preventDefault(); 
         onDelete();
         onClose()
-      }} class="menu-item menu-item-danger">
+      }}>
         Delete
       </button>
         </>

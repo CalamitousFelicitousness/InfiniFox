@@ -386,11 +386,14 @@ export function Canvas() {
     const stage = stageRef.current
     if (!stage) return
 
-    const containerRect = stage.container().getBoundingClientRect()
+    // Use stage pointer position for absolute positioning within canvas container
+    const pointer = stage.getPointerPosition()
+    if (!pointer) return
+    
     setContextMenu({
       visible: true,
-      x: containerRect.left + stage.getPointerPosition()!.x,
-      y: containerRect.top + stage.getPointerPosition()!.y,
+      x: pointer.x,
+      y: pointer.y,
       imageId,
     })
   }
@@ -411,11 +414,11 @@ export function Canvas() {
       // Show upload context menu for empty space
       const pointer = stage.getPointerPosition()
       if (pointer) {
-        const containerRect = stage.container().getBoundingClientRect()
+        // Use stage pointer position for absolute positioning within canvas container
         setContextMenu({
           visible: true,
-          x: containerRect.left + pointer.x,
-          y: containerRect.top + pointer.y,
+          x: pointer.x,
+          y: pointer.y,
           imageId: null, // null indicates empty space
         })
         // Store the canvas position for image placement
