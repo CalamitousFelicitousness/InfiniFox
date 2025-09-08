@@ -176,40 +176,42 @@ export function Canvas() {
     if (!activeGenerationFrameId) return
 
     const unsubscribe = progressService.onProgress((message) => {
-      // Handle different message formats from progress service
-      if (message.phase === 'sampling' || message.type === 'progress') {
-        const progress =
-          message.total > 0 ? (message.current / message.total) * 100 : message.progress || 0
-        updateGenerationFrame(activeGenerationFrameId, {
-          progress,
-          previewImage: message.preview ? `data:image/png;base64,${message.preview}` : undefined,
-        })
+      // Handle progress messages from REST polling monitor
+      console.log('Progress event for frame:', activeGenerationFrameId, message)
+      
+      if (message.phase === 'sampling') {
+      const progress = message.total > 0 ? (message.current / message.total) * 100 : 0
+      updateGenerationFrame(activeGenerationFrameId, {
+      progress,
+        previewImage: message.preview ? `data:image/png;base64,${message.preview}` : undefined,
+          isGenerating: true,
+      })
       } else if (message.phase === 'vae' || message.phase === 'postprocessing') {
-        updateGenerationFrame(activeGenerationFrameId, {
-          progress: 95,
+      updateGenerationFrame(activeGenerationFrameId, {
+        progress: 95,
           previewImage: message.preview ? `data:image/png;base64,${message.preview}` : undefined,
-        })
-      } else if (message.phase === 'completed' || message.type === 'complete') {
-        updateGenerationFrame(activeGenerationFrameId, {
-          isGenerating: false,
-          progress: 100,
-        })
-        // Cleanup frame after completion
-        setTimeout(() => {
-          removeGenerationFrame(activeGenerationFrameId)
+        isGenerating: true,
+      })
+      } else if (message.phase === 'completed') {
+      updateGenerationFrame(activeGenerationFrameId, {
+        isGenerating: false,
+        progress: 100,
+      })
+      // Don't remove frame here - let generation functions handle it
+      setActiveGenerationFrameId(null)
+      } else if (message.phase === 'waiting') {
+      // Initial waiting state, don't update
+      } else if (message.error) {
+      updateGenerationFrame(activeGenerationFrameId, {
+        isGenerating: false,
+        error: message.error || 'Generation failed',
+      })
+      // Keep error frames visible longer
+      setTimeout(() => {
+        removeGenerationFrame(activeGenerationFrameId)
           setActiveGenerationFrameId(null)
-        }, 500)
-      } else if (message.type === 'error') {
-        updateGenerationFrame(activeGenerationFrameId, {
-          isGenerating: false,
-          error: message.error || 'Generation failed',
-        })
-        // Keep error frames visible longer
-        setTimeout(() => {
-          removeGenerationFrame(activeGenerationFrameId)
-          setActiveGenerationFrameId(null)
-        }, 3000)
-      }
+      }, 3000)
+    }
     })
 
     return () => {
@@ -217,21 +219,22 @@ export function Canvas() {
     }
   }, [activeGenerationFrameId, generationFrames, updateGenerationFrame, removeGenerationFrame])
 
-  // Cleanup orphaned frames when generation completes
+  // Cleanup orphaned frames only if they're not being managed by activeGenerationFrameId
   useEffect(() => {
     if (!isLoading && generationFrames.length > 0) {
       generationFrames.forEach((frame) => {
-        if (frame.isGenerating) {
-          // Mark as complete if generation stopped
+        // Only cleanup frames that aren't actively monitored
+        if (frame.isGenerating && frame.id !== activeGenerationFrameId) {
+          // Mark as orphaned frame error
           updateGenerationFrame(frame.id, {
             isGenerating: false,
-            progress: 100,
+            error: 'Generation interrupted',
           })
-          setTimeout(() => removeGenerationFrame(frame.id), 500)
+          setTimeout(() => removeGenerationFrame(frame.id), 2000)
         }
       })
     }
-  }, [isLoading, generationFrames, updateGenerationFrame, removeGenerationFrame])
+  }, [isLoading, generationFrames, activeGenerationFrameId, updateGenerationFrame, removeGenerationFrame])
 
   // Initialize drawing services
   useEffect(() => {
@@ -968,7 +971,7 @@ export function Canvas() {
             inpaintingFill: 'original',
             inpaintFullRes: false,
             inpaintFullResPadding: 32,
-          })
+          }, frameId)
         } else {
           throw new Error('Inpaint image not found')
         }
@@ -980,7 +983,7 @@ export function Canvas() {
           const baseImageBase64 = await useStore.getState().exportImageAsBase64(img2imgImage.id)
 
           // Use default denoising strength (you might want to make this configurable)
-          await useStore.getState().generateImg2Img(baseImageBase64, 0.5)
+          await useStore.getState().generateImg2Img(baseImageBase64, 0.5, frameId)
         } else {
           throw new Error('Img2Img init image not found')
         }

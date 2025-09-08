@@ -8,8 +8,8 @@ export interface GenerationActionsSlice {
   // Actions
   generateTxt2Img: () => Promise<void>
   generateInFrame: (frameId: string) => Promise<void>
-  generateImg2Img: (baseImage: string, denoisingStrength: number) => Promise<void>
-  generateInpaint: (params: InpaintParams) => Promise<void>
+  generateImg2Img: (baseImage: string, denoisingStrength: number, frameId?: string) => Promise<void>
+  generateInpaint: (params: InpaintParams, frameId?: string) => Promise<void>
   loadImagesFromStorage: () => Promise<void>
   updateStorageStats: () => Promise<void>
 }
@@ -216,7 +216,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
     }
   },
 
-  generateImg2Img: async (baseImage: string, denoisingStrength: number) => {
+  generateImg2Img: async (baseImage: string, denoisingStrength: number, frameId?: string) => {
     const {
       prompt,
       negativePrompt,
@@ -227,6 +227,8 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       width,
       height,
       generationFrames,
+      removeGenerationFrame,
+      updateGenerationFrame,
     } = get()
 
     if (!prompt) {
@@ -240,6 +242,12 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
     }
 
     set({ isLoading: true })
+    
+    // Determine dimensions based on frame or default
+    const frame = frameId ? generationFrames.find((f) => f.id === frameId) : null
+    const finalWidth = frame ? frame.width : width
+    const finalHeight = frame ? frame.height : height
+    
     const params = {
       init_images: [baseImage],
       prompt,
@@ -248,8 +256,8 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       seed,
       steps,
       cfg_scale: cfgScale,
-      width,
-      height,
+      width: finalWidth,
+      height: finalHeight,
       denoising_strength: denoisingStrength,
     }
 
@@ -278,17 +286,23 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
         seed,
         steps,
         cfgScale,
-        width,
-        height,
+        width: finalWidth,
+        height: finalHeight,
         sampler,
         denoisingStrength,
         usedIn: new Set(),
       })
 
-      // Check if there's an active generation frame
-      const activeFrame = generationFrames.find((f) => f.isGenerating)
-      const x = activeFrame ? activeFrame.x : Math.random() * (window.innerWidth - 200)
-      const y = activeFrame ? activeFrame.y : Math.random() * (window.innerHeight - 200)
+      // Determine position based on frame or active generation frame
+      let x: number, y: number
+      if (frame) {
+        x = frame.x
+        y = frame.y
+      } else {
+        const activeFrame = generationFrames.find((f) => f.isGenerating)
+        x = activeFrame ? activeFrame.x : Math.random() * (window.innerWidth - 200)
+        y = activeFrame ? activeFrame.y : Math.random() * (window.innerHeight - 200)
+      }
 
       // Add image to canvas with object URL
       const newImage = {
@@ -296,14 +310,26 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
         src: storedImage.objectUrl,
         x,
         y,
-        width,
-        height,
+        width: finalWidth,
+        height: finalHeight,
         metadata: storedImage.metadata,
         blobId: imageId,
         isTemporary: false,
       }
 
       get().addImage(newImage)
+
+      // Mark frame as complete before removing
+      if (frameId) {
+        updateGenerationFrame?.(frameId, {
+          isGenerating: false,
+          progress: 100,
+        })
+        // Remove frame after short delay to show completion
+        setTimeout(() => {
+          removeGenerationFrame?.(frameId)
+        }, 500)
+      }
 
       // Update storage stats
       await get().updateStorageStats()
@@ -314,13 +340,22 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
     } catch (error) {
       console.error('Failed to generate image:', error)
       alert('Failed to generate image. Check console for details.')
+      
+      // Mark frame as error if it exists
+      if (frameId) {
+        updateGenerationFrame?.(frameId, {
+          isGenerating: false,
+          error: error.message || 'Generation failed',
+        })
+      }
+      
       // Don't force complete on error
       progressService.stopPolling(false)
       set({ isLoading: false })
     }
   },
 
-  generateInpaint: async (params: InpaintParams) => {
+  generateInpaint: async (params: InpaintParams, frameId?: string) => {
     const {
       prompt,
       negativePrompt,
@@ -331,6 +366,8 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       width,
       height,
       generationFrames,
+      removeGenerationFrame,
+      updateGenerationFrame,
     } = get()
 
     if (!prompt) {
@@ -339,6 +376,11 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
     }
 
     set({ isLoading: true })
+
+    // Determine dimensions based on frame or default
+    const frame = frameId ? generationFrames.find((f) => f.id === frameId) : null
+    const finalWidth = frame ? frame.width : width
+    const finalHeight = frame ? frame.height : height
 
     const apiParams = {
       init_images: [params.baseImage],
@@ -349,8 +391,8 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       seed,
       steps,
       cfg_scale: cfgScale,
-      width,
-      height,
+      width: finalWidth,
+      height: finalHeight,
       denoising_strength: params.denoisingStrength,
       mask_blur: params.maskBlur,
       inpainting_fill:
@@ -390,17 +432,23 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
         seed,
         steps,
         cfgScale,
-        width,
-        height,
+        width: finalWidth,
+        height: finalHeight,
         sampler,
         denoisingStrength: params.denoisingStrength,
         usedIn: new Set(),
       })
 
-      // Check if there's an active generation frame
-      const activeFrame = generationFrames.find((f) => f.isGenerating)
-      const x = activeFrame ? activeFrame.x : Math.random() * (window.innerWidth - 200)
-      const y = activeFrame ? activeFrame.y : Math.random() * (window.innerHeight - 200)
+      // Determine position based on frame or active generation frame
+      let x: number, y: number
+      if (frame) {
+        x = frame.x
+        y = frame.y
+      } else {
+        const activeFrame = generationFrames.find((f) => f.isGenerating)
+        x = activeFrame ? activeFrame.x : Math.random() * (window.innerWidth - 200)
+        y = activeFrame ? activeFrame.y : Math.random() * (window.innerHeight - 200)
+      }
 
       // Add image to canvas with object URL
       const newImage = {
@@ -408,14 +456,26 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
         src: storedImage.objectUrl,
         x,
         y,
-        width,
-        height,
+        width: finalWidth,
+        height: finalHeight,
         metadata: storedImage.metadata,
         blobId: imageId,
         isTemporary: false,
       }
 
       get().addImage(newImage)
+
+      // Mark frame as complete before removing
+      if (frameId) {
+        updateGenerationFrame?.(frameId, {
+          isGenerating: false,
+          progress: 100,
+        })
+        // Remove frame after short delay to show completion
+        setTimeout(() => {
+          removeGenerationFrame?.(frameId)
+        }, 500)
+      }
 
       // Update storage stats
       await get().updateStorageStats()
@@ -426,6 +486,15 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
     } catch (error) {
       console.error('Failed to generate inpaint:', error)
       alert('Failed to generate inpaint. Check console for details.')
+      
+      // Mark frame as error if it exists
+      if (frameId) {
+        updateGenerationFrame?.(frameId, {
+          isGenerating: false,
+          error: error.message || 'Generation failed',
+        })
+      }
+      
       // Don't force complete on error
       progressService.stopPolling(false)
       set({ isLoading: false })
