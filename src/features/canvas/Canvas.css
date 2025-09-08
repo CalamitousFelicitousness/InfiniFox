@@ -140,3 +140,40 @@
 .canvas-container.pan-mode.panning .konvajs-content {
   cursor: grabbing !important;
 }
+
+/* Space-to-pan mode indicator */
+.canvas-container.space-pan-mode {
+  cursor: grab !important;
+}
+
+.canvas-container.space-pan-mode .konvajs-content {
+  cursor: grab !important;
+}
+
+.canvas-container.space-pan-mode.panning {
+  cursor: grabbing !important;
+}
+
+.canvas-container.space-pan-mode.panning .konvajs-content {
+  cursor: grabbing !important;
+}
+
+/* Visual indicator for space-pan mode */
+.canvas-container.space-pan-mode::after {
+  content: 'SPACE PAN';
+  position: absolute;
+  bottom: var(--spacing-4);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-overlay);
+  padding: var(--spacing-1) var(--spacing-3);
+  background-color: var(--custom-glass-bg);
+  border: 1px solid var(--custom-glass-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  pointer-events: none;
+  opacity: 0.8;
+  backdrop-filter: blur(8px);
+}

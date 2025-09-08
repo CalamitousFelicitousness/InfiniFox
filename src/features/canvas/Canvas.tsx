@@ -103,17 +103,25 @@ export function Canvas() {
 
   // Add tool state - default to SELECT tool
   const [currentTool, setCurrentToolInternal] = useState<CanvasTool>(CanvasTool.SELECT)
+  const [previousTool, setPreviousTool] = useState<CanvasTool | null>(null)
+  const [isSpacePressed, setIsSpacePressed] = useState(false)
 
   // Handle tool changes with automatic drawing mode management
-  const setCurrentTool = (tool: CanvasTool) => {
-    setCurrentToolInternal(tool)
-    // Automatically enable/disable drawing mode based on tool
-    const isDrawingTool = tool === CanvasTool.BRUSH || tool === CanvasTool.ERASER
-    setDrawingMode(isDrawingTool)
-    if (isDrawingTool) {
-      setDrawingTool(tool === CanvasTool.ERASER ? 'eraser' : 'brush')
-    }
-  }
+  const setCurrentTool = useCallback(
+    (tool: CanvasTool, isTemporary = false) => {
+      // Don't allow tool changes while space is pressed (temporary pan mode)
+      if (isSpacePressed && !isTemporary) return
+
+      setCurrentToolInternal(tool)
+      // Automatically enable/disable drawing mode based on tool
+      const isDrawingTool = tool === CanvasTool.BRUSH || tool === CanvasTool.ERASER
+      setDrawingMode(isDrawingTool)
+      if (isDrawingTool) {
+        setDrawingTool(tool === CanvasTool.ERASER ? 'eraser' : 'brush')
+      }
+    },
+    [isSpacePressed, setDrawingMode, setDrawingTool]
+  )
 
   const [konvaImages, setKonvaImages] = useState<KonvaImageData[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -375,6 +383,62 @@ export function Canvas() {
       }
     },
   })
+
+  // Handle space-to-pan functionality
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check if user is typing in an input field
+      const target = e.target as HTMLElement
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT'
+      ) {
+        return
+      }
+
+      // Handle space key for temporary pan mode
+      if (e.code === 'Space' && !e.repeat && !isSpacePressed) {
+        e.preventDefault() // Prevent page scroll
+
+        // Don't activate pan mode if already in pan mode
+        if (currentTool !== CanvasTool.PAN) {
+          setIsSpacePressed(true)
+          setPreviousTool(currentTool)
+          setCurrentTool(CanvasTool.PAN, true) // true indicates temporary switch
+        }
+      }
+    }
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      // Handle space key release
+      if (e.code === 'Space') {
+        e.preventDefault() // Prevent page scroll
+
+        if (isSpacePressed && previousTool !== null) {
+          setIsSpacePressed(false)
+          setCurrentTool(previousTool, true) // Restore previous tool
+          setPreviousTool(null)
+        }
+      }
+    }
+
+    // Add event listeners
+    document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('keyup', handleKeyUp)
+
+    // Cleanup on unmount or when dependencies change
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('keyup', handleKeyUp)
+
+      // Reset space-to-pan state if component unmounts while space is pressed
+      if (isSpacePressed && previousTool !== null) {
+        setIsSpacePressed(false)
+        // Note: We can't call setCurrentTool here as it might cause issues during unmount
+      }
+    }
+  }, [currentTool, isSpacePressed, previousTool, setCurrentTool])
 
   // Load images as Konva-compatible format
   useEffect(() => {
@@ -918,7 +982,7 @@ export function Canvas() {
 
   return (
     <div
-      class={`canvas-container ${isDraggingFile ? 'dragging-file' : ''} ${canvasSelectionMode.active ? 'selection-mode' : ''} ${currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER ? 'drawing-mode' : ''} ${currentTool === CanvasTool.PAN ? 'pan-mode' : ''} ${isPanning ? 'panning' : ''}`}
+      class={`canvas-container ${isDraggingFile ? 'dragging-file' : ''} ${canvasSelectionMode.active ? 'selection-mode' : ''} ${currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER ? 'drawing-mode' : ''} ${currentTool === CanvasTool.PAN ? 'pan-mode' : ''} ${isPanning ? 'panning' : ''} ${isSpacePressed ? 'space-pan-mode' : ''}`}
       ref={containerRef}
     >
       {canvasSelectionMode.active && (
