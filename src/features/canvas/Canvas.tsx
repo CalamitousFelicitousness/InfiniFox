@@ -26,6 +26,7 @@ import { preventDefaultTouch } from '../../utils/pointerEvents'
 
 import { CanvasContextMenu } from './CanvasContextMenu'
 import { CanvasMinimap } from './CanvasMinimap'
+import { CanvasModeIndicator } from './CanvasModeIndicator'
 import { DraggableCanvasToolbar } from './DraggableCanvasToolbar'
 import { DraggableZoomControls } from './DraggableZoomControls'
 import { FloatingDrawingPanel } from './FloatingDrawingPanel'
@@ -105,6 +106,7 @@ export function Canvas() {
   const [currentTool, setCurrentToolInternal] = useState<CanvasTool>(CanvasTool.SELECT)
   const [previousTool, setPreviousTool] = useState<CanvasTool | null>(null)
   const [isSpacePressed, setIsSpacePressed] = useState(false)
+  const [isShiftPressed, setIsShiftPressed] = useState(false)
 
   // Handle tool changes with automatic drawing mode management
   const setCurrentTool = useCallback(
@@ -440,6 +442,36 @@ export function Canvas() {
     }
   }, [currentTool, isSpacePressed, previousTool, setCurrentTool])
 
+  // Track Shift key for horizontal scroll indicator
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.shiftKey && !isShiftPressed) {
+        setIsShiftPressed(true)
+      }
+    }
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (!e.shiftKey && isShiftPressed) {
+        setIsShiftPressed(false)
+      }
+    }
+
+    const handleBlur = () => {
+      // Reset Shift state when window loses focus
+      setIsShiftPressed(false)
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('keyup', handleKeyUp)
+    window.addEventListener('blur', handleBlur)
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('keyup', handleKeyUp)
+      window.removeEventListener('blur', handleBlur)
+    }
+  }, [isShiftPressed])
+
   // Load images as Konva-compatible format
   useEffect(() => {
     const imagePromises = images.map((imgData) => {
@@ -493,45 +525,69 @@ export function Canvas() {
     }
   }, [selectedId, currentTool])
 
-  const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
-    e.evt.preventDefault()
-    const stage = stageRef.current
-    if (!stage) return
+  const handleWheel = useCallback(
+    (e: Konva.KonvaEventObject<WheelEvent>) => {
+      e.evt.preventDefault()
 
-    const oldScale = scale
-    const pointer = stage.getPointerPosition()
-    if (!pointer) return
+      const stage = stageRef.current
+      if (!stage) return
 
-    // Get current position from the stage itself
-    const stagePos = stage.position()
+      // Handle Shift+wheel for horizontal scrolling
+      if (e.evt.shiftKey) {
+        const stagePos = stage.position()
+        const scrollSpeed = 50
+        const deltaX = e.evt.deltaY > 0 ? -scrollSpeed : scrollSpeed
 
-    const mousePointTo = {
-      x: (pointer.x - stagePos.x) / oldScale,
-      y: (pointer.y - stagePos.y) / oldScale,
-    }
+        const newPos = {
+          x: stagePos.x + deltaX,
+          y: stagePos.y,
+        }
 
-    const direction = e.evt.deltaY > 0 ? -1 : 1
-    const newScale = direction > 0 ? oldScale * 1.1 : oldScale / 1.1
-    const clampedScale = Math.max(0.05, Math.min(10, newScale)) // Allow more zoom out (0.05x) and zoom in (10x)
+        stage.position(newPos)
+        stage.batchDraw()
+        setPosition(newPos)
 
-    setScale(clampedScale)
+        debouncedUpdateViewport(stage.scaleX(), newPos)
+        return
+      }
 
-    // Directly update stage position and scale
-    const newPos = {
-      x: pointer.x - mousePointTo.x * clampedScale,
-      y: pointer.y - mousePointTo.y * clampedScale,
-    }
+      // Normal zoom - get current scale from stage, not state
+      const oldScale = stage.scaleX()
+      const pointer = stage.getPointerPosition()
+      if (!pointer) return
 
-    stage.scale({ x: clampedScale, y: clampedScale })
-    stage.position(newPos)
-    stage.batchDraw()
+      // Get current position from stage
+      const stagePos = stage.position()
 
-    // Update position state for reference
-    setPosition(newPos)
+      const mousePointTo = {
+        x: (pointer.x - stagePos.x) / oldScale,
+        y: (pointer.y - stagePos.y) / oldScale,
+      }
 
-    // Save viewport to persistent storage (debounced for wheel events)
-    debouncedUpdateViewport(clampedScale, newPos)
-  }
+      const direction = e.evt.deltaY > 0 ? -1 : 1
+      const newScale = direction > 0 ? oldScale * 1.1 : oldScale / 1.1
+      const clampedScale = Math.max(0.05, Math.min(10, newScale))
+
+      // Calculate new position
+      const newPos = {
+        x: pointer.x - mousePointTo.x * clampedScale,
+        y: pointer.y - mousePointTo.y * clampedScale,
+      }
+
+      // Update stage directly
+      stage.scale({ x: clampedScale, y: clampedScale })
+      stage.position(newPos)
+      stage.batchDraw()
+
+      // Update state
+      setScale(clampedScale)
+      setPosition(newPos)
+
+      // Save viewport to persistent storage (debounced)
+      debouncedUpdateViewport(clampedScale, newPos)
+    },
+    [debouncedUpdateViewport]
+  )
 
   const handleContextMenu = (
     e: Konva.KonvaEventObject<PointerEvent | MouseEvent>,
@@ -982,7 +1038,7 @@ export function Canvas() {
 
   return (
     <div
-      class={`canvas-container ${isDraggingFile ? 'dragging-file' : ''} ${canvasSelectionMode.active ? 'selection-mode' : ''} ${currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER ? 'drawing-mode' : ''} ${currentTool === CanvasTool.PAN ? 'pan-mode' : ''} ${isPanning ? 'panning' : ''} ${isSpacePressed ? 'space-pan-mode' : ''}`}
+      class={`canvas-container ${isDraggingFile ? 'dragging-file' : ''} ${canvasSelectionMode.active ? 'selection-mode' : ''} ${currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER ? 'drawing-mode' : ''} ${currentTool === CanvasTool.PAN ? 'pan-mode' : ''} ${isPanning ? 'panning' : ''}`}
       ref={containerRef}
     >
       {canvasSelectionMode.active && (
@@ -996,6 +1052,12 @@ export function Canvas() {
           <div class="selection-mode-hint">Click on any image to select it</div>
         </div>
       )}
+
+      {/* Canvas Mode Indicators */}
+      <CanvasModeIndicator
+        mode={isSpacePressed ? 'space-pan' : isShiftPressed ? 'shift-scroll' : null}
+        position="bottom-center"
+      />
 
       {/* Draggable Canvas Toolbar */}
       <DraggableCanvasToolbar currentTool={currentTool} onToolChange={setCurrentTool} />

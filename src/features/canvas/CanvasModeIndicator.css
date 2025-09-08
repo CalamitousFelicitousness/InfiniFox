@@ -1,0 +1,73 @@
+/* Canvas Mode Indicator Component Styles */
+
+.canvas-mode-indicator {
+  /* Layout */
+  position: absolute;
+  z-index: var(--z-overlay);
+  
+  /* Spacing */
+  padding: var(--spacing-1) var(--spacing-3);
+  
+  /* Visual */
+  border: 1px solid var(--custom-glass-border);
+  border-radius: var(--radius-sm);
+  backdrop-filter: blur(8px);
+  
+  /* Typography */
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  
+  /* Transitions */
+  transition: var(--transition-opacity);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Visibility state */
+.canvas-mode-indicator.visible {
+  opacity: 0.8;
+}
+
+/* Position variants */
+.canvas-mode-indicator.bottom-center {
+  bottom: var(--spacing-4);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.canvas-mode-indicator.bottom-right {
+  bottom: var(--spacing-4);
+  right: var(--spacing-4);
+}
+
+.canvas-mode-indicator.bottom-left {
+  bottom: var(--spacing-4);
+  left: var(--spacing-4);
+}
+
+/* Text content */
+.canvas-mode-indicator__text {
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+/* Pulse animation for all mode indicators */
+.canvas-mode-indicator.visible {
+  animation: canvas-indicator-pulse 2s infinite;
+}
+
+@keyframes canvas-indicator-pulse {
+  0%, 100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .canvas-mode-indicator.visible {
+    animation: none;
+  }
+}
