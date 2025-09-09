@@ -1,6 +1,3 @@
-// Apply React 18 patches for react-konva compatibility
-import './utils/reactPatches'
-
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 

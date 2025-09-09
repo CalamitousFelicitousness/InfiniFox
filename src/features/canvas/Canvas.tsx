@@ -1,5 +1,5 @@
 import Konva from 'konva'
-import React, { useEffect, useState, useRef, useCallback } from 'react'
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import {
   Stage,
   Layer,
@@ -9,7 +9,7 @@ import {
   Circle,
   Rect,
   Text,
-} from '../../utils/konvaCompat'
+} from 'react-konva'
 
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
 import { useKonvaTokens } from '../../hooks/useKonvaTokens'
@@ -107,6 +107,7 @@ export function Canvas() {
   const [previousTool, setPreviousTool] = useState<CanvasTool | null>(null)
   const [isSpacePressed, setIsSpacePressed] = useState(false)
   const [isShiftPressed, setIsShiftPressed] = useState(false)
+  const [isCtrlPressed, setIsCtrlPressed] = useState(false)
 
   // Handle tool changes with automatic drawing mode management
   const setCurrentTool = useCallback(
@@ -457,11 +458,14 @@ export function Canvas() {
     }
   }, [currentTool, isSpacePressed, previousTool, setCurrentTool])
 
-  // Track Shift key for horizontal scroll indicator
+  // Track Shift and Ctrl keys for scroll indicators
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.shiftKey && !isShiftPressed) {
         setIsShiftPressed(true)
+      }
+      if (e.ctrlKey && !isCtrlPressed) {
+        setIsCtrlPressed(true)
       }
     }
 
@@ -469,11 +473,15 @@ export function Canvas() {
       if (!e.shiftKey && isShiftPressed) {
         setIsShiftPressed(false)
       }
+      if (!e.ctrlKey && isCtrlPressed) {
+        setIsCtrlPressed(false)
+      }
     }
 
     const handleBlur = () => {
-      // Reset Shift state when window loses focus
+      // Reset Shift and Ctrl state when window loses focus
       setIsShiftPressed(false)
+      setIsCtrlPressed(false)
     }
 
     document.addEventListener('keydown', handleKeyDown)
@@ -485,7 +493,7 @@ export function Canvas() {
       document.removeEventListener('keyup', handleKeyUp)
       window.removeEventListener('blur', handleBlur)
     }
-  }, [isShiftPressed])
+  }, [isShiftPressed, isCtrlPressed])
 
   // Load images as Konva-compatible format
   useEffect(() => {
@@ -556,6 +564,25 @@ export function Canvas() {
         const newPos = {
           x: stagePos.x + deltaX,
           y: stagePos.y,
+        }
+
+        stage.position(newPos)
+        stage.batchDraw()
+        setPosition(newPos)
+
+        debouncedUpdateViewport(stage.scaleX(), newPos)
+        return
+      }
+
+      // Handle Ctrl+wheel for vertical scrolling
+      if (e.evt.ctrlKey) {
+        const stagePos = stage.position()
+        const scrollSpeed = 50
+        const deltaY = e.evt.deltaY > 0 ? -scrollSpeed : scrollSpeed
+
+        const newPos = {
+          x: stagePos.x,
+          y: stagePos.y + deltaY,
         }
 
         stage.position(newPos)
@@ -1070,6 +1097,19 @@ export function Canvas() {
     return brushSize / 2
   }
 
+  // Memoize SizeIndicator elements to prevent infinite re-renders
+  const sizeIndicatorElements = useMemo(
+    () =>
+      konvaImages.map((img) => ({
+        id: img.id,
+        x: img.x,
+        y: img.y,
+        type: 'image' as const,
+        image: img.image,
+      })),
+    [konvaImages]
+  )
+
   return (
     <div
       className={`canvas-container ${isDraggingFile ? 'dragging-file' : ''} ${canvasSelectionMode.active ? 'selection-mode' : ''} ${currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER ? 'drawing-mode' : ''} ${currentTool === CanvasTool.PAN ? 'pan-mode' : ''} ${isPanning ? 'panning' : ''}`}
@@ -1089,7 +1129,15 @@ export function Canvas() {
 
       {/* Canvas Mode Indicators */}
       <CanvasModeIndicator
-        mode={isSpacePressed ? 'space-pan' : isShiftPressed ? 'shift-scroll' : null}
+        mode={
+          isSpacePressed
+            ? 'space-pan'
+            : isShiftPressed
+              ? 'shift-scroll'
+              : isCtrlPressed
+                ? 'ctrl-scroll'
+                : null
+        }
         position="bottom-center"
       />
 
@@ -1596,15 +1644,7 @@ export function Canvas() {
       {/* Size Indicator for images only (not frames) */}
       <SizeIndicator
         selectedId={selectedId}
-        elements={[
-          ...konvaImages.map((img) => ({
-            id: img.id,
-            x: img.x,
-            y: img.y,
-            type: 'image' as const,
-            image: img.image,
-          })),
-        ]}
+        elements={sizeIndicatorElements}
         scale={scale}
         position={position}
       />

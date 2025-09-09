@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import './CanvasModeIndicator.css'
 
 interface CanvasModeIndicatorProps {
-  mode: 'space-pan' | 'shift-scroll' | null
+  mode: 'space-pan' | 'shift-scroll' | 'ctrl-scroll' | null
   position?: 'bottom-center' | 'bottom-right' | 'bottom-left'
 }
 
@@ -29,6 +29,8 @@ export function CanvasModeIndicator({
         return 'SPACE PAN'
       case 'shift-scroll':
         return 'SHIFT+SCROLL ↔'
+      case 'ctrl-scroll':
+        return 'CTRL+SCROLL ↕'
       default:
         return ''
     }
