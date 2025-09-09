@@ -3,8 +3,8 @@
  * Comprehensive test of all theme components and tokens
  */
 
-import { Brush, Pencil, Search, Undo2 } from 'lucide-preact'
-import { useState } from 'preact/hooks'
+import { Brush, Pencil, Search, Undo2 } from 'lucide-react'
+import { useState } from 'react'
 
 import { useTheme } from '../themes/ThemeProvider'
 

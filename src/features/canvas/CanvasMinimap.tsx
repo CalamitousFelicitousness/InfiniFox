@@ -1,5 +1,5 @@
 import type Konva from 'konva'
-import { useEffect, useRef, useState, useCallback, useMemo } from 'preact/hooks'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import './CanvasMinimap.css'
 
 interface MinimapProps {
@@ -444,7 +444,7 @@ export function CanvasMinimap({
   return (
     <div
       ref={panelRef}
-      class={`canvas-minimap ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''} ${isMinimized ? 'minimized' : ''}`}
+      className={`canvas-minimap ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''} ${isMinimized ? 'minimized' : ''}`}
       style={{
         left: `${minimapPos.x}px`,
         top: `${minimapPos.y}px`,
@@ -453,13 +453,13 @@ export function CanvasMinimap({
       }}
       onPointerDown={handlePointerDown}
     >
-      <div class="minimap-header">
-        <div class="minimap-grip" title="Drag to move">
-          <span class="grip-icon">⋮⋮</span>
+      <div className="minimap-header">
+        <div className="minimap-grip" title="Drag to move">
+          <span className="grip-icon">⋮⋮</span>
         </div>
-        <span class="minimap-title">Minimap</span>
+        <span className="minimap-title">Minimap</span>
         <button
-          class="minimap-minimize-btn"
+          className="minimap-minimize-btn"
           onClick={() => setIsMinimized(!isMinimized)}
           title={isMinimized ? 'Expand' : 'Minimize'}
         >
@@ -471,13 +471,13 @@ export function CanvasMinimap({
         <>
           <canvas
             ref={canvasRef}
-            class="minimap-canvas"
+            className="minimap-canvas"
             width={minimapSize.width - 4}
             height={minimapSize.height - 4}
             onClick={handleMinimapClick}
           />
-          <div class="minimap-resize-handle" title="Drag to resize">
-            <span class="resize-icon">◢</span>
+          <div className="minimap-resize-handle" title="Drag to resize">
+            <span className="resize-icon">◢</span>
           </div>
         </>
       )}

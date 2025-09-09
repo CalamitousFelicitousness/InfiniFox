@@ -6,7 +6,7 @@ import type { InpaintParams, SliceCreator } from '../types'
 
 export interface GenerationActionsSlice {
   // Actions
-  generateTxt2Img: () => Promise<void>
+  generateTxt2Img: (frameId?: string) => Promise<void>
   generateInFrame: (frameId: string) => Promise<void>
   generateImg2Img: (baseImage: string, denoisingStrength: number, frameId?: string) => Promise<void>
   generateInpaint: (params: InpaintParams, frameId?: string) => Promise<void>
@@ -15,7 +15,7 @@ export interface GenerationActionsSlice {
 }
 
 export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> = (set, get) => ({
-  generateTxt2Img: async () => {
+  generateTxt2Img: async (frameId?: string) => {
     const {
       prompt,
       negativePrompt,
@@ -26,6 +26,9 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       width,
       height,
       generationFrames,
+      addGenerationFrame,
+      updateGenerationFrame,
+      removeGenerationFrame,
     } = get()
 
     if (!prompt) {
@@ -54,6 +57,15 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       return
     }
 
+    // Create a frame if one wasn't provided
+    let actualFrameId = frameId
+    if (!actualFrameId) {
+      const x = Math.random() * (window.innerWidth - 400)
+      const y = Math.random() * (window.innerHeight - 200)
+      actualFrameId = addGenerationFrame(x, y, width, height, false)
+    }
+    updateGenerationFrame(actualFrameId, { isGenerating: true })
+
     try {
       // Start progress monitoring before making the request
       progressService.startPolling()
@@ -78,17 +90,17 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
         usedIn: new Set(),
       })
 
-      // Check for active generation frame
-      const activeFrame = generationFrames.find((f) => f.isGenerating)
-      const x = activeFrame ? activeFrame.x : Math.random() * (window.innerWidth - 200)
-      const y = activeFrame ? activeFrame.y : Math.random() * (window.innerHeight - 200)
+      // Use the frame position
+      const frame = generationFrames.find((f) => f.id === actualFrameId)
+      const frameX = frame ? frame.x : Math.random() * (window.innerWidth - 400)
+      const frameY = frame ? frame.y : Math.random() * (window.innerHeight - 200)
 
       // Add image to canvas with object URL instead of base64
       const newImage = {
         id: imageId,
         src: storedImage.objectUrl, // Use object URL instead of base64
-        x,
-        y,
+        x: frameX,
+        y: frameY,
         width,
         height,
         metadata: storedImage.metadata,
@@ -97,6 +109,9 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       }
 
       get().addImage(newImage)
+      
+      // Remove the generation frame
+      removeGenerationFrame(actualFrameId)
 
       // Update storage stats
       await get().updateStorageStats()
@@ -106,6 +121,17 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
     } catch (error) {
       console.error('Failed to generate image:', error)
       alert('Failed to generate image. Check console for details.')
+      
+      // Mark frame as error
+      updateGenerationFrame(actualFrameId, {
+        isGenerating: false,
+        error: error.message || 'Generation failed',
+      })
+      // Remove frame after delay
+      setTimeout(() => {
+        removeGenerationFrame(actualFrameId)
+      }, 3000)
+      
       // Don't force complete on error
       progressService.stopPolling(false)
     } finally {

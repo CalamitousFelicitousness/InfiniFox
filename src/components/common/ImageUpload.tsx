@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks'
+import { useState } from 'react'
 
 import './ImageUpload.css'
 
@@ -73,9 +73,9 @@ export function ImageUpload({ onImageSelect, currentImage, disabled = false }: I
   }
 
   return (
-    <div class="image-upload">
+    <div className="image-upload">
       <div
-        class={`upload-area ${isDragging ? 'dragging' : ''}`}
+        className={`upload-area ${isDragging ? 'dragging' : ''}`}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -96,17 +96,17 @@ export function ImageUpload({ onImageSelect, currentImage, disabled = false }: I
           onInput={handleFileInput}
           disabled={disabled}
         />
-        <div class="upload-prompt">
+        <div className="upload-prompt">
           Drop an image here or <span>click to browse</span>
         </div>
       </div>
 
       {preview && (
-        <div class="image-preview">
+        <div className="image-preview">
           <img src={preview} alt="Preview" />
-          <div class="image-info">
+          <div className="image-info">
             <span>{dimensions ? `${dimensions.width} × ${dimensions.height}` : 'Loading...'}</span>
-            <button class="clear-image-btn" onClick={clearImage} disabled={disabled}>
+            <button className="clear-image-btn" onClick={clearImage} disabled={disabled}>
               Clear
             </button>
           </div>

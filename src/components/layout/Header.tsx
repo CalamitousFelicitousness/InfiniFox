@@ -1,11 +1,11 @@
 import { X, Minimize2, Maximize2, ChevronDown, ChevronUp } from 'lucide-react'
-import { ComponentChildren } from 'preact'
+import { ReactNode } from 'react'
 
 interface HeaderProps {
-  title: string | ComponentChildren
+  title: string | ReactNode
   subtitle?: string
   className?: string
-  actions?: ComponentChildren
+  actions?: ReactNode
   onClose?: () => void
   onMinimize?: () => void
   onMaximize?: () => void
@@ -31,11 +31,11 @@ export function Header({
     .join(' ')
 
   return (
-    <header class={headerClass}>
-      <div class="header-content">
+    <header className={headerClass}>
+      <div className="header-content">
         {onCollapse && (
           <button
-            class="header-action header-collapse"
+            className="header-action header-collapse"
             onClick={onCollapse}
             aria-label={isCollapsed ? 'Expand' : 'Collapse'}
             aria-expanded={!isCollapsed}
@@ -44,17 +44,17 @@ export function Header({
           </button>
         )}
 
-        <div class="header-title-group">
-          <h2 class="header-title">{title}</h2>
-          {subtitle && <span class="header-subtitle">{subtitle}</span>}
+        <div className="header-title-group">
+          <h2 className="header-title">{title}</h2>
+          {subtitle && <span className="header-subtitle">{subtitle}</span>}
         </div>
 
-        {actions && <div class="header-actions">{actions}</div>}
+        {actions && <div className="header-actions">{actions}</div>}
 
-        <div class="header-controls">
+        <div className="header-controls">
           {onMinimize && (
             <button
-              class="header-action header-minimize"
+              className="header-action header-minimize"
               onClick={onMinimize}
               aria-label="Minimize"
             >
@@ -64,7 +64,7 @@ export function Header({
 
           {onMaximize && (
             <button
-              class="header-action header-maximize"
+              className="header-action header-maximize"
               onClick={onMaximize}
               aria-label="Maximize"
             >
@@ -73,7 +73,7 @@ export function Header({
           )}
 
           {onClose && (
-            <button class="header-action header-close" onClick={onClose} aria-label="Close">
+            <button className="header-action header-close" onClick={onClose} aria-label="Close">
               <X size={16} />
             </button>
           )}

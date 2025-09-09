@@ -1,5 +1,5 @@
-import { Check } from 'lucide-preact'
-import { useEffect, useRef } from 'preact/hooks'
+import { Check } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 
 import { Icon } from '../../components/common/Icon'
 import { useStore } from '../../store/store'
@@ -102,7 +102,7 @@ export function CanvasContextMenu({
     return (
       <div
         ref={menuRef}
-        class="menu canvas-context-menu"
+        className="menu canvas-context-menu"
         style={{
           position: 'absolute',
           left: `${x}px`,
@@ -112,7 +112,7 @@ export function CanvasContextMenu({
         {currentFrame.isPlaceholder && (
           <>
             <button
-              class="menu-item"
+              className="menu-item"
               onPointerDown={(e) => {
                 e.preventDefault()
                 generateInFrame(frameId)
@@ -122,7 +122,7 @@ export function CanvasContextMenu({
               Generate in Frame
             </button>
             <button
-              class="menu-item"
+              className="menu-item"
               onPointerDown={(e) => {
                 e.preventDefault()
                 lockFrame(frameId, !currentFrame.locked)
@@ -131,11 +131,11 @@ export function CanvasContextMenu({
             >
               {currentFrame.locked ? 'Unlock' : 'Lock'} Frame
             </button>
-            <hr class="menu-divider" />
+            <hr className="menu-divider" />
           </>
         )}
         <button
-          class="menu-item menu-item-danger"
+          className="menu-item menu-item-danger"
           onPointerDown={(e) => {
             e.preventDefault()
             removeGenerationFrame(frameId)
@@ -151,7 +151,7 @@ export function CanvasContextMenu({
   return (
     <div
       ref={menuRef}
-      class="menu canvas-context-menu"
+      className="menu canvas-context-menu"
       style={{
         position: 'absolute',
         left: `${x}px`,
@@ -162,7 +162,7 @@ export function CanvasContextMenu({
         // Context menu for empty canvas space
         <>
           <button
-            class="menu-item"
+            className="menu-item"
             onPointerDown={(e) => {
               e.preventDefault()
               onUploadImage()
@@ -173,9 +173,9 @@ export function CanvasContextMenu({
           </button>
           {activeImageRoles.length > 0 && (
             <>
-              <hr class="menu-divider" />
+              <hr className="menu-divider" />
               <button
-                class="menu-item"
+                className="menu-item"
                 onPointerDown={(e) => {
                   e.preventDefault()
                   clearImageRoles()
@@ -186,9 +186,9 @@ export function CanvasContextMenu({
               </button>
             </>
           )}
-          <hr class="menu-divider" />
+          <hr className="menu-divider" />
           <button
-            class="menu-item"
+            className="menu-item"
             onPointerDown={(e) => {
               e.preventDefault()
               onPlaceEmptyFrame()
@@ -197,7 +197,7 @@ export function CanvasContextMenu({
             Place Empty Frame
           </button>
           <button
-            class="menu-item"
+            className="menu-item"
             onPointerDown={(e) => {
               e.preventDefault()
               onGenerateHere()
@@ -220,10 +220,10 @@ export function CanvasContextMenu({
           </button>
           {/* Show info about active image roles */}
           {activeImageRoles.length > 0 && (
-            <div class="canvas-context-menu__role-info">
+            <div className="canvas-context-menu__role-info">
               {activeImageRoles.map((role) => (
-                <div key={role.imageId} class="canvas-context-menu__role-item">
-                  <span class="canvas-context-menu__role-text">
+                <div key={role.imageId} className="canvas-context-menu__role-item">
+                  <span className="canvas-context-menu__role-text">
                     {role.role === 'img2img_init' && 'Img2Img'}
                     {role.role === 'inpaint_image' && 'Inpaint'}
                     {role.role === 'controlnet' && 'ControlNet'}: Image {role.imageId.slice(-6)}
@@ -237,7 +237,7 @@ export function CanvasContextMenu({
         // Context menu for image
         <>
           <button
-            class="menu-item"
+            className="menu-item"
             onPointerDown={(e) => {
               e.preventDefault()
               handleSendToImg2Img()
@@ -249,7 +249,7 @@ export function CanvasContextMenu({
             )}
           </button>
           <button
-            class="menu-item"
+            className="menu-item"
             onPointerDown={(e) => {
               e.preventDefault()
               handleSendToInpaint()
@@ -260,11 +260,11 @@ export function CanvasContextMenu({
               <Icon icon={Check} size="sm" className="menu-item__check-inline" />
             )}
           </button>
-          <hr class="menu-divider" />
+          <hr className="menu-divider" />
           {currentRole && (
             <>
               <button
-                class="menu-item"
+                className="menu-item"
                 onPointerDown={(e) => {
                   e.preventDefault()
                   setImageRole(imageId, null)
@@ -273,11 +273,11 @@ export function CanvasContextMenu({
               >
                 Clear Role{roleIndicator}
               </button>
-              <hr class="menu-divider" />
+              <hr className="menu-divider" />
             </>
           )}
           <button
-            class="menu-item"
+            className="menu-item"
             onPointerDown={(e) => {
               e.preventDefault()
               onDuplicate()
@@ -287,7 +287,7 @@ export function CanvasContextMenu({
             Duplicate
           </button>
           <button
-            class="menu-item"
+            className="menu-item"
             onPointerDown={(e) => {
               e.preventDefault()
               onDownload()
@@ -296,9 +296,9 @@ export function CanvasContextMenu({
           >
             Download
           </button>
-          <hr class="menu-divider" />
+          <hr className="menu-divider" />
           <button
-            class="menu-item menu-item-danger"
+            className="menu-item menu-item-danger"
             onPointerDown={(e) => {
               e.preventDefault()
               onDelete()

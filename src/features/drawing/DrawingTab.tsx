@@ -1,4 +1,4 @@
-import { NotebookPen } from 'lucide-preact'
+import { NotebookPen } from 'lucide-react'
 
 import { Icon } from '../../components/common/Icon'
 import { useStore } from '../../store/store'
@@ -12,17 +12,17 @@ export function DrawingTab() {
   const { drawingStrokes } = useStore()
 
   return (
-    <div class="drawing-tab">
-      <div class="drawing-info">
+    <div className="drawing-tab">
+      <div className="drawing-info">
         <h3>
           <Icon icon={NotebookPen} size="lg" /> Drawing Tools
         </h3>
-        <p class="info-text">
+        <p className="info-text">
           Drawing tools are now integrated directly into the canvas. Select the Brush or Eraser tool
           from the canvas toolbar to start drawing.
         </p>
 
-        <div class="drawing-tips">
+        <div className="drawing-tips">
           <h4>Quick Tips:</h4>
           <ul>
             <li>
@@ -40,7 +40,7 @@ export function DrawingTab() {
           </ul>
         </div>
 
-        <div class="drawing-stats-summary">
+        <div className="drawing-stats-summary">
           <p>Total strokes: {drawingStrokes.length}</p>
         </div>
       </div>

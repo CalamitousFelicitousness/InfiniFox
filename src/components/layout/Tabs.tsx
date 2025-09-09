@@ -1,4 +1,4 @@
-import { useRef } from 'preact/hooks'
+import { useRef } from 'react'
 
 interface Tab {
   id: string
@@ -45,11 +45,11 @@ export function Tabs({ tabs, activeTab, setActiveTab }: TabsProps) {
   }
 
   return (
-    <div class="tabs" ref={tabsRef} role="tablist">
+    <div className="tabs" ref={tabsRef} role="tablist">
       {tabs.map((tab, index) => (
         <button
           key={tab.id}
-          class={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
+          className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
           onPointerDown={(e) => {
             e.preventDefault()
             setActiveTab(tab.id)

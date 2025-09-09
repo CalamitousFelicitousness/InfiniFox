@@ -66,21 +66,6 @@ ${generateAllCSSVariables()}
 `
 }
 
-// Create a function to write the CSS file (for build process)
-export async function writeTokenCSS(
-  path = './src/themes/styles/token-variables.css'
-): Promise<void> {
-  if (typeof window === 'undefined') {
-    // Node.js environment
-    const fs = await import('fs').then((m) => m.promises)
-    const cssContent = generateTokenCSS()
-    await fs.writeFile(path, cssContent, 'utf-8')
-    console.log(`✓ Token CSS variables written to ${path}`)
-  } else {
-    console.warn('writeTokenCSS can only be run in Node.js environment')
-  }
-}
-
 // Theme utilities
 export const themeUtils = {
   /**

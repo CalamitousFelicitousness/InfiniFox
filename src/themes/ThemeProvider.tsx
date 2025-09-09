@@ -3,9 +3,9 @@
  * React context provider for advanced theme management
  */
 
-import { createContext } from 'preact'
-import type { VNode } from 'preact'
-import { useContext, useEffect, useState, useCallback, useRef } from 'preact/hooks'
+import { createContext } from 'react'
+import type { ReactNode } from 'react'
+import { useContext, useEffect, useState, useCallback, useRef } from 'react'
 
 import darkTheme from './themes/dark'
 import lightTheme from './themes/light'
@@ -37,7 +37,7 @@ const defaultConfig: ThemeConfig = {
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 
 interface ThemeProviderProps {
-  children: VNode | VNode[] | string | number | null
+  children: ReactNode
   config?: Partial<ThemeConfig>
   initialTheme?: string
   onThemeChange?: (theme: Theme) => void

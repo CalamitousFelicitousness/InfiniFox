@@ -13,8 +13,8 @@ import {
   Ban,
   Loader2,
   HelpCircle,
-} from 'lucide-preact'
-import { useRef, useState } from 'preact/hooks'
+} from 'lucide-react'
+import { useRef, useState } from 'react'
 
 import type { QueueItem } from '../../store/queueStore'
 import { useQueueStore } from '../../store/queueStore'
@@ -42,17 +42,17 @@ export function QueuePanel() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Clock class="icon-base" />
+        return <Clock className="icon-base" />
       case 'processing':
-        return <Loader2 class="icon-base animate-spin" />
+        return <Loader2 className="icon-base animate-spin" />
       case 'completed':
-        return <CheckCircle class="icon-base" />
+        return <CheckCircle className="icon-base" />
       case 'failed':
-        return <XCircle class="icon-base" />
+        return <XCircle className="icon-base" />
       case 'cancelled':
-        return <Ban class="icon-base" />
+        return <Ban className="icon-base" />
       default:
-        return <HelpCircle class="icon-base" />
+        return <HelpCircle className="icon-base" />
     }
   }
 
@@ -68,19 +68,19 @@ export function QueuePanel() {
   }
 
   return (
-    <div class={`panel queue-panel ${isExpanded ? '' : 'collapsed'}`} ref={panelRef}>
-      <div class="panel-header">
-        <h3 class="panel-title">Queue ({stats.total})</h3>
-        <div class="panel-actions">
+    <div className={`panel queue-panel ${isExpanded ? '' : 'collapsed'}`} ref={panelRef}>
+      <div className="panel-header">
+        <h3 className="panel-title">Queue ({stats.total})</h3>
+        <div className="panel-actions">
           {isProcessing ? (
             <button
               onPointerDown={(e) => {
                 e.preventDefault()
                 stopProcessing()
               }}
-              class="btn btn-sm btn-secondary"
+              className="btn btn-sm btn-secondary"
             >
-              <Pause class="icon-sm" />
+              <Pause className="icon-sm" />
               <span>Pause</span>
             </button>
           ) : (
@@ -90,9 +90,9 @@ export function QueuePanel() {
                 startProcessing()
               }}
               disabled={stats.pending === 0}
-              class="btn btn-sm btn-success"
+              className="btn btn-sm btn-success"
             >
-              <Play class="icon-sm" />
+              <Play className="icon-sm" />
               <span>Start</span>
             </button>
           )}
@@ -104,83 +104,83 @@ export function QueuePanel() {
               }
             }}
             disabled={queue.length === 0}
-            class="btn btn-sm btn-ghost"
+            className="btn btn-sm btn-ghost"
           >
-            <Trash2 class="icon-sm" />
+            <Trash2 className="icon-sm" />
           </button>
           <button
-            class="settings-toggle"
+            className="settings-toggle"
             onPointerDown={(e) => {
               e.preventDefault()
               setIsExpanded(!isExpanded)
             }}
             aria-label={isExpanded ? 'Collapse' : 'Expand'}
           >
-            <ChevronRight class="icon-base" />
+            <ChevronRight className="icon-base" />
           </button>
         </div>
       </div>
 
-      <div class={`panel-content ${!isExpanded ? 'collapsed' : ''}`}>
+      <div className={`panel-content ${!isExpanded ? 'collapsed' : ''}`}>
         {isExpanded && (
           <>
-            <div class="queue-stats">
-              <span class="queue-stat pending">
-                <Clock class="icon-sm" />
+            <div className="queue-stats">
+              <span className="queue-stat pending">
+                <Clock className="icon-sm" />
                 <span>{stats.pending}</span>
               </span>
-              <span class="queue-stat processing">
-                <Loader2 class="icon-sm" />
+              <span className="queue-stat processing">
+                <Loader2 className="icon-sm" />
                 <span>{stats.processing}</span>
               </span>
-              <span class="queue-stat completed">
-                <CheckCircle class="icon-sm" />
+              <span className="queue-stat completed">
+                <CheckCircle className="icon-sm" />
                 <span>{stats.completed}</span>
               </span>
-              <span class="queue-stat failed">
-                <XCircle class="icon-sm" />
+              <span className="queue-stat failed">
+                <XCircle className="icon-sm" />
                 <span>{stats.failed}</span>
               </span>
             </div>
 
-            <div class="queue-list" ref={listRef}>
+            <div className="queue-list" ref={listRef}>
               {queue.length === 0 ? (
-                <div class="queue-empty">Queue is empty</div>
+                <div className="queue-empty">Queue is empty</div>
               ) : (
                 queue.map((item, index) => (
                   <div
                     key={item.id}
-                    class={`queue-item ${item.status} ${
+                    className={`queue-item ${item.status} ${
                       currentItem?.id === item.id ? 'active' : ''
                     }`}
                   >
-                    <div class="queue-item-header">
-                      <span class={`queue-item-status status-${item.status}`}>
+                    <div className="queue-item-header">
+                      <span className={`queue-item-status status-${item.status}`}>
                         {getStatusIcon(item.status)}
                       </span>
-                      <span class="queue-item-prompt">{getItemDescription(item)}</span>
+                      <span className="queue-item-prompt">{getItemDescription(item)}</span>
                     </div>
 
-                    <div class="queue-item-params">
-                      <span class="queue-item-time">{formatTime(item.createdAt)}</span>
+                    <div className="queue-item-params">
+                      <span className="queue-item-time">{formatTime(item.createdAt)}</span>
                       {item.retryCount > 0 && (
-                        <span class="queue-item-retry">
+                        <span className="queue-item-retry">
                           Retry {item.retryCount}/{item.maxRetries}
                         </span>
                       )}
                     </div>
 
                     {item.progress !== undefined && item.status === 'processing' && (
-                      <div class="queue-progress">
-                        <div class="queue-progress-bar" style={`width: ${item.progress}%`} />
+                      <div className="queue-progress">
+                        <div className="queue-progress-bar" style={`width: ${item.progress}%`} />
                       </div>
                     )}
 
-                    <div class="queue-item-actions">
+                    <div className="queue-item-actions">
                       {item.status === 'pending' && (
                         <>
                           <button
-                            class="btn btn-xs btn-ghost"
+                            className="btn btn-xs btn-ghost"
                             onPointerDown={(e) => {
                               e.preventDefault()
                               e.stopPropagation()
@@ -189,10 +189,10 @@ export function QueuePanel() {
                             disabled={index === 0}
                             title="Move up"
                           >
-                            <ChevronUp class="icon-sm" />
+                            <ChevronUp className="icon-sm" />
                           </button>
                           <button
-                            class="btn btn-xs btn-ghost"
+                            className="btn btn-xs btn-ghost"
                             onPointerDown={(e) => {
                               e.preventDefault()
                               e.stopPropagation()
@@ -201,56 +201,56 @@ export function QueuePanel() {
                             disabled={index === queue.length - 1}
                             title="Move down"
                           >
-                            <ChevronDown class="icon-sm" />
+                            <ChevronDown className="icon-sm" />
                           </button>
                         </>
                       )}
 
                       {item.status === 'failed' && (
                         <button
-                          class="btn btn-xs btn-ghost"
+                          className="btn btn-xs btn-ghost"
                           onPointerDown={(e) => {
                             e.preventDefault()
                             retryItem(item.id)
                           }}
                           title="Retry"
                         >
-                          <RefreshCw class="icon-sm" />
+                          <RefreshCw className="icon-sm" />
                         </button>
                       )}
 
                       {(item.status === 'pending' || item.status === 'processing') && (
                         <button
-                          class="btn btn-xs btn-ghost"
+                          className="btn btn-xs btn-ghost"
                           onPointerDown={(e) => {
                             e.preventDefault()
                             cancelItem(item.id)
                           }}
                           title="Cancel"
                         >
-                          <X class="icon-sm" />
+                          <X className="icon-sm" />
                         </button>
                       )}
 
                       <button
-                        class="btn btn-xs btn-ghost"
+                        className="btn btn-xs btn-ghost"
                         onPointerDown={(e) => {
                           e.preventDefault()
                           removeFromQueue(item.id)
                         }}
                         title="Remove"
                       >
-                        <Trash2 class="icon-sm" />
+                        <Trash2 className="icon-sm" />
                       </button>
                     </div>
 
                     {item.result && (
-                      <div class="queue-item-result">
+                      <div className="queue-item-result">
                         <img src={`data:image/png;base64,${item.result}`} alt="Result" />
                       </div>
                     )}
 
-                    {item.error && <div class="queue-item-error">Error: {item.error}</div>}
+                    {item.error && <div className="queue-item-error">Error: {item.error}</div>}
                   </div>
                 ))
               )}

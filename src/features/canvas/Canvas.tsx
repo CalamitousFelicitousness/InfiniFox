@@ -1,5 +1,5 @@
 import Konva from 'konva'
-import React, { useEffect, useState, useRef, useCallback } from 'preact/compat'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import {
   Stage,
   Layer,
@@ -9,7 +9,7 @@ import {
   Circle,
   Rect,
   Text,
-} from 'react-konva'
+} from '../../utils/konvaCompat'
 
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
 import { useKonvaTokens } from '../../hooks/useKonvaTokens'
@@ -241,6 +241,12 @@ export function Canvas() {
     updateGenerationFrame,
     removeGenerationFrame,
   ])
+  
+  // Clear any stale frames on mount (for development)
+  useEffect(() => {
+    // Clear contextMenuFrameId on mount to prevent stale references
+    setContextMenuFrameId(null)
+  }, [])
 
   // Initialize drawing services
   useEffect(() => {
@@ -599,7 +605,7 @@ export function Canvas() {
   )
 
   const handleContextMenu = (
-    e: Konva.KonvaEventObject<PointerEvent | MouseEvent>,
+    e: Konva.KonvaEventObject<PointerEvent>,
     imageId: string
   ) => {
     e.evt.preventDefault()
@@ -614,6 +620,9 @@ export function Canvas() {
     const pointer = stage.getPointerPosition()
     if (!pointer) return
 
+    // Clear frame context when clicking on an image
+    setContextMenuFrameId(null)
+    
     setContextMenu({
       visible: true,
       x: pointer.x,
@@ -622,7 +631,7 @@ export function Canvas() {
     })
   }
 
-  const handleStageContextMenu = (e: Konva.KonvaEventObject<PointerEvent | MouseEvent>) => {
+  const handleStageContextMenu = (e: Konva.KonvaEventObject<PointerEvent>) => {
     e.evt.preventDefault()
 
     // Context menu works in all modes except drawing modes and active panning
@@ -631,10 +640,23 @@ export function Canvas() {
     const stage = stageRef.current
     if (!stage) return
 
-    // Check if we clicked on empty space or an image
-    const clickedOnEmpty = e.target === e.target.getStage()
+    // Check what we clicked on
+    const target = e.target
+    const clickedOnEmpty = target === stage
+    const clickedOnFrame = target.getClassName() === 'Rect' && target.id()?.startsWith('frame-')
+    
+    // If we clicked on a frame, let the frame's own context menu handler deal with it
+    if (clickedOnFrame) {
+      return
+    }
 
+    // For empty space or other elements
     if (clickedOnEmpty) {
+      e.cancelBubble = true // Stop event from reaching frames
+      
+      // Clear frame context if clicking on empty space
+      setContextMenuFrameId(null)
+      
       // Show upload context menu for empty space
       const pointer = stage.getPointerPosition()
       if (pointer) {
@@ -658,7 +680,7 @@ export function Canvas() {
   }
 
   const handleStagePointerDown = (
-    e: Konva.KonvaEventObject<PointerEvent | MouseEvent | TouchEvent>
+    e: Konva.KonvaEventObject<PointerEvent>
   ) => {
     const stage = stageRef.current
     if (!stage) return
@@ -808,7 +830,7 @@ export function Canvas() {
   }
 
   const handleStagePointerUp = (
-    _e?: Konva.KonvaEventObject<PointerEvent | MouseEvent | TouchEvent>
+    _e?: Konva.KonvaEventObject<PointerEvent>
   ) => {
     // Handle drawing tools
     if (
@@ -998,7 +1020,7 @@ export function Canvas() {
         }
       } else {
         // Default to txt2img if no image roles are set
-        await generateTxt2Img()
+        await generateTxt2Img(frameId)
       }
 
       // Generated image will be placed at frame position by generation system
@@ -1050,18 +1072,18 @@ export function Canvas() {
 
   return (
     <div
-      class={`canvas-container ${isDraggingFile ? 'dragging-file' : ''} ${canvasSelectionMode.active ? 'selection-mode' : ''} ${currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER ? 'drawing-mode' : ''} ${currentTool === CanvasTool.PAN ? 'pan-mode' : ''} ${isPanning ? 'panning' : ''}`}
+      className={`canvas-container ${isDraggingFile ? 'dragging-file' : ''} ${canvasSelectionMode.active ? 'selection-mode' : ''} ${currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER ? 'drawing-mode' : ''} ${currentTool === CanvasTool.PAN ? 'pan-mode' : ''} ${isPanning ? 'panning' : ''}`}
       ref={containerRef}
     >
       {canvasSelectionMode.active && (
-        <div class="selection-mode-overlay">
-          <div class="selection-mode-header">
+        <div className="selection-mode-overlay">
+          <div className="selection-mode-header">
             <h3>Select an image for {canvasSelectionMode.mode}</h3>
-            <button class="cancel-selection-btn" onClick={cancelCanvasSelection}>
+            <button className="cancel-selection-btn" onClick={cancelCanvasSelection}>
               Cancel
             </button>
           </div>
-          <div class="selection-mode-hint">Click on any image to select it</div>
+          <div className="selection-mode-hint">Click on any image to select it</div>
         </div>
       )}
 
@@ -1127,7 +1149,6 @@ export function Canvas() {
         height={window.innerHeight}
         draggable={false} // We control this programmatically
         onWheel={handleWheel}
-        onMouseDown={handleStagePointerDown}
         onPointerDown={handleStagePointerDown}
         onPointerMove={handleStagePointerMove}
         onPointerUp={handleStagePointerUp}
@@ -1190,7 +1211,7 @@ export function Canvas() {
                     container.style.cursor = ''
                   }
                 }}
-                onMouseEnter={() => {
+                onPointerEnter={() => {
                   if (frame.isPlaceholder && !frame.locked && currentTool === CanvasTool.SELECT) {
                     const container = containerRef.current
                     if (container) {
@@ -1198,7 +1219,7 @@ export function Canvas() {
                     }
                   }
                 }}
-                onMouseLeave={() => {
+                onPointerLeave={() => {
                   const container = containerRef.current
                   if (container) {
                     container.style.cursor = ''
@@ -1430,11 +1451,11 @@ export function Canvas() {
               strokeWidth={
                 selectedId === img.id || activeImageRoles.some((r) => r.imageId === img.id) ? 3 : 0
               }
-              strokeHitEnabled={false} // Prevent stroke from interfering with events
+              hitStrokeWidth={0} // Prevent stroke from interfering with events
               shadowBlur={selectedId === img.id ? 10 : 0}
               shadowColor={getImageBorderColor(img.id)}
               shadowOpacity={0.5}
-              shadowHitEnabled={false} // Prevent shadow from interfering with events
+              // Shadow hit is disabled by default in Konva
               opacity={
                 canvasSelectionMode.active
                   ? activeImageRoles.some((r) => r.imageId === img.id)

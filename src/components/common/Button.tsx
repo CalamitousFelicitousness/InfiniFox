@@ -1,8 +1,8 @@
-import { ComponentChildren } from 'preact'
+import { ReactNode, PointerEvent } from 'react'
 
 interface ButtonProps {
-  children: ComponentChildren
-  onClick?: (e: MouseEvent) => void
+  children: ReactNode
+  onClick?: (e: PointerEvent<HTMLButtonElement>) => void
   variant?: 'primary' | 'secondary' | 'ghost' | 'outline' | 'danger' | 'success'
   size?: 'xs' | 'sm' | 'base' | 'lg' | 'xl'
   disabled?: boolean
@@ -10,7 +10,7 @@ interface ButtonProps {
   type?: 'button' | 'submit' | 'reset'
   className?: string
   fullWidth?: boolean
-  icon?: ComponentChildren
+  icon?: ReactNode
   iconPosition?: 'left' | 'right'
 }
 
@@ -41,19 +41,19 @@ export function Button({
     .join(' ')
 
   return (
-    <button type={type} class={buttonClasses} onClick={onClick} disabled={isDisabled}>
-      {loading && <span class="btn-spinner" aria-hidden="true" />}
-      {icon && iconPosition === 'left' && <span class="btn-icon btn-icon-left">{icon}</span>}
-      <span class="btn-text">{children}</span>
-      {icon && iconPosition === 'right' && <span class="btn-icon btn-icon-right">{icon}</span>}
+    <button type={type} className={buttonClasses} onClick={onClick} disabled={isDisabled}>
+      {loading && <span className="btn-spinner" aria-hidden="true" />}
+      {icon && iconPosition === 'left' && <span className="btn-icon btn-icon-left">{icon}</span>}
+      <span className="btn-text">{children}</span>
+      {icon && iconPosition === 'right' && <span className="btn-icon btn-icon-right">{icon}</span>}
     </button>
   )
 }
 
 // Icon Button variant
 interface IconButtonProps {
-  icon: ComponentChildren
-  onClick?: (e: MouseEvent) => void
+  icon: ReactNode
+  onClick?: (e: PointerEvent<HTMLButtonElement>) => void
   variant?: 'primary' | 'secondary' | 'ghost' | 'outline' | 'danger' | 'success'
   size?: 'xs' | 'sm' | 'base' | 'lg' | 'xl'
   disabled?: boolean
@@ -90,19 +90,19 @@ export function IconButton({
   return (
     <button
       type={type}
-      class={buttonClasses}
+      className={buttonClasses}
       onClick={onClick}
       disabled={isDisabled}
       aria-label={ariaLabel}
     >
-      {loading ? <span class="btn-spinner" aria-hidden="true" /> : icon}
+      {loading ? <span className="btn-spinner" aria-hidden="true" /> : icon}
     </button>
   )
 }
 
 // Button Group component
 interface ButtonGroupProps {
-  children: ComponentChildren
+  children: ReactNode
   className?: string
   orientation?: 'horizontal' | 'vertical'
 }
@@ -112,5 +112,5 @@ export function ButtonGroup({
   className = '',
   orientation = 'horizontal',
 }: ButtonGroupProps) {
-  return <div class={`btn-group btn-group-${orientation} ${className}`}>{children}</div>
+  return <div className={`btn-group btn-group-${orientation} ${className}`}>{children}</div>
 }

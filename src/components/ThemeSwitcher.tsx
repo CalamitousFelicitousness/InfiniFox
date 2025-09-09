@@ -3,8 +3,7 @@
  * UI control for switching between themes
  */
 
-import { h } from 'preact'
-import { useState, useEffect, useCallback } from 'preact/hooks'
+import React, { useState, useEffect, useCallback } from 'react'
 
 import { useThemeTransition, useSystemTheme } from '../hooks/useThemeTransition'
 import { useTheme } from '../themes/ThemeProvider'
@@ -27,9 +26,9 @@ export interface ThemeSwitcherProps {
   showSystemOption?: boolean
   /** Custom icons */
   icons?: {
-    light?: h.JSX.Element
-    dark?: h.JSX.Element
-    system?: h.JSX.Element
+    light?: React.ReactElement
+    dark?: React.ReactElement
+    system?: React.ReactElement
   }
 }
 
@@ -318,7 +317,7 @@ export function ThemeSwitcher({
                     '--preview-text': themes[hoveredTheme]?.colors?.semantic?.text?.primary,
                     '--preview-primary': themes[hoveredTheme]?.colors?.semantic?.primary?.base,
                     '--preview-border': themes[hoveredTheme]?.colors?.semantic?.border?.default,
-                  } as h.JSX.CSSProperties & Record<string, string | undefined>
+                  } as React.CSSProperties & Record<string, string | undefined>
                 }
               >
                 <div className="theme-switcher__preview-bg" />

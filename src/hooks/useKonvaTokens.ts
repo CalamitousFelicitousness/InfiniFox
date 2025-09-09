@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'preact/compat'
+import { useEffect, useMemo } from 'react'
 
 import { KonvaTokenBridge } from '../services/canvas/KonvaTokenBridge'
 

@@ -3,7 +3,7 @@
  * Custom hooks for theme system interaction
  */
 
-import { useContext, useEffect, useState, useMemo } from 'preact/hooks'
+import { useContext, useEffect, useState, useMemo } from 'react'
 
 import { ThemeContext } from './ThemeProvider'
 import { breakpointUtils } from './tokens/breakpoints'

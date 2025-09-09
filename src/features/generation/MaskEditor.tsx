@@ -1,6 +1,6 @@
 import Konva from 'konva'
-import { Brush, Eraser } from 'lucide-preact'
-import { useState, useRef, useEffect } from 'preact/hooks'
+import { Brush, Eraser } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
 import { Stage, Layer, Image as KonvaImage, Line, Circle } from 'react-konva'
 
 import { Icon } from '../../components/common/Icon'
@@ -195,12 +195,12 @@ export function MaskEditor({ baseImage, onMaskUpdate, disabled = false }: MaskEd
   }
 
   return (
-    <div class="mask-editor">
-      <div class="mask-tools">
-        <div class="tool-buttons">
+    <div className="mask-editor">
+      <div className="mask-tools">
+        <div className="tool-buttons">
           <button
             type="button"
-            class={`btn btn-secondary ${tool === 'brush' ? 'active' : ''}`}
+            className={`btn btn-secondary ${tool === 'brush' ? 'active' : ''}`}
             onClick={() => setTool('brush')}
             disabled={disabled}
           >
@@ -208,7 +208,7 @@ export function MaskEditor({ baseImage, onMaskUpdate, disabled = false }: MaskEd
           </button>
           <button
             type="button"
-            class={`btn btn-secondary ${tool === 'eraser' ? 'active' : ''}`}
+            className={`btn btn-secondary ${tool === 'eraser' ? 'active' : ''}`}
             onClick={() => setTool('eraser')}
             disabled={disabled}
           >
@@ -216,7 +216,7 @@ export function MaskEditor({ baseImage, onMaskUpdate, disabled = false }: MaskEd
           </button>
         </div>
 
-        <div class="brush-size-control">
+        <div className="brush-size-control">
           <label>
             Size: {brushSize}px
             {pointerType === 'pen' && (
@@ -233,19 +233,19 @@ export function MaskEditor({ baseImage, onMaskUpdate, disabled = false }: MaskEd
           />
         </div>
 
-        {pointerType !== 'mouse' && <div class="input-type-indicator">Using: {pointerType}</div>}
+        {pointerType !== 'mouse' && <div className="input-type-indicator">Using: {pointerType}</div>}
 
-        <div class="mask-actions">
-          <button type="button" class="btn btn-ghost" onClick={clearMask} disabled={disabled}>
+        <div className="mask-actions">
+          <button type="button" className="btn btn-ghost" onClick={clearMask} disabled={disabled}>
             Clear
           </button>
-          <button type="button" class="btn btn-ghost" onClick={downloadMask} disabled={disabled}>
+          <button type="button" className="btn btn-ghost" onClick={downloadMask} disabled={disabled}>
             Download
           </button>
         </div>
       </div>
 
-      <div class="mask-canvas" ref={containerRef}>
+      <div className="mask-canvas" ref={containerRef}>
         <Stage
           ref={stageRef}
           width={dimensions.width}
@@ -293,7 +293,7 @@ export function MaskEditor({ baseImage, onMaskUpdate, disabled = false }: MaskEd
         </Stage>
       </div>
 
-      <div class="mask-hint">
+      <div className="mask-hint">
         Red areas will be regenerated. Use brush to add, eraser to remove.
       </div>
     </div>

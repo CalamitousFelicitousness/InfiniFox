@@ -1,5 +1,5 @@
-import { Layers, ChevronRight } from 'lucide-preact'
-import { useRef, useState } from 'preact/hooks'
+import { Layers, ChevronRight } from 'lucide-react'
+import { useRef, useState } from 'react'
 
 import { useQueueStore } from '../../store/queueStore'
 
@@ -30,34 +30,34 @@ export function BatchSettingsPanel() {
   }
 
   return (
-    <div class={`panel batch-settings-panel ${isExpanded ? '' : 'collapsed'}`} ref={panelRef}>
-      <div class="panel-header">
-        <div class="d-flex items-center gap-2">
-          <Layers class="icon-base" />
-          <h3 class="panel-title">Batch Settings</h3>
+    <div className={`panel batch-settings-panel ${isExpanded ? '' : 'collapsed'}`} ref={panelRef}>
+      <div className="panel-header">
+        <div className="d-flex items-center gap-2">
+          <Layers className="icon-base" />
+          <h3 className="panel-title">Batch Settings</h3>
         </div>
-        <div class="d-flex items-center gap-2">
+        <div className="d-flex items-center gap-2">
           <button
-            class="settings-toggle"
+            className="settings-toggle"
             onPointerDown={(e) => {
               e.preventDefault()
               setIsExpanded(!isExpanded)
             }}
             aria-label={isExpanded ? 'Collapse' : 'Expand'}
           >
-            <ChevronRight class="icon-base" />
+            <ChevronRight className="icon-base" />
           </button>
         </div>
       </div>
 
-      <div class={`panel-content ${!isExpanded ? 'collapsed' : ''}`}>
+      <div className={`panel-content ${!isExpanded ? 'collapsed' : ''}`}>
         {isExpanded && (
           <>
-            <div class="form-group">
-              <label class="form-label">Batch Count</label>
+            <div className="form-group">
+              <label className="form-label">Batch Count</label>
               <input
                 type="number"
-                class="text-input-field"
+                className="text-input-field"
                 min="1"
                 max="100"
                 value={batchSettings.count}
@@ -65,14 +65,14 @@ export function BatchSettingsPanel() {
               />
             </div>
 
-            <div class="batch-variations">
-              <h4 class="section-title">Variations</h4>
+            <div className="batch-variations">
+              <h4 className="section-title">Variations</h4>
 
-              <div class="form-group">
-                <label class="checkbox-group">
+              <div className="form-group">
+                <label className="checkbox-group">
                   <input
                     type="checkbox"
-                    class="checkbox-input"
+                    className="checkbox-input"
                     checked={batchSettings.variations.seed}
                     onChange={(e) =>
                       setBatchSettings({
@@ -83,13 +83,13 @@ export function BatchSettingsPanel() {
                       })
                     }
                   />
-                  <span class="checkbox-box"></span>
-                  <span class="checkbox-label">Vary Seed</span>
+                  <span className="checkbox-box"></span>
+                  <span className="checkbox-label">Vary Seed</span>
                 </label>
                 {batchSettings.variations.seed && (
                   <input
                     type="number"
-                    class="text-input-field mt-2"
+                    className="text-input-field mt-2"
                     placeholder="Seed increment"
                     value={batchSettings.seedIncrement}
                     onInput={(e) =>
@@ -99,11 +99,11 @@ export function BatchSettingsPanel() {
                 )}
               </div>
 
-              <div class="form-group">
-                <label class="checkbox-group">
+              <div className="form-group">
+                <label className="checkbox-group">
                   <input
                     type="checkbox"
-                    class="checkbox-input"
+                    className="checkbox-input"
                     checked={batchSettings.variations.prompt}
                     onChange={(e) =>
                       setBatchSettings({
@@ -114,12 +114,12 @@ export function BatchSettingsPanel() {
                       })
                     }
                   />
-                  <span class="checkbox-box"></span>
-                  <span class="checkbox-label">Vary Prompt</span>
+                  <span className="checkbox-box"></span>
+                  <span className="checkbox-label">Vary Prompt</span>
                 </label>
                 {batchSettings.variations.prompt && (
                   <textarea
-                    class="text-input-field textarea-field mt-2"
+                    className="text-input-field textarea-field mt-2"
                     placeholder="Enter prompts (one per line)"
                     value={batchSettings.promptVariations.join('\n')}
                     onInput={(e) => handlePromptVariationsChange(e.currentTarget.value)}
@@ -128,11 +128,11 @@ export function BatchSettingsPanel() {
                 )}
               </div>
 
-              <div class="form-group">
-                <label class="checkbox-group">
+              <div className="form-group">
+                <label className="checkbox-group">
                   <input
                     type="checkbox"
-                    class="checkbox-input"
+                    className="checkbox-input"
                     checked={batchSettings.variations.steps}
                     onChange={(e) =>
                       setBatchSettings({
@@ -143,13 +143,13 @@ export function BatchSettingsPanel() {
                       })
                     }
                   />
-                  <span class="checkbox-box"></span>
-                  <span class="checkbox-label">Vary Steps</span>
+                  <span className="checkbox-box"></span>
+                  <span className="checkbox-label">Vary Steps</span>
                 </label>
                 {batchSettings.variations.steps && (
                   <input
                     type="text"
-                    class="text-input-field mt-2"
+                    className="text-input-field mt-2"
                     placeholder="e.g., 10, 20, 30"
                     value={batchSettings.stepsVariations.join(', ')}
                     onInput={(e) => handleStepsVariationsChange(e.currentTarget.value)}
@@ -157,11 +157,11 @@ export function BatchSettingsPanel() {
                 )}
               </div>
 
-              <div class="form-group">
-                <label class="checkbox-group">
+              <div className="form-group">
+                <label className="checkbox-group">
                   <input
                     type="checkbox"
-                    class="checkbox-input"
+                    className="checkbox-input"
                     checked={batchSettings.variations.cfgScale}
                     onChange={(e) =>
                       setBatchSettings({
@@ -172,13 +172,13 @@ export function BatchSettingsPanel() {
                       })
                     }
                   />
-                  <span class="checkbox-box"></span>
-                  <span class="checkbox-label">Vary CFG Scale</span>
+                  <span className="checkbox-box"></span>
+                  <span className="checkbox-label">Vary CFG Scale</span>
                 </label>
                 {batchSettings.variations.cfgScale && (
                   <input
                     type="text"
-                    class="text-input-field mt-2"
+                    className="text-input-field mt-2"
                     placeholder="e.g., 5.5, 7.5, 9.5"
                     value={batchSettings.cfgScaleVariations.join(', ')}
                     onInput={(e) => handleCfgScaleVariationsChange(e.currentTarget.value)}
@@ -187,10 +187,10 @@ export function BatchSettingsPanel() {
               </div>
             </div>
 
-            <div class="panel-footer">
-              <p class="text-sm text-secondary">
+            <div className="panel-footer">
+              <p className="text-sm text-secondary">
                 Total generations:{' '}
-                <strong class="text-primary">
+                <strong className="text-primary">
                   {batchSettings.count *
                     (batchSettings.variations.prompt
                       ? batchSettings.promptVariations.length || 1

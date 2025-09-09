@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'react'
 
 import { Plus, Minus, RotateIcon, GripIcon } from '../../components/icons'
 import './DraggableZoomControls.css'
@@ -110,53 +110,53 @@ export function DraggableZoomControls({
   return (
     <div
       ref={panelRef}
-      class={`zoom-controls toolbar toolbar-horizontal toolbar-floating toolbar-draggable glass-surface ${isDragging ? 'dragging' : ''}`}
+      className={`zoom-controls toolbar toolbar-horizontal toolbar-floating toolbar-draggable glass-surface ${isDragging ? 'dragging' : ''}`}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
       }}
       onPointerDown={handlePointerDown}
     >
-      <div class="toolbar-grip" title="Drag to move">
-        <GripIcon class="lucide-icon" />
+      <div className="toolbar-grip" title="Drag to move">
+        <GripIcon className="lucide-icon" />
       </div>
 
-      <div class="toolbar-separator" />
+      <div className="toolbar-separator" />
 
-      <div class="toolbar-group">
+      <div className="toolbar-group">
         <button
-          class="toolbar-item"
+          className="toolbar-item"
           onClick={onZoomOut}
           data-tooltip="Zoom Out (Ctrl -)"
           aria-label="Zoom Out"
         >
-          <Minus class="lucide-icon" />
+          <Minus className="lucide-icon" />
         </button>
 
-        <span class="zoom-value" title="Current zoom level">
+        <span className="zoom-value" title="Current zoom level">
           {Math.round(scale * 100)}%
         </span>
 
         <button
-          class="toolbar-item"
+          className="toolbar-item"
           onClick={onZoomIn}
           data-tooltip="Zoom In (Ctrl +)"
           aria-label="Zoom In"
         >
-          <Plus class="lucide-icon" />
+          <Plus className="lucide-icon" />
         </button>
       </div>
 
-      <div class="toolbar-separator" />
+      <div className="toolbar-separator" />
 
-      <div class="toolbar-group">
+      <div className="toolbar-group">
         <button
-          class="toolbar-item"
+          className="toolbar-item"
           onClick={onReset}
           data-tooltip="Reset View"
           aria-label="Reset View"
         >
-          <RotateIcon class="lucide-icon" />
+          <RotateIcon className="lucide-icon" />
         </button>
       </div>
     </div>

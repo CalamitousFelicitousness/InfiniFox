@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useState } from 'react'
 
 import { PaletteIcon } from './components/icons'
 import { ControlPanel } from './components/layout/ControlPanel'
@@ -67,7 +67,7 @@ export function App() {
   }, [])
 
   return (
-    <div class="app-layout">
+    <div className="app-layout">
       <ControlPanel />
       <Canvas />
 
@@ -81,12 +81,12 @@ export function App() {
 
       {/* Floating Action Button for Full Drawing Panel */}
       <button
-        class="drawing-fab"
+        className="drawing-fab"
         onClick={() => setShowDrawingModal(true)}
         title="Open Advanced Drawing Panel"
         aria-label="Open Advanced Drawing Panel"
       >
-        <PaletteIcon size={20} class="lucide-icon" />
+        <PaletteIcon size={20} className="lucide-icon" />
       </button>
 
       {/* Drawing Modal */}

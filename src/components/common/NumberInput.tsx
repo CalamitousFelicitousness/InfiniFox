@@ -1,4 +1,4 @@
-import { useState, useRef } from 'preact/hooks'
+import { useState, useRef } from 'react'
 
 interface NumberInputProps {
   label: string
@@ -67,13 +67,13 @@ export function NumberInput({
   }
 
   return (
-    <div class="number-input-group" onPointerDown={handlePointerDown} onWheel={handleWheel}>
-      <label class={`number-input-label ${disabled ? '' : 'draggable'}`}>{label}</label>
-      <div class="number-input-wrapper">
+    <div className="number-input-group" onPointerDown={handlePointerDown} onWheel={handleWheel}>
+      <label className={`number-input-label ${disabled ? '' : 'draggable'}`}>{label}</label>
+      <div className="number-input-wrapper">
         <input
           ref={inputRef}
           type="number"
-          class="number-input-field"
+          className="number-input-field"
           value={value}
           min={min}
           max={max}
@@ -83,10 +83,10 @@ export function NumberInput({
           onBlur={() => setIsFocused(false)}
           disabled={disabled}
         />
-        <div class="number-input-buttons">
+        <div className="number-input-buttons">
           <button
             type="button"
-            class="number-input-button"
+            className="number-input-button"
             onPointerDown={(e) => {
               e.stopPropagation()
               // For width/height with step=16, snap to next multiple
@@ -104,7 +104,7 @@ export function NumberInput({
           </button>
           <button
             type="button"
-            class="number-input-button"
+            className="number-input-button"
             onPointerDown={(e) => {
               e.stopPropagation()
               // For width/height with step=16, snap to previous multiple

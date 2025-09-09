@@ -1,5 +1,5 @@
 import Konva from 'konva'
-import { useEffect, useRef, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'react'
 import { Stage, Layer, Line, Circle, Image as KonvaImage, Rect } from 'react-konva'
 
 import { Slider } from '../../components/common/Slider'
@@ -322,15 +322,15 @@ export function DrawingPanel() {
   }
 
   return (
-    <div class="drawing-panel">
-      <div class="drawing-toolbar">
+    <div className="drawing-panel">
+      <div className="drawing-toolbar">
         {/* Tool Selection */}
-        <div class="tool-section">
+        <div className="tool-section">
           <h3>Tools</h3>
-          <div class="tool-buttons">
+          <div className="tool-buttons">
             <Tooltip content="Brush Tool (B)">
               <button
-                class={`tool-btn ${tool === 'brush' ? 'active' : ''}`}
+                className={`tool-btn ${tool === 'brush' ? 'active' : ''}`}
                 onClick={() => setTool('brush')}
                 aria-label="Brush Tool"
               >
@@ -339,7 +339,7 @@ export function DrawingPanel() {
             </Tooltip>
             <Tooltip content="Eraser Tool (E)">
               <button
-                class={`tool-btn ${tool === 'eraser' ? 'active' : ''}`}
+                className={`tool-btn ${tool === 'eraser' ? 'active' : ''}`}
                 onClick={() => setTool('eraser')}
                 aria-label="Eraser Tool"
               >
@@ -348,7 +348,7 @@ export function DrawingPanel() {
             </Tooltip>
             <Tooltip content="Smudge Tool (S)">
               <button
-                class={`tool-btn ${tool === 'smudge' ? 'active' : ''}`}
+                className={`tool-btn ${tool === 'smudge' ? 'active' : ''}`}
                 onClick={() => setTool('smudge')}
                 aria-label="Smudge Tool"
               >
@@ -359,13 +359,13 @@ export function DrawingPanel() {
         </div>
 
         {/* Brush Presets */}
-        <div class="tool-section">
+        <div className="tool-section">
           <h3>Presets</h3>
-          <div class="preset-buttons">
+          <div className="preset-buttons">
             {Object.keys(BRUSH_PRESETS).map((preset) => (
               <button
                 key={preset}
-                class={`preset-btn ${brushPreset === preset ? 'active' : ''}`}
+                className={`preset-btn ${brushPreset === preset ? 'active' : ''}`}
                 onClick={() => setBrushPreset(preset as keyof typeof BRUSH_PRESETS)}
               >
                 {preset}
@@ -375,30 +375,30 @@ export function DrawingPanel() {
         </div>
 
         {/* Brush Settings */}
-        <div class="tool-section">
+        <div className="tool-section">
           <h3>Brush Settings</h3>
 
-          <div class="setting-row">
+          <div className="setting-row">
             <label>Size: {brushSize}px</label>
             <Slider min={1} max={200} value={brushSize} onChange={setBrushSize} step={1} />
           </div>
 
-          <div class="setting-row">
+          <div className="setting-row">
             <label>Hardness: {brushHardness}%</label>
             <Slider min={0} max={100} value={brushHardness} onChange={setBrushHardness} step={1} />
           </div>
 
-          <div class="setting-row">
+          <div className="setting-row">
             <label>Opacity: {brushOpacity}%</label>
             <Slider min={1} max={100} value={brushOpacity} onChange={setBrushOpacity} step={1} />
           </div>
 
-          <div class="setting-row">
+          <div className="setting-row">
             <label>Flow: {brushFlow}%</label>
             <Slider min={1} max={100} value={brushFlow} onChange={setBrushFlow} step={1} />
           </div>
 
-          <div class="setting-row">
+          <div className="setting-row">
             <label>Smoothing: {smoothingRadius}px</label>
             <Slider
               min={0}
@@ -411,26 +411,26 @@ export function DrawingPanel() {
         </div>
 
         {/* Color Picker */}
-        <div class="tool-section">
+        <div className="tool-section">
           <h3>Color</h3>
 
-          <div class="color-picker-section">
-            <div class="current-color-display">
+          <div className="color-picker-section">
+            <div className="current-color-display">
               <input
                 ref={colorInputRef}
                 type="color"
                 value={currentColor}
                 onChange={handleColorChange}
-                class="color-input"
+                className="color-input"
               />
-              <span class="color-hex">{currentColor}</span>
+              <span className="color-hex">{currentColor}</span>
             </div>
 
-            <div class="color-palette">
+            <div className="color-palette">
               {colorPalette.map((item) => (
                 <Tooltip key={item.id} content={item.name}>
                   <button
-                    class={`color-swatch ${currentColor === item.color ? 'active' : ''}`}
+                    className={`color-swatch ${currentColor === item.color ? 'active' : ''}`}
                     style={{ backgroundColor: item.color }}
                     onClick={() => setCurrentColor(item.color)}
                   />
@@ -441,11 +441,11 @@ export function DrawingPanel() {
             {recentColors.length > 0 && (
               <>
                 <h4>Recent Colors</h4>
-                <div class="recent-colors">
+                <div className="recent-colors">
                   {recentColors.map((color, index) => (
                     <button
                       key={`recent-${index}`}
-                      class="color-swatch"
+                      className="color-swatch"
                       style={{ backgroundColor: color }}
                       onClick={() => setCurrentColor(color)}
                     />
@@ -457,17 +457,17 @@ export function DrawingPanel() {
         </div>
 
         {/* Layers */}
-        <div class="tool-section">
+        <div className="tool-section">
           <h3>Layers</h3>
-          <div class="layers-list">
+          <div className="layers-list">
             {layers.map((layer, index) => (
               <div
                 key={layer.id}
-                class={`layer-item ${currentLayer === index ? 'active' : ''}`}
+                className={`layer-item ${currentLayer === index ? 'active' : ''}`}
                 onClick={() => setCurrentLayer(index)}
               >
                 <button
-                  class="layer-visibility"
+                  className="layer-visibility"
                   onClick={(e) => {
                     e.stopPropagation()
                     toggleLayerVisibility(index)
@@ -476,19 +476,19 @@ export function DrawingPanel() {
                 >
                   {layer.visible ? <EyeIcon size={16} /> : <EyeOffIcon size={16} />}
                 </button>
-                <span class="layer-name">{layer.name}</span>
+                <span className="layer-name">{layer.name}</span>
                 <input
                   type="range"
                   min="0"
                   max="100"
                   value={layer.opacity * 100}
                   onChange={(e) => updateLayerOpacity(index, parseInt(e.currentTarget.value))}
-                  class="layer-opacity"
+                  className="layer-opacity"
                   onClick={(e) => e.stopPropagation()}
                 />
                 {layers.length > 1 && (
                   <button
-                    class="layer-delete"
+                    className="layer-delete"
                     onClick={(e) => {
                       e.stopPropagation()
                       deleteLayer(index)
@@ -501,26 +501,26 @@ export function DrawingPanel() {
               </div>
             ))}
           </div>
-          <button class="add-layer-btn" onClick={addLayer}>
-            <Plus size={16} class="lucide-icon" />
+          <button className="add-layer-btn" onClick={addLayer}>
+            <Plus size={16} className="lucide-icon" />
             Add Layer
           </button>
         </div>
 
         {/* Actions */}
-        <div class="tool-section">
+        <div className="tool-section">
           <h3>Actions</h3>
-          <div class="action-buttons">
+          <div className="action-buttons">
             <button onClick={clearCanvas}>
-              <RefreshCw size={16} class="lucide-icon" />
+              <RefreshCw size={16} className="lucide-icon" />
               Clear Layer
             </button>
             <button onClick={exportCanvas}>
-              <Download size={16} class="lucide-icon" />
+              <Download size={16} className="lucide-icon" />
               Export
             </button>
             <button onClick={() => fileInputRef.current?.click()}>
-              <Upload size={16} class="lucide-icon" />
+              <Upload size={16} className="lucide-icon" />
               Load Background
             </button>
           </div>
@@ -528,7 +528,7 @@ export function DrawingPanel() {
       </div>
 
       {/* Canvas Area */}
-      <div class="drawing-canvas-container" ref={containerRef}>
+      <div className="drawing-canvas-container" ref={containerRef}>
         <input
           ref={fileInputRef}
           type="file"
@@ -626,7 +626,7 @@ export function DrawingPanel() {
         </Stage>
 
         {/* Pressure Indicator */}
-        <div class="pressure-indicator">
+        <div className="pressure-indicator">
           Pressure: {Math.round(pressureManagerRef.current?.getCurrentPressure() * 100)}%
         </div>
       </div>

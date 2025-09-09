@@ -10,8 +10,8 @@
  * 4. As a dockable panel
  */
 
-import { Pin, PinOff } from 'lucide-preact'
-import { useState } from 'preact/hooks'
+import { Pin, PinOff } from 'lucide-react'
+import { useState } from 'react'
 
 import { CloseIcon, ChevronDown, ChevronUp } from '../../components/icons'
 
@@ -21,7 +21,7 @@ import './DrawingIntegration.css'
 // Option 1: As a Tab in ControlPanel
 export function DrawingTab() {
   return (
-    <div class="drawing-tab-container">
+    <div className="drawing-tab-container">
       <DrawingPanel />
     </div>
   )
@@ -32,10 +32,10 @@ export function DrawingModal({ isOpen, onClose }: { isOpen: boolean; onClose: ()
   if (!isOpen) return null
 
   return (
-    <div class="drawing-modal-overlay" onClick={onClose}>
-      <div class="drawing-modal" onClick={(e) => e.stopPropagation()}>
-        <button class="modal-close" onClick={onClose} aria-label="Close">
-          <CloseIcon size={18} class="lucide-icon" />
+    <div className="drawing-modal-overlay" onClick={onClose}>
+      <div className="drawing-modal" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose} aria-label="Close">
+          <CloseIcon size={18} className="lucide-icon" />
         </button>
         <DrawingPanel />
       </div>
@@ -50,11 +50,11 @@ export function DockableDrawingPanel() {
 
   return (
     <div
-      class={`dockable-drawing-panel ${isDocked ? 'docked' : 'floating'} ${isMinimized ? 'minimized' : ''}`}
+      className={`dockable-drawing-panel ${isDocked ? 'docked' : 'floating'} ${isMinimized ? 'minimized' : ''}`}
     >
-      <div class="panel-header">
+      <div className="panel-header">
         <span>Drawing Tools</span>
-        <div class="panel-controls">
+        <div className="panel-controls">
           <button
             onClick={() => setIsMinimized(!isMinimized)}
             aria-label={isMinimized ? 'Expand' : 'Minimize'}
@@ -76,13 +76,13 @@ export function CanvasDrawingMode() {
   const [isDrawingMode, setIsDrawingMode] = useState(false)
 
   return (
-    <div class="canvas-drawing-integration">
-      <button class="drawing-mode-toggle" onClick={() => setIsDrawingMode(!isDrawingMode)}>
+    <div className="canvas-drawing-integration">
+      <button className="drawing-mode-toggle" onClick={() => setIsDrawingMode(!isDrawingMode)}>
         {isDrawingMode ? 'Exit Drawing Mode' : 'Enter Drawing Mode'}
       </button>
 
       {isDrawingMode && (
-        <div class="drawing-overlay">
+        <div className="drawing-overlay">
           <DrawingPanel />
         </div>
       )}
@@ -118,7 +118,7 @@ export function CanvasDrawingMode() {
  *   const [showDrawing, setShowDrawing] = useState(false)
  *
  *   return (
- *     <div class="app-layout">
+ *     <div className="app-layout">
  *       <button onClick={() => setShowDrawing(true)}>Open Drawing Panel</button>
  *       <DrawingModal isOpen={showDrawing} onClose={() => setShowDrawing(false)} />
  *       // ... rest of app components

@@ -3,7 +3,7 @@
  * Exports all lucide-preact icons used throughout InfiniFox
  */
 
-import type { FunctionComponent, ComponentProps } from 'preact'
+import type { FunctionComponent, ComponentProps } from 'react'
 
 export {
   // Canvas Tools
@@ -175,13 +175,13 @@ export {
   BarChart as ChartIcon,
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
-} from 'lucide-preact'
+} from 'lucide-react'
 
 // Default icon props for consistent styling
 export const defaultIconProps = {
   size: 16,
   strokeWidth: 2,
-  class: 'lucide-icon',
+  className: 'lucide-icon',
 }
 
 // Icon size constants

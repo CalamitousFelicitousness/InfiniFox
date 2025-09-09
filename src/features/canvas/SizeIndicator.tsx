@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useState } from 'react'
 import './SizeIndicator.css'
 
 interface CanvasElement {
@@ -58,16 +58,16 @@ export function SizeIndicator({ selectedId, elements, scale, position }: SizeInd
 
   return (
     <div
-      class={`size-indicator ${elementType === 'frame' ? 'size-indicator--frame' : ''}`}
+      className={`size-indicator ${elementType === 'frame' ? 'size-indicator--frame' : ''}`}
       style={{
         left: `${indicatorPos.x}px`,
         top: `${indicatorPos.y}px`,
       }}
     >
-      <span class="size-value">
+      <span className="size-value">
         {elementSize.width} × {elementSize.height}
       </span>
-      <span class="size-label">px</span>
+      <span className="size-label">px</span>
     </div>
   )
 }

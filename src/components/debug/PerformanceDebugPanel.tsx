@@ -1,5 +1,5 @@
-import { CheckCircle, Check, AlertTriangle, XCircle, Activity } from 'lucide-preact'
-import { useEffect, useState, useRef } from 'preact/hooks'
+import { CheckCircle, Check, AlertTriangle, XCircle, Activity } from 'lucide-react'
+import { useEffect, useState, useRef } from 'react'
 
 import { PerformanceMonitor } from '../../utils/performanceUtils'
 import { Icon } from '../common/Icon'

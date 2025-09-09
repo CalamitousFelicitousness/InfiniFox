@@ -1,5 +1,5 @@
-import { Undo, Redo, Trash2, Clock, ChevronRight } from 'lucide-preact'
-import { useRef, useEffect, useState } from 'preact/hooks'
+import { Undo, Redo, Trash2, Clock, ChevronRight } from 'lucide-react'
+import { useRef, useEffect, useState } from 'react'
 
 import { useHistoryStore } from '../../store/historyStore'
 
@@ -50,10 +50,10 @@ export function HistoryPanel() {
   }
 
   return (
-    <div class={`panel history-panel ${isExpanded ? '' : 'collapsed'}`}>
-      <div class="panel-header">
-        <h3 class="panel-title">History</h3>
-        <div class="panel-actions">
+    <div className={`panel history-panel ${isExpanded ? '' : 'collapsed'}`}>
+      <div className="panel-header">
+        <h3 className="panel-title">History</h3>
+        <div className="panel-actions">
           <button
             onPointerDown={(e) => {
               e.preventDefault()
@@ -61,9 +61,9 @@ export function HistoryPanel() {
             }}
             disabled={!canUndo}
             title="Undo (Ctrl+Z)"
-            class="btn btn-xs btn-ghost"
+            className="btn btn-xs btn-ghost"
           >
-            <Undo class="icon-sm" />
+            <Undo className="icon-sm" />
           </button>
           <button
             onPointerDown={(e) => {
@@ -72,9 +72,9 @@ export function HistoryPanel() {
             }}
             disabled={!canRedo}
             title="Redo (Ctrl+Shift+Z)"
-            class="btn btn-xs btn-ghost"
+            className="btn btn-xs btn-ghost"
           >
-            <Redo class="icon-sm" />
+            <Redo className="icon-sm" />
           </button>
           <button
             onPointerDown={(e) => {
@@ -85,43 +85,43 @@ export function HistoryPanel() {
             }}
             disabled={history.length === 0}
             title="Clear History"
-            class="btn btn-xs btn-ghost"
+            className="btn btn-xs btn-ghost"
           >
-            <Trash2 class="icon-sm" />
+            <Trash2 className="icon-sm" />
           </button>
           <button
-            class="settings-toggle"
+            className="settings-toggle"
             onPointerDown={(e) => {
               e.preventDefault()
               setIsExpanded(!isExpanded)
             }}
             aria-label={isExpanded ? 'Collapse' : 'Expand'}
           >
-            <ChevronRight class="icon-base" />
+            <ChevronRight className="icon-base" />
           </button>
         </div>
       </div>
 
-      <div class="panel-content">
+      <div className="panel-content">
         {isExpanded && (
           <>
-            <div class="history-list" ref={listRef}>
+            <div className="history-list" ref={listRef}>
               {history.length === 0 ? (
-                <div class="history-empty">No actions yet</div>
+                <div className="history-empty">No actions yet</div>
               ) : (
                 history.map((item) => (
-                  <div key={item.id} class={`history-item ${item.isCurrent ? 'current' : ''}`}>
-                    <span class="history-item-icon">
-                      <Clock class="icon-sm" />
+                  <div key={item.id} className={`history-item ${item.isCurrent ? 'current' : ''}`}>
+                    <span className="history-item-icon">
+                      <Clock className="icon-sm" />
                     </span>
-                    <span class="history-item-label">{item.description}</span>
-                    <span class="history-item-time">{formatTime(item.timestamp)}</span>
+                    <span className="history-item-label">{item.description}</span>
+                    <span className="history-item-time">{formatTime(item.timestamp)}</span>
                   </div>
                 ))
               )}
             </div>
 
-            <div class="history-footer">
+            <div className="history-footer">
               <span>
                 {history.length} action{history.length !== 1 ? 's' : ''}
               </span>

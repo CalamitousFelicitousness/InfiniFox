@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from 'preact/hooks'
+import { useRef, useState, useEffect, useCallback } from 'react'
 
 interface SliderProps {
   label?: string
@@ -92,17 +92,17 @@ export function Slider({
   const percentage = ((value - min) / (max - min)) * 100
 
   return (
-    <div class={`slider-group ${disabled ? 'slider-disabled' : ''}`}>
+    <div className={`slider-group ${disabled ? 'slider-disabled' : ''}`}>
       {label && (
-        <div class="slider-header">
-          <span class="slider-label">{label}</span>
-          <span class="slider-value">{value}</span>
+        <div className="slider-header">
+          <span className="slider-label">{label}</span>
+          <span className="slider-value">{value}</span>
         </div>
       )}
-      <div class="slider-track" ref={trackRef} onPointerDown={handlePointerDown}>
-        <div class="slider-fill" style={{ width: `${percentage}%` }} />
-        <div class="slider-thumb" style={{ left: `${percentage}%` }}>
-          {showTooltip && <div class="slider-tooltip">{value}</div>}
+      <div className="slider-track" ref={trackRef} onPointerDown={handlePointerDown}>
+        <div className="slider-fill" style={{ width: `${percentage}%` }} />
+        <div className="slider-thumb" style={{ left: `${percentage}%` }}>
+          {showTooltip && <div className="slider-tooltip">{value}</div>}
         </div>
       </div>
       {/* Keep native input as fallback/accessibility */}

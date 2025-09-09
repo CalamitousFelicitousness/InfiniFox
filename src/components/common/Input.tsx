@@ -22,16 +22,16 @@ export function Input({
   className = '',
 }: InputProps) {
   return (
-    <div class={`text-input-group ${className}`}>
+    <div className={`text-input-group ${className}`}>
       {label && (
-        <label class="text-input-label">
+        <label className="text-input-label">
           {label}
-          {required && <span class="text-error ml-1">*</span>}
+          {required && <span className="text-error ml-1">*</span>}
         </label>
       )}
       <input
         type={type}
-        class="text-input-field"
+        className="text-input-field"
         value={value}
         onInput={(e) => onInput(e.currentTarget.value)}
         placeholder={placeholder}
@@ -66,15 +66,15 @@ export function Textarea({
   className = '',
 }: TextareaProps) {
   return (
-    <div class={`text-input-group ${className}`}>
+    <div className={`text-input-group ${className}`}>
       {label && (
-        <label class="text-input-label">
+        <label className="text-input-label">
           {label}
-          {required && <span class="text-error ml-1">*</span>}
+          {required && <span className="text-error ml-1">*</span>}
         </label>
       )}
       <textarea
-        class="text-input-field textarea-field"
+        className="text-input-field textarea-field"
         value={value}
         onInput={(e) => onInput(e.currentTarget.value)}
         placeholder={placeholder}

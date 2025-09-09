@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'preact/hooks'
+import { useState, useRef, useEffect } from 'react'
 import './ColorPicker.css'
 
 interface ColorPickerProps {
@@ -165,29 +165,29 @@ export function ColorPicker({ color, onChange, onClose }: ColorPickerProps) {
   }
 
   return (
-    <div class="color-picker" ref={pickerRef}>
-      <div class="color-picker-header">
+    <div className="color-picker" ref={pickerRef}>
+      <div className="color-picker-header">
         <span>Color Picker</span>
         {onClose && (
-          <button class="close-btn" onClick={onClose}>
+          <button className="close-btn" onClick={onClose}>
             ×
           </button>
         )}
       </div>
 
-      <div class="color-picker-body">
+      <div className="color-picker-body">
         {/* Color canvas */}
         <canvas
           ref={canvasRef}
           width={256}
           height={256}
-          class="color-canvas"
+          className="color-canvas"
           onClick={handleCanvasClick}
         />
 
         {/* Current position indicator */}
         <div
-          class="color-indicator"
+          className="color-indicator"
           style={{
             left: `${(saturation / 100) * 256}px`,
             top: `${((100 - lightness) / 100) * 256}px`,
@@ -196,7 +196,7 @@ export function ColorPicker({ color, onChange, onClose }: ColorPickerProps) {
         />
 
         {/* Hue slider */}
-        <div class="slider-container">
+        <div className="slider-container">
           <label>Hue</label>
           <input
             type="range"
@@ -204,12 +204,12 @@ export function ColorPicker({ color, onChange, onClose }: ColorPickerProps) {
             max="360"
             value={hue}
             onChange={(e) => setHue(parseInt(e.currentTarget.value))}
-            class="hue-slider"
+            className="hue-slider"
           />
         </div>
 
         {/* Alpha slider */}
-        <div class="slider-container">
+        <div className="slider-container">
           <label>Opacity</label>
           <input
             type="range"
@@ -218,27 +218,27 @@ export function ColorPicker({ color, onChange, onClose }: ColorPickerProps) {
             step="0.01"
             value={alpha}
             onChange={(e) => setAlpha(parseFloat(e.currentTarget.value))}
-            class="alpha-slider"
+            className="alpha-slider"
           />
           <span>{Math.round(alpha * 100)}%</span>
         </div>
 
         {/* Hex input */}
-        <div class="hex-input-container">
+        <div className="hex-input-container">
           <label>Hex</label>
           <input
             type="text"
             value={hexInput}
             onChange={handleHexInputChange}
             maxLength={7}
-            class="hex-input"
+            className="hex-input"
           />
         </div>
 
         {/* Preview */}
-        <div class="color-preview-container">
-          <div class="color-preview-label">Preview</div>
-          <div class="color-preview" style={{ backgroundColor: hexInput, opacity: alpha }} />
+        <div className="color-preview-container">
+          <div className="color-preview-label">Preview</div>
+          <div className="color-preview" style={{ backgroundColor: hexInput, opacity: alpha }} />
         </div>
       </div>
     </div>

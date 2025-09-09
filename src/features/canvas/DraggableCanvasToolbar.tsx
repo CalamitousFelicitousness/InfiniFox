@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'react'
 
 import { SelectIcon, BrushIcon, EraserIcon, PanIcon, GripIcon } from '../../components/icons'
 
@@ -106,32 +106,32 @@ export function DraggableCanvasToolbar({ currentTool, onToolChange }: DraggableC
   return (
     <div
       ref={panelRef}
-      class={`toolbar toolbar-horizontal toolbar-floating toolbar-draggable glass-surface ${isDragging ? 'dragging' : ''}`}
+      className={`toolbar toolbar-horizontal toolbar-floating toolbar-draggable glass-surface ${isDragging ? 'dragging' : ''}`}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
       }}
       onPointerDown={handlePointerDown}
     >
-      <div class="toolbar-grip" title="Drag to move">
-        <GripIcon class="lucide-icon" />
+      <div className="toolbar-grip" title="Drag to move">
+        <GripIcon className="lucide-icon" />
       </div>
 
-      <div class="toolbar-separator" />
+      <div className="toolbar-separator" />
 
-      <div class="toolbar-group">
+      <div className="toolbar-group">
         {tools.map((tool) => {
           const IconComponent = tool.icon
           return (
             <button
               key={tool.id}
-              class={`toolbar-item ${currentTool === tool.id ? 'active' : ''}`}
+              className={`toolbar-item ${currentTool === tool.id ? 'active' : ''}`}
               onClick={() => onToolChange(tool.id)}
               data-tooltip={tool.tooltip}
               aria-label={tool.tooltip}
               aria-pressed={currentTool === tool.id}
             >
-              <IconComponent class="lucide-icon" />
+              <IconComponent className="lucide-icon" />
             </button>
           )
         })}

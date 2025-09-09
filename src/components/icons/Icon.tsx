@@ -3,8 +3,8 @@
  * Provides consistent icon rendering with proper typing and default props
  */
 
-import { ComponentProps, FunctionComponent } from 'preact'
-import { memo } from 'preact/compat'
+import { ComponentProps, FunctionComponent } from 'react'
+import { memo } from 'react'
 
 import { defaultIconProps } from './index'
 
@@ -28,7 +28,7 @@ export function Icon({
     <IconComponent
       size={size}
       strokeWidth={strokeWidth}
-      class={`lucide-icon ${className}`}
+      className={`lucide-icon ${className}`}
       color={color}
       {...props}
     />
@@ -79,7 +79,7 @@ export function IconWithTooltip({
 }: IconWithTooltipProps) {
   return (
     <span
-      class={`icon-with-tooltip ${className}`}
+      className={`icon-with-tooltip ${className}`}
       title={tooltip}
       data-tooltip={tooltip}
       data-tooltip-position={tooltipPosition}
@@ -114,7 +114,7 @@ export function IconButton({
       aria-label={label}
       aria-pressed={isActive}
       disabled={disabled}
-      class={`icon-button ${isActive ? 'active' : ''} ${disabled ? 'disabled' : ''} ${className}`}
+      className={`icon-button ${isActive ? 'active' : ''} ${disabled ? 'disabled' : ''} ${className}`}
     >
       <Icon {...props} />
     </button>

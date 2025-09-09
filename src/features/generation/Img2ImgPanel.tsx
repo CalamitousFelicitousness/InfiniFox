@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'preact/hooks'
+import { useState, useEffect } from 'react'
 
 import { Dropdown } from '../../components/common/Dropdown'
 import { NumberInput } from '../../components/common/NumberInput'
@@ -88,23 +88,23 @@ export function Img2ImgPanel() {
   }
 
   return (
-    <div class="generation-panel">
-      <h3 class="generation-panel-header">Image to Image</h3>
-      <form class="generation-form" onSubmit={handleGenerate}>
-        <div class="prompt-group">
-          <label class="prompt-label">Prompt</label>
+    <div className="generation-panel">
+      <h3 className="generation-panel-header">Image to Image</h3>
+      <form className="generation-form" onSubmit={handleGenerate}>
+        <div className="prompt-group">
+          <label className="prompt-label">Prompt</label>
           <textarea
-            class="prompt-textarea"
+            className="prompt-textarea"
             value={prompt}
             onInput={(e) => setPrompt(e.currentTarget.value)}
             disabled={isLoading}
           />
         </div>
 
-        <div class="prompt-group">
-          <label class="prompt-label">Negative Prompt</label>
+        <div className="prompt-group">
+          <label className="prompt-label">Negative Prompt</label>
           <textarea
-            class="prompt-textarea"
+            className="prompt-textarea"
             value={negativePrompt}
             onInput={(e) => setNegativePrompt(e.currentTarget.value)}
             disabled={isLoading}
@@ -151,13 +151,13 @@ export function Img2ImgPanel() {
           disabled={isLoading}
         />
 
-        <div class="size-inputs-group">
+        <div className="size-inputs-group">
           <NumberInput label="Width" value={width} onInput={setWidth} disabled={isLoading} />
           <NumberInput label="Height" value={height} onInput={setHeight} disabled={isLoading} />
         </div>
 
-        <div class="generation-actions">
-          <button type="submit" class="btn btn-primary btn-block" disabled={isLoading}>
+        <div className="generation-actions">
+          <button type="submit" className="btn btn-primary btn-block" disabled={isLoading}>
             {isLoading ? 'Generating...' : 'Generate'}
           </button>
         </div>

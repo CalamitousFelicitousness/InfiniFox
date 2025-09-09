@@ -1,5 +1,8 @@
-import 'preact/debug'
-import { render } from 'preact'
+// Apply React 18 patches for react-konva compatibility
+import './utils/reactPatches'
+
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
 
 import { App } from './app'
 import { ThemeProvider } from './themes'
@@ -28,13 +31,15 @@ import './themes/styles/components/headers.css'
 import './themes/styles/components/canvas.css'
 
 // Root element
-const root = document.getElementById('app')
+const container = document.getElementById('app')
 
-if (root) {
-  render(
-    <ThemeProvider>
-      <App />
-    </ThemeProvider>,
-    root
+if (container) {
+  const root = createRoot(container)
+  root.render(
+    <StrictMode>
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
+    </StrictMode>
   )
 }

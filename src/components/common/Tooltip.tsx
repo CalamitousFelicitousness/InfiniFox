@@ -1,5 +1,5 @@
-import type { VNode } from 'preact'
-import { useState } from 'preact/hooks'
+import type { VNode } from 'react'
+import { useState } from 'react'
 
 import './Tooltip.css'
 
@@ -30,12 +30,12 @@ export function Tooltip({ content, children, position = 'top', delay = 500 }: To
   }
 
   return (
-    <div class="tooltip-wrapper" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+    <div className="tooltip-wrapper" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
       {children}
       {visible && (
-        <div class={`tooltip tooltip-${position}`}>
-          <div class="tooltip-content">{content}</div>
-          <div class="tooltip-arrow" />
+        <div className={`tooltip tooltip-${position}`}>
+          <div className="tooltip-content">{content}</div>
+          <div className="tooltip-arrow" />
         </div>
       )}
     </div>

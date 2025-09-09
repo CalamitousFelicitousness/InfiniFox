@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'preact/hooks'
+import { useState, useEffect } from 'react'
 
 import InfiniFoxIcon from '../../assets/InfiniFox.svg'
 import { Img2ImgPanel } from '../../features/generation/Img2ImgPanel'
@@ -29,9 +29,9 @@ export function ControlPanel() {
   ]
 
   return (
-    <aside class="control-panel">
-      <div class="panel-header">
-        <img src={InfiniFoxIcon} alt="InfiniFox" style="height: 64px; width: auto;" />
+    <aside className="control-panel">
+      <div className="panel-header">
+        <img src={InfiniFoxIcon} alt="InfiniFox" style={{ height: '64px', width: 'auto' }} />
         <Dropdown
           label=""
           value={sdModel}
@@ -42,22 +42,22 @@ export function ControlPanel() {
         />
       </div>
 
-      <div class="control-panel-content">
-        <div class="tab-panel">
+      <div className="control-panel-content">
+        <div className="tab-panel">
           <Tabs tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
-          <div class="tab-content">
+          <div className="tab-content">
             {activeTab === 'txt2img' && (
-              <div class="tab-pane active">
+              <div className="tab-pane active">
                 <Txt2ImgPanel />
               </div>
             )}
             {activeTab === 'img2img' && (
-              <div class="tab-pane active">
+              <div className="tab-pane active">
                 <Img2ImgPanel />
               </div>
             )}
             {activeTab === 'inpaint' && (
-              <div class="tab-pane active">
+              <div className="tab-pane active">
                 <InpaintPanel />
               </div>
             )}

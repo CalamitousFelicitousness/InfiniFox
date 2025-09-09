@@ -1,5 +1,5 @@
-import { Settings, ChevronRight, CheckCircle, XCircle } from 'lucide-preact'
-import { useState, useEffect } from 'preact/hooks'
+import { Settings, ChevronRight, CheckCircle, XCircle } from 'lucide-react'
+import { useState, useEffect } from 'react'
 
 import { progressService } from '../../services/progress/ProgressService'
 import type { ProgressMethod } from '../../services/progress/types'
@@ -94,79 +94,79 @@ export function SettingsPanel() {
   }
 
   return (
-    <div class={`panel settings-panel ${isExpanded ? '' : 'collapsed'}`}>
-      <div class="settings-header">
-        <div class="d-flex items-center gap-2">
-          <Settings class="icon-base" />
+    <div className={`panel settings-panel ${isExpanded ? '' : 'collapsed'}`}>
+      <div className="settings-header">
+        <div className="d-flex items-center gap-2">
+          <Settings className="icon-base" />
           <h3>API Settings</h3>
         </div>
         <button
-          class="settings-toggle"
+          className="settings-toggle"
           onPointerDown={(e) => {
             e.preventDefault()
             setIsExpanded(!isExpanded)
           }}
           aria-label={isExpanded ? 'Collapse' : 'Expand'}
         >
-          <ChevronRight class="icon-base" />
+          <ChevronRight className="icon-base" />
         </button>
       </div>
 
-      <div class="settings-content">
+      <div className="settings-content">
         {isExpanded && (
           <>
-            <div class="settings-group">
+            <div className="settings-group">
               <Input
                 label="API URL"
                 value={apiUrl}
                 onInput={setApiUrl}
                 placeholder="http://127.0.0.1:7860/sdapi/v1"
               />
-              <div class="form-help">Example: http://127.0.0.1:7860/sdapi/v1</div>
+              <div className="form-help">Example: http://127.0.0.1:7860/sdapi/v1</div>
             </div>
 
-            <div class="settings-group">
+            <div className="settings-group">
               <Input
                 label="WebSocket URL"
                 value={wsUrl}
                 onInput={setWsUrl}
                 placeholder="127.0.0.1:7860"
               />
-              <div class="form-help">Example: 127.0.0.1:7860 (without protocol)</div>
+              <div className="form-help">Example: 127.0.0.1:7860 (without protocol)</div>
             </div>
 
-            <div class="settings-group">
+            <div className="settings-group">
               <Dropdown
                 label="Progress Monitoring"
                 value={progressMethod}
                 onInput={(val) => setProgressMethod(val as ProgressMethod)}
                 options={['auto', 'websocket', 'rest', 'none']}
               />
-              <div class="form-help">Auto will detect the best available method</div>
+              <div className="form-help">Auto will detect the best available method</div>
             </div>
 
-            <div class="settings-group">
+            <div className="settings-group">
               <Dropdown
                 label="API Type"
                 value={apiType}
                 onInput={(val) => setApiType(val as 'sdnext' | 'a1111' | 'comfyui' | 'custom')}
                 options={['sdnext', 'a1111', 'comfyui', 'custom']}
               />
-              <div class="form-help">
+              <div className="form-help">
                 Helps optimize compatibility with different backends
                 {apiType && (
-                  <div class="mt-1 text-xs">
+                  <div className="mt-1 text-xs">
                     Supports:{' '}
                     {getApiFeatures(apiType).websocket ? (
-                      <CheckCircle class="icon-xs inline-icon success" />
+                      <CheckCircle className="icon-xs inline-icon success" />
                     ) : (
-                      <XCircle class="icon-xs inline-icon error" />
+                      <XCircle className="icon-xs inline-icon error" />
                     )}{' '}
                     WebSocket,{' '}
                     {getApiFeatures(apiType).rest ? (
-                      <CheckCircle class="icon-xs inline-icon success" />
+                      <CheckCircle className="icon-xs inline-icon success" />
                     ) : (
-                      <XCircle class="icon-xs inline-icon error" />
+                      <XCircle className="icon-xs inline-icon error" />
                     )}{' '}
                     REST Polling
                   </div>
@@ -175,17 +175,17 @@ export function SettingsPanel() {
             </div>
 
             {connectionStatus && (
-              <div class={`settings-status ${connectionStatus}`}>
+              <div className={`settings-status ${connectionStatus}`}>
                 {connectionStatus === 'success' ? (
                   <>
-                    <CheckCircle class="icon-sm" />
+                    <CheckCircle className="icon-sm" />
                     <span>
                       Connected! API: {apiType}, Progress: {detectedProgressMethod}
                     </span>
                   </>
                 ) : (
                   <>
-                    <XCircle class="icon-sm" />
+                    <XCircle className="icon-sm" />
                     <span>Connection failed!</span>
                   </>
                 )}
@@ -193,25 +193,25 @@ export function SettingsPanel() {
             )}
 
             {detectedProgressMethod && connectionStatus === 'success' && (
-              <div class="form-help">Progress monitoring: {detectedProgressMethod}</div>
+              <div className="form-help">Progress monitoring: {detectedProgressMethod}</div>
             )}
 
-            <div class="settings-actions">
+            <div className="settings-actions">
               <button
-                class="btn btn-sm btn-secondary"
+                className="btn btn-sm btn-secondary"
                 onPointerDown={handleTest}
                 disabled={isTesting}
               >
                 {isTesting ? 'Testing...' : 'Test Connection'}
               </button>
               <button
-                class="btn btn-sm btn-primary"
+                className="btn btn-sm btn-primary"
                 onPointerDown={handleSave}
                 disabled={isTesting}
               >
                 Save Settings
               </button>
-              <button class="btn btn-sm btn-ghost" onPointerDown={handleReset} disabled={isTesting}>
+              <button className="btn btn-sm btn-ghost" onPointerDown={handleReset} disabled={isTesting}>
                 Reset to Default
               </button>
             </div>

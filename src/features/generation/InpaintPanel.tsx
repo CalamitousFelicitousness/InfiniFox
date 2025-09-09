@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'preact/hooks'
+import { useState, useEffect } from 'react'
 
 import { Dropdown } from '../../components/common/Dropdown'
 import { NumberInput } from '../../components/common/NumberInput'
@@ -92,11 +92,11 @@ export function InpaintPanel() {
   }
 
   return (
-    <div class="generation-panel">
-      <h3 class="generation-panel-header">Inpainting</h3>
-      <form class="generation-form" onSubmit={handleGenerate}>
+    <div className="generation-panel">
+      <h3 className="generation-panel-header">Inpainting</h3>
+      <form className="generation-form" onSubmit={handleGenerate}>
         {baseImage && (
-          <div class="mask-section">
+          <div className="mask-section">
             <MaskEditor
               baseImage={`data:image/png;base64,${baseImage}`}
               onMaskUpdate={handleMaskDrawn}
@@ -105,10 +105,10 @@ export function InpaintPanel() {
           </div>
         )}
 
-        <div class="prompt-group">
-          <label class="prompt-label">Prompt</label>
+        <div className="prompt-group">
+          <label className="prompt-label">Prompt</label>
           <textarea
-            class="prompt-textarea"
+            className="prompt-textarea"
             value={prompt}
             onInput={(e) => setPrompt(e.currentTarget.value)}
             disabled={isLoading}
@@ -116,10 +116,10 @@ export function InpaintPanel() {
           />
         </div>
 
-        <div class="prompt-group">
-          <label class="prompt-label">Negative Prompt</label>
+        <div className="prompt-group">
+          <label className="prompt-label">Negative Prompt</label>
           <textarea
-            class="prompt-textarea"
+            className="prompt-textarea"
             value={negativePrompt}
             onInput={(e) => setNegativePrompt(e.currentTarget.value)}
             disabled={isLoading}
@@ -156,17 +156,17 @@ export function InpaintPanel() {
           disabled={isLoading}
         />
 
-        <div class="checkbox-group">
+        <div className="checkbox-group">
           <input
             type="checkbox"
             id="inpaint-full-res"
-            class="checkbox-input"
+            className="checkbox-input"
             checked={inpaintFullRes}
             onChange={(e) => setInpaintFullRes(e.currentTarget.checked)}
             disabled={isLoading}
           />
-          <div class="checkbox-box"></div>
-          <label for="inpaint-full-res" class="checkbox-label">
+          <div className="checkbox-box"></div>
+          <label for="inpaint-full-res" className="checkbox-label">
             Inpaint at Full Resolution
           </label>
         </div>
@@ -210,10 +210,10 @@ export function InpaintPanel() {
           disabled={isLoading}
         />
 
-        <div class="generation-actions">
+        <div className="generation-actions">
           <button
             type="submit"
-            class="btn btn-primary btn-block"
+            className="btn btn-primary btn-block"
             disabled={isLoading || !maskImage}
           >
             {isLoading ? 'Generating...' : 'Generate'}

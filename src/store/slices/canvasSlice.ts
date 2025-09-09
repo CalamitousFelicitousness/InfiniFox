@@ -424,7 +424,7 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
     height: number,
     isPlaceholder = false
   ) => {
-    const id = `frame-${Date.now()}`
+    const id = `frame-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     set((state) => ({
       generationFrames: [
         ...state.generationFrames,

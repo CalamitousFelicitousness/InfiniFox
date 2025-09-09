@@ -1,5 +1,5 @@
 import { ChevronDown } from 'lucide-react'
-import { useState, useRef, useEffect } from 'preact/hooks'
+import { useState, useRef, useEffect } from 'react'
 
 interface DropdownProps {
   label: string
@@ -81,11 +81,11 @@ export function Dropdown({
   }
 
   return (
-    <div class="dropdown-group" ref={dropdownRef}>
-      {label && <label class="dropdown-label">{label}</label>}
+    <div className="dropdown-group" ref={dropdownRef}>
+      {label && <label className="dropdown-label">{label}</label>}
       <button
         type="button"
-        class="dropdown-button"
+        className="dropdown-button"
         onPointerDown={(e) => {
           e.preventDefault()
           if (!disabled) setIsOpen(!isOpen)
@@ -97,17 +97,17 @@ export function Dropdown({
       >
         <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', flex: 1 }}>
           {value}
-          {isLoading && <span class="dropdown-spinner" />}
+          {isLoading && <span className="dropdown-spinner" />}
         </span>
-        <ChevronDown size={14} class="dropdown-icon" />
+        <ChevronDown size={14} className="dropdown-icon" />
       </button>
 
       {isOpen && (
-        <div class={`dropdown-menu ${isOpen ? 'open' : ''}`} role="listbox">
+        <div className={`dropdown-menu ${isOpen ? 'open' : ''}`} role="listbox">
           {options.map((option, index) => (
             <div
               key={option}
-              class={`dropdown-option ${value === option ? 'selected' : ''} ${highlightedIndex === index ? 'highlighted' : ''}`}
+              className={`dropdown-option ${value === option ? 'selected' : ''} ${highlightedIndex === index ? 'highlighted' : ''}`}
               onPointerDown={(e) => {
                 e.preventDefault()
                 handleSelect(option)

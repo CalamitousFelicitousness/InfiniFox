@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useState } from 'react'
 
 import './CanvasModeIndicator.css'
 
@@ -36,11 +36,11 @@ export function CanvasModeIndicator({
 
   return (
     <div
-      class={`canvas-mode-indicator glass-surface ${position} ${isVisible ? 'visible' : ''}`}
+      className={`canvas-mode-indicator glass-surface ${position} ${isVisible ? 'visible' : ''}`}
       data-mode={mode}
       aria-label={`Canvas mode: ${getModeText()}`}
     >
-      <span class="canvas-mode-indicator__text">{getModeText()}</span>
+      <span className="canvas-mode-indicator__text">{getModeText()}</span>
     </div>
   )
 }

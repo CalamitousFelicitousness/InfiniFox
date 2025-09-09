@@ -3,7 +3,7 @@
  * Manages smooth theme transitions with performance optimization
  */
 
-import { useState, useCallback, useRef, useEffect } from 'preact/hooks'
+import { useState, useCallback, useRef, useEffect } from 'react'
 
 import { useTheme } from '../themes/ThemeProvider'
 import {

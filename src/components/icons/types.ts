@@ -2,7 +2,7 @@
  * TypeScript definitions for Icon System
  */
 
-import { ComponentProps, FunctionComponent } from 'preact'
+import { ComponentProps, FunctionComponent } from 'react'
 
 // Lucide icon component type
 export type LucideIcon = FunctionComponent<ComponentProps<'svg'>>

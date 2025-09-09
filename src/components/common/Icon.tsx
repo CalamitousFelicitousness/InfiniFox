@@ -3,7 +3,7 @@
  * Enforces consistent sizing using theme tokens
  */
 
-import type { FunctionComponent, JSX } from 'preact'
+import type { FunctionComponent, JSX } from 'react'
 
 import { iconSizeValues, iconStrokes } from '../../themes/tokens/icons'
 
