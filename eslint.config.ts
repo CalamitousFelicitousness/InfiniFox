@@ -40,6 +40,8 @@ const config: Linter.Config[] = [
         ecmaFeatures: {
           jsx: true,
         },
+        project: ['./tsconfig.app.json', './tsconfig.node.json'],
+        tsconfigRootDir: import.meta.dirname,
       },
       globals: {
         browser: true,

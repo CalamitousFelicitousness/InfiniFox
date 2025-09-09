@@ -178,40 +178,40 @@ export function Canvas() {
     const unsubscribe = progressService.onProgress((message) => {
       // Handle progress messages from REST polling monitor
       console.log('Progress event for frame:', activeGenerationFrameId, message)
-      
+
       if (message.phase === 'sampling') {
-      const progress = message.total > 0 ? (message.current / message.total) * 100 : 0
-      updateGenerationFrame(activeGenerationFrameId, {
-      progress,
-        previewImage: message.preview ? `data:image/png;base64,${message.preview}` : undefined,
-          isGenerating: true,
-      })
-      } else if (message.phase === 'vae' || message.phase === 'postprocessing') {
-      updateGenerationFrame(activeGenerationFrameId, {
-        progress: 95,
+        const progress = message.total > 0 ? (message.current / message.total) * 100 : 0
+        updateGenerationFrame(activeGenerationFrameId, {
+          progress,
           previewImage: message.preview ? `data:image/png;base64,${message.preview}` : undefined,
-        isGenerating: true,
-      })
+          isGenerating: true,
+        })
+      } else if (message.phase === 'vae' || message.phase === 'postprocessing') {
+        updateGenerationFrame(activeGenerationFrameId, {
+          progress: 95,
+          previewImage: message.preview ? `data:image/png;base64,${message.preview}` : undefined,
+          isGenerating: true,
+        })
       } else if (message.phase === 'completed') {
-      updateGenerationFrame(activeGenerationFrameId, {
-        isGenerating: false,
-        progress: 100,
-      })
-      // Don't remove frame here - let generation functions handle it
-      setActiveGenerationFrameId(null)
+        updateGenerationFrame(activeGenerationFrameId, {
+          isGenerating: false,
+          progress: 100,
+        })
+        // Don't remove frame here - let generation functions handle it
+        setActiveGenerationFrameId(null)
       } else if (message.phase === 'waiting') {
-      // Initial waiting state, don't update
+        // Initial waiting state, don't update
       } else if (message.error) {
-      updateGenerationFrame(activeGenerationFrameId, {
-        isGenerating: false,
-        error: message.error || 'Generation failed',
-      })
-      // Keep error frames visible longer
-      setTimeout(() => {
-        removeGenerationFrame(activeGenerationFrameId)
+        updateGenerationFrame(activeGenerationFrameId, {
+          isGenerating: false,
+          error: message.error || 'Generation failed',
+        })
+        // Keep error frames visible longer
+        setTimeout(() => {
+          removeGenerationFrame(activeGenerationFrameId)
           setActiveGenerationFrameId(null)
-      }, 3000)
-    }
+        }, 3000)
+      }
     })
 
     return () => {
@@ -234,7 +234,13 @@ export function Canvas() {
         }
       })
     }
-  }, [isLoading, generationFrames, activeGenerationFrameId, updateGenerationFrame, removeGenerationFrame])
+  }, [
+    isLoading,
+    generationFrames,
+    activeGenerationFrameId,
+    updateGenerationFrame,
+    removeGenerationFrame,
+  ])
 
   // Initialize drawing services
   useEffect(() => {
@@ -963,15 +969,18 @@ export function Canvas() {
 
           // For now, use the same image as mask (you might want to add mask drawing functionality)
           // This is a basic implementation - you should implement proper mask drawing
-          await useStore.getState().generateInpaint({
-            baseImage: baseImageBase64,
-            maskImage: baseImageBase64, // TODO: Implement proper mask drawing
-            denoisingStrength: 0.75,
-            maskBlur: 4,
-            inpaintingFill: 'original',
-            inpaintFullRes: false,
-            inpaintFullResPadding: 32,
-          }, frameId)
+          await useStore.getState().generateInpaint(
+            {
+              baseImage: baseImageBase64,
+              maskImage: baseImageBase64, // TODO: Implement proper mask drawing
+              denoisingStrength: 0.75,
+              maskBlur: 4,
+              inpaintingFill: 'original',
+              inpaintFullRes: false,
+              inpaintFullResPadding: 32,
+            },
+            frameId
+          )
         } else {
           throw new Error('Inpaint image not found')
         }

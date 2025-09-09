@@ -242,12 +242,12 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
     }
 
     set({ isLoading: true })
-    
+
     // Determine dimensions based on frame or default
     const frame = frameId ? generationFrames.find((f) => f.id === frameId) : null
     const finalWidth = frame ? frame.width : width
     const finalHeight = frame ? frame.height : height
-    
+
     const params = {
       init_images: [baseImage],
       prompt,
@@ -340,7 +340,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
     } catch (error) {
       console.error('Failed to generate image:', error)
       alert('Failed to generate image. Check console for details.')
-      
+
       // Mark frame as error if it exists
       if (frameId) {
         updateGenerationFrame?.(frameId, {
@@ -348,7 +348,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
           error: error.message || 'Generation failed',
         })
       }
-      
+
       // Don't force complete on error
       progressService.stopPolling(false)
       set({ isLoading: false })
@@ -486,7 +486,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
     } catch (error) {
       console.error('Failed to generate inpaint:', error)
       alert('Failed to generate inpaint. Check console for details.')
-      
+
       // Mark frame as error if it exists
       if (frameId) {
         updateGenerationFrame?.(frameId, {
@@ -494,7 +494,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
           error: error.message || 'Generation failed',
         })
       }
-      
+
       // Don't force complete on error
       progressService.stopPolling(false)
       set({ isLoading: false })
