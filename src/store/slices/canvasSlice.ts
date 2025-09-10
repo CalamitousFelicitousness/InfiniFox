@@ -13,6 +13,7 @@ type StoreRef = {
     addImageDirect: (image: ImageData) => void
     removeImageDirect: (id: string) => void
     updateImagePositionDirect: (id: string, x: number, y: number) => void
+  updateImageTransform: (id: string, transform: { x: number; y: number; scaleX: number; scaleY: number; rotation: number }) => void
     updateStorageStats?: () => void
   }
 }
@@ -49,6 +50,7 @@ export interface CanvasSlice {
   canvasSelectionMode: CanvasSelectionMode
   canvasViewport: CanvasViewport
   generationFrames: GenerationFrame[]
+  activeGenerationFrameId: string | null
 
   // Actions
   addImage: (image: ImageData) => void
@@ -58,6 +60,7 @@ export interface CanvasSlice {
   duplicateImage: (id: string) => void
   updateImagePosition: (id: string, x: number, y: number) => void
   updateImagePositionDirect: (id: string, x: number, y: number) => void
+  updateImageTransform: (id: string, transform: { x: number; y: number; scaleX: number; scaleY: number; rotation: number }) => void
   setImageRole: (
     imageId: string,
     role: 'img2img_init' | 'inpaint_image' | 'controlnet' | null
@@ -91,6 +94,7 @@ export interface CanvasSlice {
   lockFrame: (id: string, locked: boolean) => void
   labelFrame: (id: string, label: string) => void
   convertPlaceholderToActive: (id: string) => void
+  setActiveGenerationFrameId: (id: string | null) => void
 }
 
 export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
@@ -107,6 +111,7 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
     position: { x: 0, y: 0 },
   },
   generationFrames: [],
+  activeGenerationFrameId: null,
 
   // Actions
   addImage: (image: ImageData) => {
@@ -211,6 +216,24 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
       const oldPos = { x: image.x, y: image.y }
       const command = new MoveImageCommand(id, oldPos, { x, y }, storeRef)
       useHistoryStore.getState().executeCommand(command)
+    }
+  },
+
+  updateImageTransform: (id: string, transform: { x: number; y: number; scaleX: number; scaleY: number; rotation: number }) => {
+    set((state) => ({
+      images: state.images.map((img) => 
+        img.id === id 
+          ? { ...img, ...transform }
+          : img
+      ),
+    }))
+
+    // Save transform to IndexedDB if image has a blobId
+    const image = get().images.find((img) => img.id === id)
+    if (image?.blobId) {
+      imageStorage.updateImagePosition(image.blobId, transform.x, transform.y).catch((error) => {
+        console.error('Failed to persist image transform:', error)
+      })
     }
   },
 
@@ -496,5 +519,9 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
         f.id === id ? { ...f, isPlaceholder: false, isGenerating: true } : f
       ),
     }))
+  },
+
+  setActiveGenerationFrameId: (id: string | null) => {
+    set({ activeGenerationFrameId: id })
   },
 })

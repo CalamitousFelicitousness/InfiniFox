@@ -1,309 +1,104 @@
+import React, { useRef, useEffect, useMemo } from 'react'
 import Konva from 'konva'
-import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
-import {
-  Stage,
-  Layer,
-  Image as KonvaImage,
-  Transformer,
-  Line,
-  Circle,
-  Rect,
-  Text,
-} from 'react-konva'
 
-import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
-import { useKonvaTokens } from '../../hooks/useKonvaTokens'
-import { LazyBrush } from '../../services/drawing/LazyBrush'
-import {
-  PerfectFreehandService,
-  BRUSH_PRESETS,
-} from '../../services/drawing/PerfectFreehandService'
-import { PressureManager } from '../../services/drawing/PressureManager'
-import { progressService } from '../../services/progress/ProgressService'
+// Store and utilities
 import { useStore } from '../../store/store'
-import { debounce } from '../../utils/helpers'
+import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
 import { preventDefaultTouch } from '../../utils/pointerEvents'
 
-import { CanvasContextMenu } from './CanvasContextMenu'
+// Custom hooks (Phase 1)
+import { useCanvasTools, CanvasTool } from './hooks/useCanvasTools'
+import { useViewport } from './hooks/useViewport'
+import { useDrawingSystem } from './hooks/useDrawingSystem'
+import { useImageManagement } from './hooks/useImageManagement'
+import { useGenerationFrames } from './hooks/useGenerationFrames'
+import { useFileOperations } from './hooks/useFileOperations'
+import { useCanvasEvents } from './hooks/useCanvasEvents'
+
+// Components (Phase 2)
+import { CanvasStage, useStageSize } from './components/CanvasStage'
+import { CanvasOverlays } from './components/CanvasOverlays'
+import { DrawingLayer } from './components/DrawingLayer'
+import { ImageLayer } from './components/ImageLayer'
+import { FrameLayer } from './components/FrameLayer'
+
+// Existing components
 import { CanvasMinimap } from './CanvasMinimap'
-import { CanvasModeIndicator } from './CanvasModeIndicator'
-import { DraggableCanvasToolbar } from './DraggableCanvasToolbar'
-import { DraggableZoomControls } from './DraggableZoomControls'
-import { FloatingDrawingPanel } from './FloatingDrawingPanel'
-import { SizeIndicator } from './SizeIndicator'
+import { CanvasContextMenu } from './CanvasContextMenu'
 
 import './Canvas.css'
 
-// Tool types enum for better mode management
-export enum CanvasTool {
-  SELECT = 'select',
-  BRUSH = 'brush',
-  ERASER = 'eraser',
-  PAN = 'pan',
-}
-
-interface KonvaImageData {
-  id: string
-  src: string
-  x: number
-  y: number
-  image: HTMLImageElement
-}
-
-interface CanvasState {
-  showUploadMenu: boolean
-  uploadPosition: { x: number; y: number }
-}
-
+/**
+ * Main Canvas component - orchestrates the infinite canvas functionality
+ * Refactored to use modular hooks and components for better maintainability
+ */
 export function Canvas() {
-  const tokens = useKonvaTokens()
+  // Refs for stage and container
+  const stageRef = useRef<Konva.Stage>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Store state
   const {
     images,
     removeImage,
     duplicateImage,
     setImageAsInput,
-    activeImageRoles,
-    uploadImageToCanvas,
     canvasSelectionMode,
     cancelCanvasSelection,
-    setImageRole,
-    canvasViewport,
-    updateCanvasViewport,
-    // Generation frames
-    generationFrames,
-    addGenerationFrame,
-    removeGenerationFrame,
-    updateGenerationFrame,
-    updateFramePosition,
-
-    // Generation parameters
+    
+    // Generation params
     width,
     height,
     generateTxt2Img,
-    isLoading,
-
-    // Drawing state from store
-    isDrawingActive,
-    brushSize,
-    brushOpacity,
-    brushColor,
-    brushPreset,
-    smoothing,
-    drawingStrokes,
-    currentStroke,
-    drawingLayerVisible,
-    drawingLayerOpacity,
-    // Drawing actions from store
-    setDrawingMode,
-    setDrawingTool,
-    setDrawingActive,
-    startDrawingStroke,
-    updateCurrentStroke,
-    endDrawingStroke,
+    
+    // Store exports for context menu
+    exportImageAsBase64,
+    generateImg2Img,
+    generateInpaint,
   } = useStore()
 
-  // Add tool state - default to SELECT tool
-  const [currentTool, setCurrentToolInternal] = useState<CanvasTool>(CanvasTool.SELECT)
-  const [previousTool, setPreviousTool] = useState<CanvasTool | null>(null)
-  const [isSpacePressed, setIsSpacePressed] = useState(false)
-  const [isShiftPressed, setIsShiftPressed] = useState(false)
-  const [isCtrlPressed, setIsCtrlPressed] = useState(false)
-
-  // Handle tool changes with automatic drawing mode management
-  const setCurrentTool = useCallback(
-    (tool: CanvasTool, isTemporary = false) => {
-      // Don't allow tool changes while space is pressed (temporary pan mode)
-      if (isSpacePressed && !isTemporary) return
-
-      setCurrentToolInternal(tool)
-      // Automatically enable/disable drawing mode based on tool
-      const isDrawingTool = tool === CanvasTool.BRUSH || tool === CanvasTool.ERASER
-      setDrawingMode(isDrawingTool)
-      if (isDrawingTool) {
-        setDrawingTool(tool === CanvasTool.ERASER ? 'eraser' : 'brush')
-      }
-    },
-    [isSpacePressed, setDrawingMode, setDrawingTool]
-  )
-
-  const [konvaImages, setKonvaImages] = useState<KonvaImageData[]>([])
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [scale, setScale] = useState(canvasViewport.scale)
-  const [position, setPosition] = useState(canvasViewport.position)
-  const [canvasState, setCanvasState] = useState<CanvasState>({
-    showUploadMenu: false,
-    uploadPosition: { x: 0, y: 0 },
-  })
-  const [contextMenu, setContextMenu] = useState<{
-    visible: boolean
-    x: number
-    y: number
-    imageId: string | null
-  }>({
-    visible: false,
-    x: 0,
-    y: 0,
-    imageId: null,
-  })
-  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 })
-  const [showDrawingCursor, setShowDrawingCursor] = useState(false)
-  const [, setCurrentPressure] = useState(0.5)
-  const strokePointsRef = useRef<{ x: number; y: number; pressure: number }[]>([])
-  const [isPanning, setIsPanning] = useState(false)
-  const [activeGenerationFrameId, setActiveGenerationFrameId] = useState<string | null>(null)
-  const [contextMenuFrameId, setContextMenuFrameId] = useState<string | null>(null)
-  const [, setSelectedFrameId] = useState<string | null>(null)
-
-  const stageRef = useRef<Konva.Stage>(null)
-  const transformerRef = useRef<Konva.Transformer>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [isDraggingFile, setIsDraggingFile] = useState(false)
-
-  // Drawing services
-  const perfectFreehandRef = useRef<PerfectFreehandService | null>(null)
-  const pressureManagerRef = useRef<PressureManager | null>(null)
-  const lazyBrushRef = useRef<LazyBrush | null>(null)
-
-  // Create debounced viewport update to prevent excessive localStorage writes
-  const debouncedUpdateViewport = useRef(
-    debounce((scale: number, position: { x: number; y: number }) => {
-      updateCanvasViewport(scale, position)
-    }, 250) // Debounce for 250ms
-  ).current
-
-  // Monitor progress for active generation frame
-  useEffect(() => {
-    if (!activeGenerationFrameId) return
-
-    const unsubscribe = progressService.onProgress((message) => {
-      // Handle progress messages from REST polling monitor
-      console.log('Progress event for frame:', activeGenerationFrameId, message)
-
-      if (message.phase === 'sampling') {
-        const progress = message.total > 0 ? (message.current / message.total) * 100 : 0
-        updateGenerationFrame(activeGenerationFrameId, {
-          progress,
-          previewImage: message.preview ? `data:image/png;base64,${message.preview}` : undefined,
-          isGenerating: true,
-        })
-      } else if (message.phase === 'vae' || message.phase === 'postprocessing') {
-        updateGenerationFrame(activeGenerationFrameId, {
-          progress: 95,
-          previewImage: message.preview ? `data:image/png;base64,${message.preview}` : undefined,
-          isGenerating: true,
-        })
-      } else if (message.phase === 'completed') {
-        updateGenerationFrame(activeGenerationFrameId, {
-          isGenerating: false,
-          progress: 100,
-        })
-        // Don't remove frame here - let generation functions handle it
-        setActiveGenerationFrameId(null)
-      } else if (message.phase === 'waiting') {
-        // Initial waiting state, don't update
-      } else if (message.error) {
-        updateGenerationFrame(activeGenerationFrameId, {
-          isGenerating: false,
-          error: message.error || 'Generation failed',
-        })
-        // Keep error frames visible longer
-        setTimeout(() => {
-          removeGenerationFrame(activeGenerationFrameId)
-          setActiveGenerationFrameId(null)
-        }, 3000)
-      }
-    })
-
-    return () => {
-      unsubscribe()
-    }
-  }, [activeGenerationFrameId, generationFrames, updateGenerationFrame, removeGenerationFrame])
-
-  // Cleanup orphaned frames only if they're not being managed by activeGenerationFrameId
-  useEffect(() => {
-    if (!isLoading && generationFrames.length > 0) {
-      generationFrames.forEach((frame) => {
-        // Only cleanup frames that aren't actively monitored
-        if (frame.isGenerating && frame.id !== activeGenerationFrameId) {
-          // Mark as orphaned frame error
-          updateGenerationFrame(frame.id, {
-            isGenerating: false,
-            error: 'Generation interrupted',
-          })
-          setTimeout(() => removeGenerationFrame(frame.id), 2000)
-        }
-      })
-    }
-  }, [
-    isLoading,
-    generationFrames,
-    activeGenerationFrameId,
-    updateGenerationFrame,
-    removeGenerationFrame,
-  ])
+  // Initialize all hooks
+  const tools = useCanvasTools()
+  const viewport = useViewport(stageRef)
+  const stageSize = useStageSize(400) // 400px sidebar width
   
-  // Clear any stale frames on mount (for development)
-  useEffect(() => {
-    // Clear contextMenuFrameId on mount to prevent stale references
-    setContextMenuFrameId(null)
-  }, [])
-
-  // Initialize drawing services
-  useEffect(() => {
-    const preset = BRUSH_PRESETS[brushPreset as keyof typeof BRUSH_PRESETS] || BRUSH_PRESETS.soft
-    perfectFreehandRef.current = new PerfectFreehandService({
-      ...preset,
-      size: brushSize,
-    })
-    pressureManagerRef.current = new PressureManager()
-    lazyBrushRef.current = new LazyBrush({ radius: smoothing, enabled: true })
-
-    pressureManagerRef.current.initialize()
-
-    return () => {
-      pressureManagerRef.current?.cleanup()
-    }
-  }, [position, scale, brushPreset, brushSize, smoothing])
-
-  // No longer needed - tool selection directly manages drawing mode
-
-  // Update drawing services when settings change
-  useEffect(() => {
-    if (perfectFreehandRef.current) {
-      const preset = BRUSH_PRESETS[brushPreset as keyof typeof BRUSH_PRESETS] || BRUSH_PRESETS.soft
-      perfectFreehandRef.current.setOptions({
-        ...preset,
-        size: brushSize,
-        smoothing: smoothing / 100,
-      })
-    }
-  }, [brushSize, brushPreset, smoothing])
-
-  useEffect(() => {
-    if (lazyBrushRef.current) {
-      lazyBrushRef.current.configure({ radius: smoothing })
-    }
-  }, [smoothing])
-
-  // Set initial stage position and scale
-  useEffect(() => {
-    if (stageRef.current) {
-      stageRef.current.position(position)
-      stageRef.current.scale({ x: scale, y: scale })
-    }
-  }, [position, scale])
-
-  // Update cursor visibility based on tool and manage stage draggability
-  useEffect(() => {
-    const isDrawingTool = currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER
-    setShowDrawingCursor(isDrawingTool)
-
-    // Update stage draggability based on current tool
-    if (stageRef.current) {
-      stageRef.current.draggable(currentTool === CanvasTool.PAN)
-    }
-  }, [currentTool])
+  const drawing = useDrawingSystem({ 
+    currentTool: tools.currentTool,
+    scale: viewport.scale,
+    position: viewport.position,
+  })
+  
+  const images_ = useImageManagement({ 
+    currentTool: tools.currentTool,
+    scale: viewport.scale,
+  })
+  
+  const frames = useGenerationFrames({ 
+    currentTool: tools.currentTool,
+  })
+  
+  const fileOps = useFileOperations({
+    containerRef,
+    scale: viewport.scale,
+    position: viewport.position,
+    onImageUpload: images_.handleImageFile,
+  })
+  
+  const events = useCanvasEvents({
+    currentTool: tools.currentTool,
+    stageRef,
+    scale: viewport.scale,
+    position: viewport.position,
+    isPanning: viewport.isPanning,
+    onDrawingPointerDown: drawing.handlePointerDown,
+    onDrawingPointerMove: drawing.handlePointerMove,
+    onDrawingPointerUp: drawing.handlePointerUp,
+    onImageSelect: images_.handleImageSelect,
+    onFrameSelect: frames.setSelectedFrameId,
+    onViewportDragStart: viewport.handleStageDragStart,
+    onViewportDragMove: viewport.handleStageDragMove,
+    onViewportDragEnd: viewport.handleStageDragEnd,
+  })
 
   // Prevent default touch behaviors on canvas
   useEffect(() => {
@@ -313,1388 +108,248 @@ export function Canvas() {
     }
   }, [])
 
-  // Handle image file upload - define before use in drag-drop handlers
-  const handleImageFile = useCallback(
-    async (file: File, x: number, y: number) => {
-      if (!file.type.startsWith('image/')) {
-        alert('Please select an image file')
-        return
-      }
-
-      // Use the new uploadImageToCanvas function from the store
-      await uploadImageToCanvas(file, x, y)
-    },
-    [uploadImageToCanvas]
-  )
-
-  // Setup drag and drop handlers
-  useEffect(() => {
-    const container = containerRef.current
-    if (!container) return
-
-    const handleDragOver = (e: DragEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      setIsDraggingFile(true)
-    }
-
-    const handleDragLeave = (e: DragEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      // Only set to false if we're leaving the container entirely
-      if (e.target === container) {
-        setIsDraggingFile(false)
-      }
-    }
-
-    const handleDrop = (e: DragEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      setIsDraggingFile(false)
-
-      const files = Array.from(e.dataTransfer?.files || [])
-      const imageFile = files.find((f) => f.type.startsWith('image/'))
-
-      if (imageFile && stageRef.current) {
-        const stage = stageRef.current
-        const pointer = stage.getPointerPosition()
-        if (pointer) {
-          const stagePos = stage.position()
-          const x = (pointer.x - stagePos.x) / scale
-          const y = (pointer.y - stagePos.y) / scale
-          handleImageFile(imageFile, x, y)
-        }
-      }
-    }
-
-    container.addEventListener('dragover', handleDragOver)
-    container.addEventListener('dragleave', handleDragLeave)
-    container.addEventListener('drop', handleDrop)
-
-    return () => {
-      container.removeEventListener('dragover', handleDragOver)
-      container.removeEventListener('dragleave', handleDragLeave)
-      container.removeEventListener('drop', handleDrop)
-    }
-  }, [scale, handleImageFile])
-
-  const getImageBorderColor = (imageId: string) => {
-    const role = activeImageRoles.find((r) => r.imageId === imageId)
-    if (!role) return selectedId === imageId ? tokens.colors.interactivePrimary : 'transparent'
-
-    switch (role.role) {
-      case 'img2img_init':
-        return tokens.colors.success
-      case 'inpaint_image':
-        return tokens.colors.warning
-      default:
-        return selectedId === imageId ? tokens.colors.interactivePrimary : 'transparent'
-    }
-  }
-
   // Setup keyboard shortcuts
   useKeyboardShortcuts({
     onDelete: () => {
-      if (selectedId && currentTool === CanvasTool.SELECT) {
-        removeImage(selectedId)
-        setSelectedId(null)
+      if (images_.selectedId && tools.currentTool === CanvasTool.SELECT) {
+        removeImage(images_.selectedId)
+        images_.setSelectedId(null)
       }
     },
   })
 
-  // Handle space-to-pan functionality
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Check if user is typing in an input field
-      const target = e.target as HTMLElement
-      if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.tagName === 'SELECT'
-      ) {
-        return
-      }
-
-      // Handle space key for temporary pan mode
-      if (e.code === 'Space' && !e.repeat && !isSpacePressed) {
-        e.preventDefault() // Prevent page scroll
-
-        // Don't activate pan mode if already in pan mode
-        if (currentTool !== CanvasTool.PAN) {
-          setIsSpacePressed(true)
-          setPreviousTool(currentTool)
-          setCurrentTool(CanvasTool.PAN, true) // true indicates temporary switch
+  // Handle context menu actions
+  const handleContextMenuAction = (action: string) => {
+    const { contextMenu } = events
+    const { selectedFrameId } = frames
+    
+    switch (action) {
+      case 'delete':
+        if (contextMenu.imageId) {
+          removeImage(contextMenu.imageId)
+          images_.setSelectedId(null)
         }
-      }
-    }
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      // Handle space key release
-      if (e.code === 'Space') {
-        e.preventDefault() // Prevent page scroll
-
-        if (isSpacePressed && previousTool !== null) {
-          setIsSpacePressed(false)
-          setCurrentTool(previousTool, true) // Restore previous tool
-          setPreviousTool(null)
+        break
+        
+      case 'duplicate':
+        if (contextMenu.imageId) {
+          duplicateImage(contextMenu.imageId)
         }
-      }
-    }
-
-    // Add event listeners
-    document.addEventListener('keydown', handleKeyDown)
-    document.addEventListener('keyup', handleKeyUp)
-
-    // Cleanup on unmount or when dependencies change
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-      document.removeEventListener('keyup', handleKeyUp)
-
-      // Reset space-to-pan state if component unmounts while space is pressed
-      if (isSpacePressed && previousTool !== null) {
-        setIsSpacePressed(false)
-        // Note: We can't call setCurrentTool here as it might cause issues during unmount
-      }
-    }
-  }, [currentTool, isSpacePressed, previousTool, setCurrentTool])
-
-  // Track Shift and Ctrl keys for scroll indicators
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.shiftKey && !isShiftPressed) {
-        setIsShiftPressed(true)
-      }
-      if (e.ctrlKey && !isCtrlPressed) {
-        setIsCtrlPressed(true)
-      }
-    }
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (!e.shiftKey && isShiftPressed) {
-        setIsShiftPressed(false)
-      }
-      if (!e.ctrlKey && isCtrlPressed) {
-        setIsCtrlPressed(false)
-      }
-    }
-
-    const handleBlur = () => {
-      // Reset Shift and Ctrl state when window loses focus
-      setIsShiftPressed(false)
-      setIsCtrlPressed(false)
-    }
-
-    document.addEventListener('keydown', handleKeyDown)
-    document.addEventListener('keyup', handleKeyUp)
-    window.addEventListener('blur', handleBlur)
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-      document.removeEventListener('keyup', handleKeyUp)
-      window.removeEventListener('blur', handleBlur)
-    }
-  }, [isShiftPressed, isCtrlPressed])
-
-  // Load images as Konva-compatible format
-  useEffect(() => {
-    const imagePromises = images.map((imgData) => {
-      return new Promise<KonvaImageData>((resolve) => {
-        const img = new window.Image()
-        img.crossOrigin = 'anonymous' // Ensure CORS is handled
-        img.src = imgData.src
-        img.onload = () => {
-          // Ensure image is fully loaded before adding to Konva
-          if (img.complete && img.naturalHeight !== 0) {
-            resolve({
-              id: imgData.id,
-              src: imgData.src,
-              x: imgData.x,
-              y: imgData.y,
-              image: img,
-            })
-          } else {
-            console.error(`Image ${imgData.id} not fully loaded`)
+        break
+        
+      case 'sendToImg2Img':
+        if (contextMenu.imageId) {
+          const image = images_.konvaImages.find((img) => img.id === contextMenu.imageId)
+          if (image) {
+            setImageAsInput(image.src)
           }
         }
-        img.onerror = () => {
-          console.error(`Failed to load image ${imgData.id}`)
-        }
-      })
-    })
-
-    Promise.all(imagePromises).then(setKonvaImages)
-  }, [images])
-
-  // Update transformer when selection changes
-  useEffect(() => {
-    if (!transformerRef.current || !stageRef.current) return
-
-    const transformer = transformerRef.current
-    const stage = stageRef.current
-
-    if (selectedId && currentTool === CanvasTool.SELECT) {
-      // Find the selected node
-      const selectedNode = stage.findOne(`#${selectedId}`)
-
-      if (selectedNode) {
-        // Attach transformer to the selected node
-        transformer.nodes([selectedNode])
-        transformer.getLayer()?.batchDraw()
-      }
-    } else {
-      // Clear transformer
-      transformer.nodes([])
-      transformer.getLayer()?.batchDraw()
-    }
-  }, [selectedId, currentTool])
-
-  const handleWheel = useCallback(
-    (e: Konva.KonvaEventObject<WheelEvent>) => {
-      e.evt.preventDefault()
-
-      const stage = stageRef.current
-      if (!stage) return
-
-      // Handle Shift+wheel for horizontal scrolling
-      if (e.evt.shiftKey) {
-        const stagePos = stage.position()
-        const scrollSpeed = 50
-        const deltaX = e.evt.deltaY > 0 ? -scrollSpeed : scrollSpeed
-
-        const newPos = {
-          x: stagePos.x + deltaX,
-          y: stagePos.y,
-        }
-
-        stage.position(newPos)
-        stage.batchDraw()
-        setPosition(newPos)
-
-        debouncedUpdateViewport(stage.scaleX(), newPos)
-        return
-      }
-
-      // Handle Ctrl+wheel for vertical scrolling
-      if (e.evt.ctrlKey) {
-        const stagePos = stage.position()
-        const scrollSpeed = 50
-        const deltaY = e.evt.deltaY > 0 ? -scrollSpeed : scrollSpeed
-
-        const newPos = {
-          x: stagePos.x,
-          y: stagePos.y + deltaY,
-        }
-
-        stage.position(newPos)
-        stage.batchDraw()
-        setPosition(newPos)
-
-        debouncedUpdateViewport(stage.scaleX(), newPos)
-        return
-      }
-
-      // Normal zoom - get current scale from stage, not state
-      const oldScale = stage.scaleX()
-      const pointer = stage.getPointerPosition()
-      if (!pointer) return
-
-      // Get current position from stage
-      const stagePos = stage.position()
-
-      const mousePointTo = {
-        x: (pointer.x - stagePos.x) / oldScale,
-        y: (pointer.y - stagePos.y) / oldScale,
-      }
-
-      const direction = e.evt.deltaY > 0 ? -1 : 1
-      const newScale = direction > 0 ? oldScale * 1.1 : oldScale / 1.1
-      const clampedScale = Math.max(0.05, Math.min(10, newScale))
-
-      // Calculate new position
-      const newPos = {
-        x: pointer.x - mousePointTo.x * clampedScale,
-        y: pointer.y - mousePointTo.y * clampedScale,
-      }
-
-      // Update stage directly
-      stage.scale({ x: clampedScale, y: clampedScale })
-      stage.position(newPos)
-      stage.batchDraw()
-
-      // Update state
-      setScale(clampedScale)
-      setPosition(newPos)
-
-      // Save viewport to persistent storage (debounced)
-      debouncedUpdateViewport(clampedScale, newPos)
-    },
-    [debouncedUpdateViewport]
-  )
-
-  const handleContextMenu = (
-    e: Konva.KonvaEventObject<PointerEvent>,
-    imageId: string
-  ) => {
-    e.evt.preventDefault()
-
-    // Context menu works in all modes except drawing modes and active panning
-    if (currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER || isPanning) return
-
-    const stage = stageRef.current
-    if (!stage) return
-
-    // Use stage pointer position for absolute positioning within canvas container
-    const pointer = stage.getPointerPosition()
-    if (!pointer) return
-
-    // Clear frame context when clicking on an image
-    setContextMenuFrameId(null)
-    
-    setContextMenu({
-      visible: true,
-      x: pointer.x,
-      y: pointer.y,
-      imageId,
-    })
-  }
-
-  const handleStageContextMenu = (e: Konva.KonvaEventObject<PointerEvent>) => {
-    e.evt.preventDefault()
-
-    // Context menu works in all modes except drawing modes and active panning
-    if (currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER || isPanning) return
-
-    const stage = stageRef.current
-    if (!stage) return
-
-    // Check what we clicked on
-    const target = e.target
-    const clickedOnEmpty = target === stage
-    const clickedOnFrame = target.getClassName() === 'Rect' && target.id()?.startsWith('frame-')
-    
-    // If we clicked on a frame, let the frame's own context menu handler deal with it
-    if (clickedOnFrame) {
-      return
-    }
-
-    // For empty space or other elements
-    if (clickedOnEmpty) {
-      e.cancelBubble = true // Stop event from reaching frames
-      
-      // Clear frame context if clicking on empty space
-      setContextMenuFrameId(null)
-      
-      // Show upload context menu for empty space
-      const pointer = stage.getPointerPosition()
-      if (pointer) {
-        // Use stage pointer position for absolute positioning within canvas container
-        setContextMenu({
-          visible: true,
-          x: pointer.x,
-          y: pointer.y,
-          imageId: null, // null indicates empty space
-        })
-        // Store the canvas position for image placement
-        const stagePos = stage.position()
-        const canvasX = (pointer.x - stagePos.x) / scale
-        const canvasY = (pointer.y - stagePos.y) / scale
-        setCanvasState({
-          ...canvasState,
-          uploadPosition: { x: canvasX, y: canvasY },
-        })
-      }
-    }
-  }
-
-  const handleStagePointerDown = (
-    e: Konva.KonvaEventObject<PointerEvent>
-  ) => {
-    const stage = stageRef.current
-    if (!stage) return
-
-    const pointer = stage.getPointerPosition()
-    if (!pointer) return
-
-    // Convert to canvas coordinates
-    const stagePos = stage.position()
-    const canvasX = (pointer.x - stagePos.x) / scale
-    const canvasY = (pointer.y - stagePos.y) / scale
-
-    // Check if we clicked on a frame
-    const target = e.target
-    if (target.getClassName() === 'Rect') {
-      const targetId = target.id()
-      if (targetId && targetId.startsWith('frame-')) {
-        return // Let the frame handle its own events
-      }
-    }
-
-    // Handle different tools
-    switch (currentTool) {
-      case CanvasTool.BRUSH:
-      case CanvasTool.ERASER: {
-        // Initialize drawing
-        if (lazyBrushRef.current) {
-          lazyBrushRef.current.initializePositions({ x: canvasX, y: canvasY })
-        }
-
-        // Get pressure from pointer event if available
-        const evt = e.evt as PointerEvent
-        const pressure = evt && 'pressure' in evt ? evt.pressure : 0.5
-        setCurrentPressure(pressure)
-
-        // Initialize stroke points
-        strokePointsRef.current = [{ x: canvasX, y: canvasY, pressure }]
-
-        if (perfectFreehandRef.current) {
-          perfectFreehandRef.current.startStroke({ x: canvasX, y: canvasY, pressure })
-        }
-
-        startDrawingStroke({
-          tool: currentTool === CanvasTool.ERASER ? 'eraser' : 'brush',
-          points: [canvasX, canvasY],
-          color: brushColor,
-          opacity: brushOpacity / 100,
-          strokeWidth: brushSize,
-          globalCompositeOperation:
-            currentTool === CanvasTool.ERASER ? 'destination-out' : 'source-over',
-        })
-        setDrawingActive(true)
         break
-      }
-
-      case CanvasTool.SELECT: {
-        // Don't handle anything here if we clicked on an image
-        // Let the image's own handlers take care of selection
-        if (e.target.className === 'Image') {
-          return
-        }
-
-        // If we're in canvas selection mode and clicked on an image
-        if (canvasSelectionMode.active && e.target !== e.target.getStage()) {
-          const clickedImage = konvaImages.find((img) => img.id === e.target.id())
-          if (clickedImage && canvasSelectionMode.callback) {
-            // Call the callback with image data
-            canvasSelectionMode.callback(clickedImage.id, clickedImage.src)
-            // Set the image role
-            if (canvasSelectionMode.mode) {
-              setImageRole(clickedImage.id, canvasSelectionMode.mode)
-            }
-            // Exit selection mode
-            cancelCanvasSelection()
-            return
+        
+      case 'download':
+        if (contextMenu.imageId) {
+          const image = images_.konvaImages.find((img) => img.id === contextMenu.imageId)
+          if (image) {
+            const link = document.createElement('a')
+            link.href = image.src
+            link.download = `generated-${contextMenu.imageId}.png`
+            link.click()
           }
         }
-
-        // Only deselect if clicking on empty stage
-        const clickedOnEmpty = e.target === e.target.getStage()
-        if (clickedOnEmpty) {
-          setSelectedId(null)
-          setSelectedFrameId(null)
+        break
+        
+      case 'uploadImage':
+        fileOps.fileInputRef.current?.click()
+        break
+        
+      case 'placeEmptyFrame':
+        {
+          const canvasPos = events.screenToCanvas({ x: contextMenu.x, y: contextMenu.y })
+          frames.placeEmptyFrame(canvasPos.x, canvasPos.y)
         }
         break
-      }
-
-      case CanvasTool.PAN:
-        // isPanning will be set by handleStageDragStart when actual dragging begins
+        
+      case 'generateHere':
+        {
+          const canvasPos = events.screenToCanvas({ x: contextMenu.x, y: contextMenu.y })
+          frames.generateAtPosition(canvasPos.x, canvasPos.y)
+        }
         break
     }
-
-    // Hide context menu
-    setContextMenu({ ...contextMenu, visible: false })
-  }
-
-  const handleStagePointerMove = (e: Konva.KonvaEventObject<PointerEvent>) => {
-    const stage = stageRef.current
-    if (!stage) return
-
-    const pointer = stage.getPointerPosition()
-    if (!pointer) return
-
-    // Convert to canvas coordinates
-    const stagePos = stage.position()
-    const canvasX = (pointer.x - stagePos.x) / scale
-    const canvasY = (pointer.y - stagePos.y) / scale
-
-    // Only update cursor position when in drawing mode to reduce re-renders
-    if (currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER) {
-      setCursorPos({ x: canvasX, y: canvasY })
-    }
-
-    // Handle drawing tools
-    if (
-      (currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER) &&
-      isDrawingActive
-    ) {
-      // Get pressure from pointer event if available
-      const evt = e.evt as PointerEvent
-      const pressure = evt && 'pressure' in evt ? evt.pressure : 0.5
-      setCurrentPressure(pressure)
-
-      if (lazyBrushRef.current) {
-        lazyBrushRef.current.update({ x: canvasX, y: canvasY })
-        const smoothed = lazyBrushRef.current.getBrushCoordinates()
-
-        // Add to stroke points with pressure
-        strokePointsRef.current.push({ x: smoothed.x, y: smoothed.y, pressure })
-
-        if (perfectFreehandRef.current) {
-          perfectFreehandRef.current.addPoint({ x: smoothed.x, y: smoothed.y, pressure })
-        }
-
-        // Update current stroke points and generate outline
-        if (currentStroke) {
-          const newPoints = [...currentStroke.points, smoothed.x, smoothed.y]
-
-          // Generate stroke outline using PerfectFreehand with actual pressure values
-          const outline =
-            perfectFreehandRef.current?.generateStrokeOutline(strokePointsRef.current) || null
-
-          updateCurrentStroke(newPoints, outline || undefined)
-        }
-      }
-    }
-  }
-
-  const handleStagePointerUp = (
-    _e?: Konva.KonvaEventObject<PointerEvent>
-  ) => {
-    // Handle drawing tools
-    if (
-      (currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER) &&
-      isDrawingActive
-    ) {
-      if (perfectFreehandRef.current) {
-        const finalOutline = perfectFreehandRef.current.endStroke()
-        if (finalOutline && currentStroke) {
-          // Update with final outline before ending
-          updateCurrentStroke(currentStroke.points, finalOutline)
-        }
-      }
-      // Clear stroke points reference
-      strokePointsRef.current = []
-      endDrawingStroke()
-    }
-
-    // Handle pan tool
-    if (currentTool === CanvasTool.PAN) {
-      setIsPanning(false)
-    }
-  }
-
-  const handleStagePointerEnter = (_e: Konva.KonvaEventObject<PointerEvent>) => {
-    if (currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER) {
-      setShowDrawingCursor(true)
-    }
-  }
-
-  const handleStagePointerLeave = (_e: Konva.KonvaEventObject<PointerEvent>) => {
-    setShowDrawingCursor(false)
-
-    // End any active drawing
-    if (isDrawingActive) {
-      if (perfectFreehandRef.current) {
-        const finalOutline = perfectFreehandRef.current.endStroke()
-        if (finalOutline && currentStroke) {
-          updateCurrentStroke(currentStroke.points, finalOutline)
-        }
-      }
-      strokePointsRef.current = []
-      endDrawingStroke()
-    }
-
-    // Stop panning if we were panning
-    if (isPanning) {
-      setIsPanning(false)
-    }
-  }
-
-  const handleStageDragStart = (e: Konva.KonvaEventObject<DragEvent>) => {
-    // Only handle stage dragging
-    if (e.target === e.target.getStage()) {
-      setIsPanning(true)
-    }
-  }
-
-  const handleStageDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
-    // Only update position if we're dragging the stage itself (not an image)
-    if (e.target === e.target.getStage()) {
-      const newPos = {
-        x: e.target.x(),
-        y: e.target.y(),
-      }
-      setPosition(newPos)
-      setIsPanning(false)
-
-      // Save viewport to persistent storage
-      updateCanvasViewport(scale, newPos)
-    }
-  }
-
-  const handleStageDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
-    // Position is handled internally by Konva for smoother dragging
-    // Update position state for minimap during drag
-    if (e.target === e.target.getStage()) {
-      const stage = e.target
-      setPosition({
-        x: stage.x(),
-        y: stage.y(),
-      })
-    }
-  }
-
-  const handleDelete = () => {
-    if (contextMenu.imageId) {
-      removeImage(contextMenu.imageId)
-      setContextMenu({ ...contextMenu, visible: false })
-      setSelectedId(null)
-    }
-  }
-
-  const handleDuplicate = () => {
-    if (contextMenu.imageId) {
-      duplicateImage(contextMenu.imageId)
-      setContextMenu({ ...contextMenu, visible: false })
-    }
-  }
-
-  const handleSendToImg2Img = () => {
-    if (contextMenu.imageId) {
-      const image = konvaImages.find((img) => img.id === contextMenu.imageId)
-      if (image) {
-        setImageAsInput(image.src)
-        setContextMenu({ ...contextMenu, visible: false })
-      }
-    }
-  }
-
-  const handleDownload = () => {
-    if (contextMenu.imageId) {
-      const image = konvaImages.find((img) => img.id === contextMenu.imageId)
-      if (image) {
-        const link = document.createElement('a')
-        link.href = image.src
-        link.download = `generated-${contextMenu.imageId}.png`
-        link.click()
-        setContextMenu({ ...contextMenu, visible: false })
-      }
-    }
-  }
-
-  const handlePlaceEmptyFrame = () => {
-    const stagePos = stageRef.current?.position()
-    if (!stagePos) return
-
-    const canvasX = (contextMenu.x - stagePos.x) / scale
-    const canvasY = (contextMenu.y - stagePos.y) / scale
-
-    addGenerationFrame(canvasX, canvasY, width, height, true)
-    setContextMenu({ ...contextMenu, visible: false })
-  }
-
-  const handleGenerateHere = async () => {
-    const stagePos = stageRef.current?.position()
-    if (!stagePos) return
-
-    const canvasX = (contextMenu.x - stagePos.x) / scale
-    const canvasY = (contextMenu.y - stagePos.y) / scale
-
-    // Create a temporary generation frame (not a placeholder)
-    const frameId = addGenerationFrame(canvasX, canvasY, width, height, false)
-    setActiveGenerationFrameId(frameId)
-    updateGenerationFrame(frameId, { isGenerating: true })
-
-    try {
-      // Check for active image roles to determine generation mode
-      const img2imgRole = activeImageRoles.find((r) => r.role === 'img2img_init')
-      const inpaintRole = activeImageRoles.find((r) => r.role === 'inpaint_image')
-
-      if (inpaintRole) {
-        // Use inpainting mode if an inpaint image is set
-        const inpaintImage = images.find((img) => img.id === inpaintRole.imageId)
-        if (inpaintImage) {
-          // Get base64 representation of the image
-          const baseImageBase64 = await useStore.getState().exportImageAsBase64(inpaintImage.id)
-
-          // For now, use the same image as mask (you might want to add mask drawing functionality)
-          // This is a basic implementation - you should implement proper mask drawing
-          await useStore.getState().generateInpaint(
-            {
-              baseImage: baseImageBase64,
-              maskImage: baseImageBase64, // TODO: Implement proper mask drawing
-              denoisingStrength: 0.75,
-              maskBlur: 4,
-              inpaintingFill: 'original',
-              inpaintFullRes: false,
-              inpaintFullResPadding: 32,
-            },
-            frameId
-          )
-        } else {
-          throw new Error('Inpaint image not found')
-        }
-      } else if (img2imgRole) {
-        // Use img2img mode if an img2img init image is set
-        const img2imgImage = images.find((img) => img.id === img2imgRole.imageId)
-        if (img2imgImage) {
-          // Get base64 representation of the image
-          const baseImageBase64 = await useStore.getState().exportImageAsBase64(img2imgImage.id)
-
-          // Use default denoising strength (you might want to make this configurable)
-          await useStore.getState().generateImg2Img(baseImageBase64, 0.5, frameId)
-        } else {
-          throw new Error('Img2Img init image not found')
-        }
-      } else {
-        // Default to txt2img if no image roles are set
-        await generateTxt2Img(frameId)
-      }
-
-      // Generated image will be placed at frame position by generation system
-    } catch (error) {
-      updateGenerationFrame(frameId, {
-        isGenerating: false,
-        error: error.message,
-      })
-      console.error('Generation failed:', error)
-    }
-  }
-
-  const handleUploadImage = () => {
-    fileInputRef.current?.click()
-    setContextMenu({ ...contextMenu, visible: false })
-  }
-
-  const handleFileSelect = async (e: Event) => {
-    const input = e.target as HTMLInputElement
-    const file = input.files?.[0]
-    if (!file) return
-
-    await handleImageFile(file, canvasState.uploadPosition.x, canvasState.uploadPosition.y)
-
-    // Reset file input
-    if (input) {
-      input.value = ''
-    }
+    
+    events.hideContextMenu()
   }
 
   // Handle viewport change from minimap
   const handleViewportChange = (x: number, y: number, newScale: number) => {
-    if (stageRef.current) {
-      setPosition({ x, y })
-      setScale(newScale)
-      stageRef.current.position({ x, y })
-      stageRef.current.scale({ x: newScale, y: newScale })
-      stageRef.current.batchDraw()
-
-      // Save viewport to persistent storage
-      updateCanvasViewport(newScale, { x, y })
-    }
+    viewport.setViewport(x, y, newScale)
   }
 
-  // Get cursor radius for drawing
-  const getCursorRadius = () => {
-    return brushSize / 2
-  }
-
-  // Memoize SizeIndicator elements to prevent infinite re-renders
-  const sizeIndicatorElements = useMemo(
-    () =>
-      konvaImages.map((img) => ({
-        id: img.id,
-        x: img.x,
-        y: img.y,
-        type: 'image' as const,
-        image: img.image,
-      })),
-    [konvaImages]
+  // Memoize minimap images data
+  const minimapImages = useMemo(
+    () => images_.konvaImages.map((img) => ({
+      id: img.id,
+      x: img.x,
+      y: img.y,
+      src: img.src,
+      width: img.image?.naturalWidth,
+      height: img.image?.naturalHeight,
+      borderColor: images_.getImageBorderColor(img.id),
+    })),
+    [images_.konvaImages, images_.getImageBorderColor]
   )
 
+  // Get container classes
+  const containerClasses = [
+    'canvas-container',
+    fileOps.isDraggingFile && 'dragging-file',
+    canvasSelectionMode.active && 'selection-mode',
+    (tools.currentTool === CanvasTool.BRUSH || tools.currentTool === CanvasTool.ERASER) && 'drawing-mode',
+    tools.currentTool === CanvasTool.PAN && 'pan-mode',
+    viewport.isPanning && 'panning',
+  ].filter(Boolean).join(' ')
+
   return (
-    <div
-      className={`canvas-container ${isDraggingFile ? 'dragging-file' : ''} ${canvasSelectionMode.active ? 'selection-mode' : ''} ${currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER ? 'drawing-mode' : ''} ${currentTool === CanvasTool.PAN ? 'pan-mode' : ''} ${isPanning ? 'panning' : ''}`}
-      ref={containerRef}
-    >
-      {canvasSelectionMode.active && (
-        <div className="selection-mode-overlay">
-          <div className="selection-mode-header">
-            <h3>Select an image for {canvasSelectionMode.mode}</h3>
-            <button className="cancel-selection-btn" onClick={cancelCanvasSelection}>
-              Cancel
-            </button>
-          </div>
-          <div className="selection-mode-hint">Click on any image to select it</div>
-        </div>
-      )}
-
-      {/* Canvas Mode Indicators */}
-      <CanvasModeIndicator
-        mode={
-          isSpacePressed
-            ? 'space-pan'
-            : isShiftPressed
-              ? 'shift-scroll'
-              : isCtrlPressed
-                ? 'ctrl-scroll'
-                : null
-        }
-        position="bottom-center"
+    <div className={containerClasses} ref={containerRef}>
+      {/* Canvas Overlays */}
+      <CanvasOverlays
+        keyboardMode={tools.getKeyboardMode()}
+        currentTool={tools.currentTool}
+        onToolChange={tools.setCurrentTool}
+        scale={viewport.scale}
+        onZoomIn={viewport.zoomIn}
+        onZoomOut={viewport.zoomOut}
+        onResetViewport={viewport.resetViewport}
+        isDrawingTool={tools.isDrawingTool}
+        drawingTool={tools.currentTool === CanvasTool.ERASER ? 'eraser' : 'brush'}
+        selectedId={images_.selectedId}
+        elements={images_.sizeIndicatorElements}
+        position={viewport.position}
+        canvasSelectionMode={canvasSelectionMode}
+        onCancelSelection={cancelCanvasSelection}
+        isDraggingFile={fileOps.isDraggingFile}
       />
-
-      {/* Draggable Canvas Toolbar */}
-      <DraggableCanvasToolbar currentTool={currentTool} onToolChange={setCurrentTool} />
-
-      {/* Draggable Zoom Controls */}
-      <DraggableZoomControls
-        scale={scale}
-        onZoomIn={() => {
-          const newScale = scale * 1.2
-          const clampedScale = Math.max(0.05, Math.min(10, newScale))
-          setScale(clampedScale)
-          if (stageRef.current) {
-            stageRef.current.scale({ x: clampedScale, y: clampedScale })
-            stageRef.current.batchDraw()
-          }
-          // Save viewport to persistent storage
-          updateCanvasViewport(clampedScale, position)
-        }}
-        onZoomOut={() => {
-          const newScale = scale / 1.2
-          const clampedScale = Math.max(0.05, Math.min(10, newScale))
-          setScale(clampedScale)
-          if (stageRef.current) {
-            stageRef.current.scale({ x: clampedScale, y: clampedScale })
-            stageRef.current.batchDraw()
-          }
-          // Save viewport to persistent storage
-          updateCanvasViewport(clampedScale, position)
-        }}
-        onReset={() => {
-          setScale(1)
-          setPosition({ x: 0, y: 0 })
-          // Directly set stage position
-          if (stageRef.current) {
-            stageRef.current.position({ x: 0, y: 0 })
-            stageRef.current.scale({ x: 1, y: 1 })
-            stageRef.current.batchDraw()
-          }
-          // Save viewport to persistent storage
-          updateCanvasViewport(1, { x: 0, y: 0 })
-        }}
-      />
-
+      
+      {/* Hidden file input */}
       <input
-        ref={fileInputRef}
+        ref={fileOps.fileInputRef}
         type="file"
-        accept="image/*"
+        accept={fileOps.getAcceptedFileTypes()}
         style={{ display: 'none' }}
-        onChange={handleFileSelect}
+        onChange={fileOps.handleFileSelect}
       />
-
-      <Stage
+      
+      {/* Main Canvas Stage */}
+      <CanvasStage
         ref={stageRef}
-        width={window.innerWidth - 400}
-        height={window.innerHeight}
-        draggable={false} // We control this programmatically
-        onWheel={handleWheel}
-        onPointerDown={handleStagePointerDown}
-        onPointerMove={handleStagePointerMove}
-        onPointerUp={handleStagePointerUp}
-        onPointerCancel={handleStagePointerUp} // Handle pointer cancel events
-        onPointerEnter={handleStagePointerEnter}
-        onPointerLeave={handleStagePointerLeave}
-        onContextMenu={handleStageContextMenu}
-        onDragStart={handleStageDragStart}
-        onDragMove={handleStageDragMove}
-        onDragEnd={handleStageDragEnd}
+        width={stageSize.width}
+        height={stageSize.height}
+        currentTool={tools.currentTool}
+        {...events.getStageEventHandlers()}
+        onWheel={viewport.handleWheel}
       >
-        {/* Generation Frames Layer */}
-        <Layer listening={true}>
-          {generationFrames.map((frame) => (
-            <React.Fragment key={frame.id}>
-              <Rect
-                id={`frame-${frame.id}`}
-                x={frame.x}
-                y={frame.y}
-                width={frame.width}
-                height={frame.height}
-                stroke={
-                  frame.error
-                    ? tokens.colors.error
-                    : frame.isPlaceholder
-                      ? tokens.colors.textTertiary
-                      : tokens.colors.interactivePrimary
-                }
-                strokeWidth={
-                  frame.isPlaceholder ? tokens.borders.widthThin : tokens.borders.widthMedium
-                }
-                fill={
-                  frame.isPlaceholder ? tokens.colors.surfaceSelected : tokens.colors.surfaceActive
-                }
-                dash={frame.isPlaceholder ? [5, 5] : [10, 5]}
-                draggable={Boolean(
-                  frame.isPlaceholder && !frame.locked && currentTool === CanvasTool.SELECT
-                )}
-                onPointerDown={() => {
-                  if (currentTool === CanvasTool.SELECT && frame.isPlaceholder) {
-                    setSelectedFrameId(frame.id)
-                    setSelectedId(null)
-                  }
-                }}
-                onDragStart={(e) => {
-                  e.cancelBubble = true
-                  setSelectedFrameId(frame.id)
-                  setSelectedId(null)
-                  const container = containerRef.current
-                  if (container) {
-                    container.style.cursor = 'move'
-                  }
-                }}
-                onDragEnd={(e) => {
-                  e.cancelBubble = true
-                  const node = e.target
-                  updateFramePosition(frame.id, node.x(), node.y())
-                  const container = containerRef.current
-                  if (container) {
-                    container.style.cursor = ''
-                  }
-                }}
-                onPointerEnter={() => {
-                  if (frame.isPlaceholder && !frame.locked && currentTool === CanvasTool.SELECT) {
-                    const container = containerRef.current
-                    if (container) {
-                      container.style.cursor = 'move'
-                    }
-                  }
-                }}
-                onPointerLeave={() => {
-                  const container = containerRef.current
-                  if (container) {
-                    container.style.cursor = ''
-                  }
-                }}
-                onContextMenu={(e) => {
-                  e.evt.preventDefault()
-                  e.cancelBubble = true
-                  const stage = stageRef.current
-                  if (!stage) return
-                  const pointer = stage.getPointerPosition()
-                  if (!pointer) return
-                  setContextMenuFrameId(frame.id)
-                  setContextMenu({
-                    visible: true,
-                    x: pointer.x,
-                    y: pointer.y,
-                    imageId: null,
-                  })
-                }}
-                listening={true}
-              />
-
-              {/* Size indicator for placeholder frames - always visible */}
-              {frame.isPlaceholder && (
-                <>
-                  {/* Background matching external SizeIndicator using design tokens */}
-                  <Rect
-                    x={frame.x + frame.width / 2 - 45}
-                    y={frame.y + frame.height / 2 - 10}
-                    width={90}
-                    height={20}
-                    fill={tokens.colors.surfacePrimary}
-                    stroke={tokens.colors.borderPrimary}
-                    strokeWidth={tokens.borders.widthThin}
-                    cornerRadius={tokens.borders.radiusBase}
-                    listening={false}
-                  />
-                  <Text
-                    x={frame.x + frame.width / 2 - 30}
-                    y={frame.y + frame.height / 2 - 6}
-                    text={`${frame.width} × ${frame.height}`}
-                    fontSize={tokens.typography.fontSizeXs}
-                    fontFamily={tokens.typography.fontFamilyMono}
-                    fontStyle={tokens.typography.fontWeightSemibold.toString()}
-                    fill={tokens.colors.textPrimary}
-                    listening={false}
-                  />
-                  <Text
-                    x={frame.x + frame.width / 2 + 30}
-                    y={frame.y + frame.height / 2 - 5}
-                    text="px"
-                    fontSize={10}
-                    fontFamily={tokens.typography.fontFamilyBase}
-                    fill={tokens.colors.textTertiary}
-                    listening={false}
-                  />
-                </>
-              )}
-
-              {/* Label for placeholder frames */}
-              {frame.isPlaceholder && frame.label && (
-                <Text
-                  x={frame.x}
-                  y={frame.y - 20}
-                  text={frame.label}
-                  fontSize={tokens.typography.fontSizeXs}
-                  fontFamily={tokens.typography.fontFamilyBase}
-                  fill={tokens.colors.textTertiary}
-                  listening={false}
-                />
-              )}
-
-              {/* Lock indicator */}
-              {frame.locked && (
-                <Circle
-                  x={frame.x + frame.width - 10}
-                  y={frame.y + 10}
-                  radius={5}
-                  fill={tokens.colors.error}
-                  listening={false}
-                />
-              )}
-
-              {frame.isGenerating && !frame.isPlaceholder && (
-                <>
-                  <Rect
-                    x={frame.x}
-                    y={frame.y - 25}
-                    width={frame.width}
-                    height={20}
-                    fill={tokens.colors.backgroundPrimary}
-                    cornerRadius={tokens.borders.radiusSm}
-                    listening={false}
-                  />
-
-                  <Rect
-                    x={frame.x + 2}
-                    y={frame.y - 23}
-                    width={(frame.width - 4) * (frame.progress / 100)}
-                    height={16}
-                    fill={tokens.colors.interactivePrimary}
-                    cornerRadius={tokens.borders.radiusSm}
-                    listening={false}
-                  />
-
-                  <Text
-                    x={frame.x}
-                    y={frame.y - 20}
-                    width={frame.width}
-                    height={20}
-                    text={`${Math.round(frame.progress)}%`}
-                    fontSize={tokens.typography.fontSizeXs}
-                    fontFamily={tokens.typography.fontFamilyMono}
-                    fill={tokens.colors.textPrimary}
-                    align="center"
-                    listening={false}
-                  />
-                </>
-              )}
-
-              {frame.previewImage && (
-                <KonvaImage
-                  x={frame.x}
-                  y={frame.y}
-                  width={frame.width}
-                  height={frame.height}
-                  image={(() => {
-                    const img = new window.Image()
-                    img.src = frame.previewImage
-                    return img
-                  })()}
-                  opacity={0.8}
-                  listening={false}
-                />
-              )}
-
-              {frame.error && (
-                <Text
-                  x={frame.x}
-                  y={frame.y + frame.height / 2 - 10}
-                  width={frame.width}
-                  text={frame.error}
-                  fontSize={tokens.typography.fontSizeSm}
-                  fontFamily={tokens.typography.fontFamilyBase}
-                  fill={tokens.colors.error}
-                  align="center"
-                  listening={false}
-                />
-              )}
-            </React.Fragment>
-          ))}
-        </Layer>
-
-        {/* Images Layer */}
-        <Layer>
-          {konvaImages.map((img) => (
-            <KonvaImage
-              key={img.id}
-              id={img.id}
-              image={img.image}
-              x={img.x}
-              y={img.y}
-              draggable={
-                currentTool === CanvasTool.SELECT &&
-                !canvasSelectionMode.active &&
-                img.image &&
-                img.image.complete
-              }
-              // dragBoundFunc removed to prevent conflicts
-              dragDistance={1} // Small threshold to prevent accidental drags
-              onPointerDown={(_e) => {
-                // Select on pointer down to enable click-and-drag
-                if (currentTool === CanvasTool.SELECT) {
-                  setSelectedId(img.id)
-                }
-              }}
-              onDragStart={(e) => {
-                // Ensure selection when drag starts
-                if (currentTool === CanvasTool.SELECT && selectedId !== img.id) {
-                  setSelectedId(img.id)
-                }
-                // Force cache to prevent buffer issues
-                e.target.cache()
-                e.target.getLayer()?.batchDraw()
-              }}
-              onDragMove={(e) => {
-                // Ensure the image buffer remains intact during drag
-                const node = e.target
-                if (!node.isClientRectOnScreen()) {
-                  // If the image is being dragged off-screen, limit the movement
-                  const stage = node.getStage()
-                  if (stage) {
-                    const box = node.getClientRect()
-                    const stageBox = {
-                      x: 0,
-                      y: 0,
-                      width: stage.width(),
-                      height: stage.height(),
-                    }
-                    // Keep at least part of the image visible
-                    if (box.x > stageBox.width) node.x(node.x() - (box.x - stageBox.width + 50))
-                    if (box.y > stageBox.height) node.y(node.y() - (box.y - stageBox.height + 50))
-                    if (box.x + box.width < 0) node.x(node.x() - (box.x + box.width - 50))
-                    if (box.y + box.height < 0) node.y(node.y() - (box.y + box.height - 50))
-                  }
-                }
-              }}
-              onDragEnd={(e) => {
-                const node = e.target
-                const newX = node.x()
-                const newY = node.y()
-
-                // Clear cache after drag
-                node.clearCache()
-
-                // Update position in store
-                useStore.getState().updateImagePosition(img.id, newX, newY)
-
-                // Update local state
-                setKonvaImages((prev) =>
-                  prev.map((i) => (i.id === img.id ? { ...i, x: newX, y: newY } : i))
-                )
-
-                // Force redraw
-                node.getLayer()?.batchDraw()
-              }}
-              stroke={getImageBorderColor(img.id)}
-              strokeWidth={
-                selectedId === img.id || activeImageRoles.some((r) => r.imageId === img.id) ? 3 : 0
-              }
-              hitStrokeWidth={0} // Prevent stroke from interfering with events
-              shadowBlur={selectedId === img.id ? 10 : 0}
-              shadowColor={getImageBorderColor(img.id)}
-              shadowOpacity={0.5}
-              // Shadow hit is disabled by default in Konva
-              opacity={
-                canvasSelectionMode.active
-                  ? activeImageRoles.some((r) => r.imageId === img.id)
-                    ? 1
-                    : 0.5
-                  : 1
-              }
-              listening={true} // Always listen for events
-              onContextMenu={(e) => handleContextMenu(e, img.id)}
-            />
-          ))}
-          {/* Always render transformer but control its visibility through nodes */}
-          <Transformer
-            ref={transformerRef}
-            ignoreStroke={true}
-            rotateEnabled={true}
-            resizeEnabled={true}
-            anchorSize={8}
-            borderStroke={tokens.colors.interactivePrimary}
-            borderStrokeWidth={tokens.borders.widthMedium}
-            anchorFill={tokens.colors.textPrimary}
-            anchorStroke={tokens.colors.interactivePrimary}
-            anchorStrokeWidth={tokens.borders.widthMedium}
-            anchorCornerRadius={tokens.borders.radiusXs}
-            shouldOverdrawWholeArea={false} // Don't overdraw to avoid blocking events
-            boundBoxFunc={(oldBox, newBox) => {
-              // Limit resize to prevent negative values
-              if (newBox.width < 5 || newBox.height < 5) {
-                return oldBox
-              }
-              return newBox
-            }}
-            keepRatio={false}
-            enabledAnchors={[
-              'top-left',
-              'top-center',
-              'top-right',
-              'middle-right',
-              'middle-left',
-              'bottom-left',
-              'bottom-center',
-              'bottom-right',
-            ]}
-            rotationSnaps={[0, 90, 180, 270]}
-            onTransformEnd={() => {
-              // Update the image position after transformation
-              if (selectedId && transformerRef.current) {
-                const node = transformerRef.current.nodes()[0]
-                if (node) {
-                  useStore.getState().updateImagePosition(selectedId, node.x(), node.y())
-                }
-              }
-            }}
-          />
-        </Layer>
-
-        {/* Drawing Layer - only listens when drawing tools are active */}
-        <Layer
-          listening={currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER}
-          visible={drawingLayerVisible}
-          opacity={drawingLayerOpacity}
-        >
-          {/* Render completed strokes */}
-          {drawingStrokes.map((stroke) => {
-            // If we have an outline from PerfectFreehand, render as filled polygon
-            if (stroke.outline && stroke.outline.length > 0) {
-              const flatPoints = stroke.outline.flat()
-              return (
-                <Line
-                  key={stroke.id}
-                  points={flatPoints}
-                  fill={stroke.color}
-                  closed={true}
-                  globalCompositeOperation={stroke.globalCompositeOperation}
-                  opacity={stroke.opacity}
-                  listening={false}
-                />
-              )
+        {/* Frame Layer */}
+        <FrameLayer
+          frames={frames.generationFrames || []}
+          selectedFrameId={frames.selectedFrameId}
+          contextMenuFrameId={frames.contextMenuFrameId}
+          currentTool={tools.currentTool}
+          onFrameSelect={frames.handleFrameSelect}
+          onFrameDragEnd={frames.handleFrameDragEnd}
+          onFrameContextMenu={(e, frameId) => {
+            const pointer = stageRef.current?.getPointerPosition()
+            if (pointer) {
+              events.setContextMenu({
+                visible: true,
+                x: pointer.x,
+                y: pointer.y,
+                imageId: null,
+                frameId,
+              })
             }
-            // Fallback to regular line if no outline
-            return (
-              <Line
-                key={stroke.id}
-                points={stroke.points}
-                stroke={stroke.color}
-                strokeWidth={stroke.strokeWidth}
-                tension={0.5}
-                lineCap="round"
-                lineJoin="round"
-                globalCompositeOperation={stroke.globalCompositeOperation}
-                opacity={stroke.opacity}
-                listening={false}
-              />
-            )
-          })}
-
-          {/* Render current stroke being drawn */}
-          {currentStroke &&
-            (currentStroke.outline && currentStroke.outline.length > 0 ? (
-              <Line
-                points={currentStroke.outline.flat()}
-                fill={currentStroke.color}
-                closed={true}
-                globalCompositeOperation={currentStroke.globalCompositeOperation}
-                opacity={currentStroke.opacity}
-                listening={false}
-              />
-            ) : (
-              <Line
-                points={currentStroke.points}
-                stroke={currentStroke.color}
-                strokeWidth={currentStroke.strokeWidth}
-                tension={0.5}
-                lineCap="round"
-                lineJoin="round"
-                globalCompositeOperation={currentStroke.globalCompositeOperation}
-                opacity={currentStroke.opacity}
-                listening={false}
-              />
-            ))}
-
-          {/* Drawing Cursor */}
-          {showDrawingCursor && !isDrawingActive && (
-            <Circle
-              x={cursorPos.x}
-              y={cursorPos.y}
-              radius={getCursorRadius()}
-              stroke={currentTool === CanvasTool.ERASER ? tokens.colors.error : brushColor}
-              strokeWidth={tokens.borders.widthThin}
-              fill="transparent"
-              opacity={tokens.opacity.hover}
-              listening={false}
-            />
-          )}
-        </Layer>
-      </Stage>
-
-      {/* Size Indicator for images only (not frames) */}
-      <SizeIndicator
-        selectedId={selectedId}
-        elements={sizeIndicatorElements}
-        scale={scale}
-        position={position}
-      />
-
+          }}
+          isFrameDraggable={frames.isFrameDraggable}
+          getFrameStrokeColor={frames.getFrameStrokeColor}
+          getFrameFillColor={frames.getFrameFillColor}
+        />
+        
+        {/* Image Layer */}
+        <ImageLayer
+          images={images_.konvaImages}
+          selectedId={images_.selectedId}
+          activeImageRoles={images_.activeImageRoles}
+          canvasSelectionMode={canvasSelectionMode}
+          currentTool={tools.currentTool}
+          onImageSelect={images_.handleImageSelect}
+          onImageDragEnd={images_.handleImageDragEnd}
+          onImageTransformEnd={images_.handleImageTransformEnd}
+          onContextMenu={(e, imageId) => {
+            const pointer = stageRef.current?.getPointerPosition()
+            if (pointer) {
+              events.setContextMenu({
+                visible: true,
+                x: pointer.x,
+                y: pointer.y,
+                imageId,
+                frameId: null,
+              })
+            }
+          }}
+          isImageDraggable={images_.isImageDraggable}
+          getImageBorderColor={images_.getImageBorderColor}
+          getImageOpacity={images_.getImageOpacity}
+          getTransformerConfig={images_.getTransformerConfig}
+        />
+        
+        {/* Drawing Layer */}
+        <DrawingLayer
+          currentTool={tools.currentTool}
+          drawingStrokes={drawing.drawingStrokes}
+          currentStroke={drawing.currentStroke}
+          showCursor={drawing.showDrawingCursor}
+          cursorPos={drawing.cursorPos}
+          isDrawingActive={drawing.isDrawingActive}
+          brushSize={drawing.brushSize}
+          brushColor={drawing.brushColor}
+          layerVisible={drawing.drawingLayerVisible}
+          layerOpacity={drawing.drawingLayerOpacity}
+          tokens={images_.tokens}
+        />
+      </CanvasStage>
+      
       {/* Minimap */}
       <CanvasMinimap
         stageRef={stageRef}
-        scale={scale}
-        position={position}
-        images={konvaImages.map((img) => ({
-          id: img.id,
-          x: img.x,
-          y: img.y,
-          src: img.src,
-          width: img.image?.naturalWidth,
-          height: img.image?.naturalHeight,
-          borderColor: getImageBorderColor(img.id), // Pass the color based on role/selection
-        }))}
+        scale={viewport.scale}
+        position={viewport.position}
+        images={minimapImages}
         onViewportChange={handleViewportChange}
       />
-
-      {/* Floating Drawing Panel - shown when drawing tools are active */}
-      <FloatingDrawingPanel
-        visible={currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER}
-        tool={currentTool === CanvasTool.ERASER ? 'eraser' : 'brush'}
-      />
-
+      
+      {/* Context Menu */}
       <CanvasContextMenu
-        visible={contextMenu.visible}
-        x={contextMenu.x}
-        y={contextMenu.y}
-        imageId={contextMenu.imageId}
-        frameId={contextMenuFrameId}
-        onClose={() => {
-          setContextMenu({ ...contextMenu, visible: false })
-          setContextMenuFrameId(null)
-        }}
-        onDelete={handleDelete}
-        onDuplicate={handleDuplicate}
-        onSendToImg2Img={handleSendToImg2Img}
+        visible={events.contextMenu.visible}
+        x={events.contextMenu.x}
+        y={events.contextMenu.y}
+        imageId={events.contextMenu.imageId}
+        frameId={events.contextMenu.frameId}
+        onClose={events.hideContextMenu}
+        onDelete={() => handleContextMenuAction('delete')}
+        onDuplicate={() => handleContextMenuAction('duplicate')}
+        onSendToImg2Img={() => handleContextMenuAction('sendToImg2Img')}
         onInpaint={() => {
           // Role is set in CanvasContextMenu component
           // TODO: Navigate to inpaint tab
-          setContextMenu({ ...contextMenu, visible: false })
+          events.hideContextMenu()
         }}
-        onDownload={handleDownload}
-        onUploadImage={handleUploadImage}
-        onGenerateHere={handleGenerateHere}
-        onPlaceEmptyFrame={handlePlaceEmptyFrame}
+        onDownload={() => handleContextMenuAction('download')}
+        onUploadImage={() => handleContextMenuAction('uploadImage')}
+        onGenerateHere={() => handleContextMenuAction('generateHere')}
+        onPlaceEmptyFrame={() => handleContextMenuAction('placeEmptyFrame')}
       />
     </div>
   )
 }
+
+// Re-export CanvasTool enum for external use
+export { CanvasTool }

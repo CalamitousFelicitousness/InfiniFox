@@ -29,6 +29,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       addGenerationFrame,
       updateGenerationFrame,
       removeGenerationFrame,
+      setActiveGenerationFrameId,
     } = get()
 
     if (!prompt) {
@@ -65,6 +66,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       actualFrameId = addGenerationFrame(x, y, width, height, false)
     }
     updateGenerationFrame(actualFrameId, { isGenerating: true })
+    setActiveGenerationFrameId(actualFrameId)
 
     try {
       // Start progress monitoring before making the request
@@ -112,6 +114,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       
       // Remove the generation frame
       removeGenerationFrame(actualFrameId)
+      setActiveGenerationFrameId(null)
 
       // Update storage stats
       await get().updateStorageStats()
@@ -130,6 +133,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       // Remove frame after delay
       setTimeout(() => {
         removeGenerationFrame(actualFrameId)
+        setActiveGenerationFrameId(null)
       }, 3000)
       
       // Don't force complete on error
@@ -152,6 +156,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       convertPlaceholderToActive,
       removeGenerationFrame,
       updateGenerationFrame,
+      setActiveGenerationFrameId,
     } = get()
 
     const frame = generationFrames.find((f) => f.id === frameId)
@@ -167,6 +172,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
 
     // Convert placeholder to active
     convertPlaceholderToActive?.(frameId)
+    setActiveGenerationFrameId(frameId)
 
     set({ isLoading: true })
 
@@ -223,6 +229,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
 
       // Remove frame after successful generation
       removeGenerationFrame?.(frameId)
+      setActiveGenerationFrameId(null)
 
       await get().updateStorageStats()
       progressService.stopPolling(true)
@@ -255,6 +262,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       generationFrames,
       removeGenerationFrame,
       updateGenerationFrame,
+      setActiveGenerationFrameId,
     } = get()
 
     if (!prompt) {
@@ -293,6 +301,10 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       useQueueStore.getState().addBatch(params, 'img2img')
       set({ isLoading: false })
       return
+    }
+
+    if (frameId) {
+      setActiveGenerationFrameId(frameId)
     }
 
     try {
@@ -354,6 +366,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
         // Remove frame after short delay to show completion
         setTimeout(() => {
           removeGenerationFrame?.(frameId)
+          setActiveGenerationFrameId(null)
         }, 500)
       }
 
@@ -394,6 +407,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       generationFrames,
       removeGenerationFrame,
       updateGenerationFrame,
+      setActiveGenerationFrameId,
     } = get()
 
     if (!prompt) {
@@ -439,6 +453,10 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       useQueueStore.getState().addBatch(apiParams, 'inpaint')
       set({ isLoading: false })
       return
+    }
+
+    if (frameId) {
+      setActiveGenerationFrameId(frameId)
     }
 
     try {
@@ -500,6 +518,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
         // Remove frame after short delay to show completion
         setTimeout(() => {
           removeGenerationFrame?.(frameId)
+          setActiveGenerationFrameId(null)
         }, 500)
       }
 

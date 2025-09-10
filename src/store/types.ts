@@ -11,6 +11,9 @@ export interface ImageData {
   y: number
   width?: number
   height?: number
+  scaleX?: number
+  scaleY?: number
+  rotation?: number
   metadata?: {
     type: 'generated' | 'uploaded' | 'reference'
     prompt?: string
@@ -44,6 +47,17 @@ export interface ApiSettings {
   wsUrl: string
   progressMethod: ProgressMethod
   apiType: 'sdnext' | 'a1111' | 'comfyui' | 'custom'
+}
+
+// Drawing types
+export interface DrawingStroke {
+  id: string
+  points: number[]
+  color: string
+  strokeWidth: number
+  globalCompositeOperation: string // Konva composite operation type
+  opacity: number
+  outline?: number[][]
 }
 
 // Inpaint params type
