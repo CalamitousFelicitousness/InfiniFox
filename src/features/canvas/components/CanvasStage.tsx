@@ -1,16 +1,17 @@
+import Konva from 'konva'
 import React, { forwardRef } from 'react'
 import { Stage } from 'react-konva'
-import Konva from 'konva'
+
 import { CanvasTool } from '../hooks/useCanvasTools'
 
 interface CanvasStageProps {
   // Stage dimensions
   width: number
   height: number
-  
+
   // Tool state
   currentTool: CanvasTool
-  
+
   // Event handlers
   onWheel: (e: Konva.KonvaEventObject<WheelEvent>) => void
   onPointerDown: (e: Konva.KonvaEventObject<PointerEvent>) => void
@@ -23,10 +24,10 @@ interface CanvasStageProps {
   onDragStart?: (e: Konva.KonvaEventObject<DragEvent>) => void
   onDragMove?: (e: Konva.KonvaEventObject<DragEvent>) => void
   onDragEnd?: (e: Konva.KonvaEventObject<DragEvent>) => void
-  
+
   // Children (layers)
   children: React.ReactNode
-  
+
   // Additional props
   className?: string
   style?: React.CSSProperties
@@ -80,10 +81,8 @@ export const CanvasStage = forwardRef<Konva.Stage, CanvasStageProps>(
           width={width}
           height={height}
           draggable={isDraggable}
-          
           // Wheel events
           onWheel={onWheel}
-          
           // Pointer events
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
@@ -91,15 +90,12 @@ export const CanvasStage = forwardRef<Konva.Stage, CanvasStageProps>(
           onPointerCancel={onPointerCancel || onPointerUp}
           onPointerEnter={onPointerEnter}
           onPointerLeave={onPointerLeave}
-          
           // Context menu
           onContextMenu={onContextMenu}
-          
           // Drag events (for panning)
           onDragStart={onDragStart}
           onDragMove={onDragMove}
           onDragEnd={onDragEnd}
-          
           // Performance optimizations
           perfectDrawEnabled={false}
           listening={true}
@@ -144,10 +140,10 @@ export const DEFAULT_STAGE_CONFIG = {
   // Performance settings
   perfectDrawEnabled: false,
   listening: true,
-  
+
   // Touch settings
   preventDefault: true,
-  
+
   // Pixel ratio for high DPI displays
   pixelRatio: window.devicePixelRatio || 1,
 }

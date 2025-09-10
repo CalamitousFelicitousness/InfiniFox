@@ -30,7 +30,11 @@ export function Tooltip({ content, children, position = 'top', delay = 500 }: To
   }
 
   return (
-    <div className="tooltip-wrapper" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+    <div
+      className="tooltip-wrapper"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
       {children}
       {visible && (
         <div className={`tooltip tooltip-${position}`}>

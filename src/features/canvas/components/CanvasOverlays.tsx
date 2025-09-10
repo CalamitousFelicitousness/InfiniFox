@@ -1,29 +1,32 @@
+import type Konva from 'konva'
 import React from 'react'
+
+import { CanvasMinimap } from '../CanvasMinimap'
 import { CanvasModeIndicator } from '../CanvasModeIndicator'
 import { DraggableCanvasToolbar } from '../DraggableCanvasToolbar'
 import { DraggableZoomControls } from '../DraggableZoomControls'
 import { FloatingDrawingPanel } from '../FloatingDrawingPanel'
-import { SizeIndicator } from '../SizeIndicator'
 import { CanvasTool } from '../hooks/useCanvasTools'
+import { SizeIndicator } from '../SizeIndicator'
 
 interface CanvasOverlaysProps {
   // Mode indicator
   keyboardMode: string | null
-  
+
   // Toolbar
   currentTool: CanvasTool
   onToolChange: (tool: CanvasTool) => void
-  
+
   // Zoom controls
   scale: number
   onZoomIn: () => void
   onZoomOut: () => void
   onResetViewport: () => void
-  
+
   // Drawing panel
   isDrawingTool: boolean
   drawingTool?: 'brush' | 'eraser'
-  
+
   // Size indicator
   selectedId: string | null
   elements?: Array<{
@@ -36,14 +39,14 @@ interface CanvasOverlaysProps {
     height?: number
   }>
   position?: { x: number; y: number }
-  
+
   // Selection mode
   canvasSelectionMode?: {
     active: boolean
     mode?: string
   }
   onCancelSelection?: () => void
-  
+
   // File dragging
   isDraggingFile?: boolean
 }
@@ -133,7 +136,7 @@ export function CanvasOverlays({
  * Props specifically for the minimap component
  */
 interface MinimapProps {
-  stageRef: React.RefObject<any>
+  stageRef: React.RefObject<Konva.Stage>
   scale: number
   position: { x: number; y: number }
   images: Array<{
@@ -159,8 +162,6 @@ export function CanvasMinimapWrapper({
   images,
   onViewportChange,
 }: MinimapProps) {
-  const { CanvasMinimap } = require('../CanvasMinimap')
-  
   return (
     <CanvasMinimap
       stageRef={stageRef}

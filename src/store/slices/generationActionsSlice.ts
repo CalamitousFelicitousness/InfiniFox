@@ -111,7 +111,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       }
 
       get().addImage(newImage)
-      
+
       // Remove the generation frame
       removeGenerationFrame(actualFrameId)
       setActiveGenerationFrameId(null)
@@ -124,7 +124,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
     } catch (error) {
       console.error('Failed to generate image:', error)
       alert('Failed to generate image. Check console for details.')
-      
+
       // Mark frame as error
       updateGenerationFrame(actualFrameId, {
         isGenerating: false,
@@ -135,7 +135,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
         removeGenerationFrame(actualFrameId)
         setActiveGenerationFrameId(null)
       }, 3000)
-      
+
       // Don't force complete on error
       progressService.stopPolling(false)
     } finally {

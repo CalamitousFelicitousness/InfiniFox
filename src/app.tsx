@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 
+import { AuthDebugPanel } from './components/auth/AuthDebugPanel'
 import { PaletteIcon } from './components/icons'
 import { ControlPanel } from './components/layout/ControlPanel'
 import { ThemeSwitcher } from './components/ThemeSwitcher'
@@ -91,6 +92,9 @@ export function App() {
 
       {/* Drawing Modal */}
       <DrawingModal isOpen={showDrawingModal} onClose={() => setShowDrawingModal(false)} />
+
+      {/* Auth Debug Panel - Development Only */}
+      {import.meta.env.DEV && <AuthDebugPanel />}
     </div>
   )
 }

@@ -1,8 +1,9 @@
+import Konva from 'konva'
 import React, { useEffect, useRef } from 'react'
 import { Layer, Image as KonvaImage, Transformer } from 'react-konva'
-import Konva from 'konva'
-import type { KonvaImageData } from '../hooks/useImageManagement'
+
 import { CanvasTool } from '../hooks/useCanvasTools'
+import type { KonvaImageData } from '../hooks/useImageManagement'
 
 interface ImageLayerProps {
   // Image data
@@ -13,21 +14,21 @@ interface ImageLayerProps {
     active: boolean
     mode?: string
   }
-  
+
   // Tool state
   currentTool: CanvasTool
-  
+
   // Callbacks
   onImageSelect: (imageId: string | null) => void
   onImageDragEnd: (imageId: string, newX: number, newY: number) => void
   onImageTransformEnd: (imageId: string, node: Konva.Node) => void
   onContextMenu: (e: Konva.KonvaEventObject<PointerEvent>, imageId: string) => void
-  
+
   // Utilities
   isImageDraggable: (imageId: string) => boolean
   getImageBorderColor: (imageId: string) => string
   getImageOpacity: (imageId: string) => number
-  getTransformerConfig: () => any
+  getTransformerConfig: () => Partial<Konva.TransformerConfig>
 }
 
 /**
@@ -38,7 +39,7 @@ export function ImageLayer({
   images,
   selectedId,
   activeImageRoles,
-  canvasSelectionMode,
+  _canvasSelectionMode,
   currentTool,
   onImageSelect,
   onImageDragEnd,
@@ -80,15 +81,6 @@ export function ImageLayer({
   }, [selectedId, currentTool])
 
   /**
-   * Handle image click/selection
-   */
-  const handleImageClick = (imageId: string) => {
-    if (currentTool === CanvasTool.SELECT) {
-      onImageSelect(imageId)
-    }
-  }
-
-  /**
    * Handle drag start
    */
   const handleDragStart = (e: Konva.KonvaEventObject<DragEvent>, imageId: string) => {
@@ -96,7 +88,7 @@ export function ImageLayer({
     if (currentTool === CanvasTool.SELECT && selectedId !== imageId) {
       onImageSelect(imageId)
     }
-    
+
     // Force cache to prevent buffer issues
     e.target.cache()
     e.target.getLayer()?.batchDraw()
@@ -141,13 +133,13 @@ export function ImageLayer({
    */
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>, imageId: string) => {
     const node = e.target
-    
+
     // Clear cache after drag
     node.clearCache()
-    
+
     // Update position
     onImageDragEnd(imageId, node.x(), node.y())
-    
+
     // Force redraw
     node.getLayer()?.batchDraw()
   }
@@ -203,7 +195,6 @@ export function ImageLayer({
           rotation={img.rotation || 0}
           draggable={isImageDraggable(img.id)}
           dragDistance={1} // Small threshold to prevent accidental drags
-          
           // Selection
           onPointerDown={(e) => {
             if (currentTool === CanvasTool.SELECT) {
@@ -211,25 +202,22 @@ export function ImageLayer({
               e.cancelBubble = true // Stop event from bubbling to stage
             }
           }}
-          
           // Dragging
           onDragStart={(e) => handleDragStart(e, img.id)}
           onDragMove={handleDragMove}
           onDragEnd={(e) => handleDragEnd(e, img.id)}
-          
           // Styling
           stroke={getImageBorderColor(img.id)}
           strokeWidth={getStrokeWidth(img.id)}
           hitStrokeWidth={0} // Prevent stroke from interfering with events
           opacity={getImageOpacity(img.id)}
           {...getShadowProps(img.id)}
-          
           // Events
           listening={true}
           onContextMenu={(e) => onContextMenu(e, img.id)}
         />
       ))}
-      
+
       {/* Transformer for selected image */}
       <Transformer
         ref={transformerRef}

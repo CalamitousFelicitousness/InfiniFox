@@ -1,5 +1,6 @@
 import React from 'react'
 import { Layer, Line, Circle } from 'react-konva'
+
 import { useKonvaTokens } from '../../../hooks/useKonvaTokens'
 import type { DrawingStroke } from '../../../store/types'
 import { CanvasTool } from '../hooks/useCanvasTools'
@@ -10,11 +11,11 @@ interface DrawingLayerProps {
   currentStroke: DrawingStroke | null
   drawingLayerVisible: boolean
   drawingLayerOpacity: number
-  
+
   // Tool state
   currentTool: CanvasTool
   isDrawingActive: boolean
-  
+
   // Cursor state
   showDrawingCursor: boolean
   cursorPos: { x: number; y: number }
@@ -39,7 +40,7 @@ export function DrawingLayer({
   brushColor,
 }: DrawingLayerProps) {
   const tokens = useKonvaTokens()
-  
+
   // Only listen to events when drawing tools are active
   const isListening = currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER
 
@@ -69,7 +70,7 @@ export function DrawingLayer({
         />
       )
     }
-    
+
     // Fallback to regular line if no outline
     return (
       <Line
@@ -88,11 +89,7 @@ export function DrawingLayer({
   }
 
   return (
-    <Layer
-      listening={isListening}
-      visible={drawingLayerVisible}
-      opacity={drawingLayerOpacity}
-    >
+    <Layer listening={isListening} visible={drawingLayerVisible} opacity={drawingLayerOpacity}>
       {/* Render completed strokes */}
       {drawingStrokes.map(renderStroke)}
 
