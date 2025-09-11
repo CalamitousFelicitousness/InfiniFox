@@ -40,7 +40,7 @@
 
 ## 🎯 Overview
 
-**InfiniFox** is a universal web interface for creative visuals, built from the ground up with enterprise requirements in mind. It aims to deliver a professional-grade experience through its infinite canvas system, sophisticated image editing, artboard support, and modular architecture to give the creator control over their workspace.
+**InfiniFox** is a universal web interface for creative visuals, built from the ground up with artist requirements in mind. It aims to deliver a professional-grade experience through its infinite canvas system, sophisticated image editing, artboard support, and modular architecture to give the creator control over their workspace.
 
 The core principle of InfiniFox is letting users focus on their creative work, without being distracted by the tool itself, with smart, contextual menus and a minimalist UI that only shows what you need when you need it, without sacrificing ease of use and functionality.
 
