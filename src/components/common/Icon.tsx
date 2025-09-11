@@ -10,7 +10,7 @@ import { iconSizeValues, iconStrokes } from '../../themes/tokens/icons'
 type IconSize = keyof typeof iconSizeValues
 type IconStroke = keyof typeof iconStrokes
 
-// Common props that lucide-preact icons accept
+// Common props that lucide-react icons accept
 interface LucideIconProps {
   size?: number | string
   strokeWidth?: number | string

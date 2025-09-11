@@ -1,6 +1,6 @@
 /**
  * Global Icon Styles
- * Consistent styling for lucide-preact icons throughout InfiniFox
+ * Consistent styling for lucide-react icons throughout InfiniFox
  * Updated to use theme tokens instead of hardcoded values
  */
 
@@ -122,24 +122,34 @@ a .lucide-icon,
 
 /* Icon animations */
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes pulse {
-  0%, 100% { 
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
-  50% { 
+  50% {
     opacity: 0.8;
     transform: scale(1.1);
   }
 }
 
 @keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
 }
 
 .icon-spin {
@@ -233,25 +243,25 @@ a .lucide-icon,
   z-index: var(--z-tooltip);
 }
 
-.icon-with-tooltip[data-tooltip-position="top"]::after {
+.icon-with-tooltip[data-tooltip-position='top']::after {
   bottom: 100%;
   left: 50%;
   transform: translateX(-50%) translateY(-4px);
 }
 
-.icon-with-tooltip[data-tooltip-position="bottom"]::after {
+.icon-with-tooltip[data-tooltip-position='bottom']::after {
   top: 100%;
   left: 50%;
   transform: translateX(-50%) translateY(4px);
 }
 
-.icon-with-tooltip[data-tooltip-position="left"]::after {
+.icon-with-tooltip[data-tooltip-position='left']::after {
   right: 100%;
   top: 50%;
   transform: translateY(-50%) translateX(-4px);
 }
 
-.icon-with-tooltip[data-tooltip-position="right"]::after {
+.icon-with-tooltip[data-tooltip-position='right']::after {
   left: 100%;
   top: 50%;
   transform: translateY(-50%) translateX(4px);
@@ -262,12 +272,30 @@ a .lucide-icon,
 }
 
 /* Size modifiers */
-.icon-xs .lucide-icon { width: 12px; height: 12px; }
-.icon-sm .lucide-icon { width: 14px; height: 14px; }
-.icon-md .lucide-icon { width: 16px; height: 16px; }
-.icon-lg .lucide-icon { width: 20px; height: 20px; }
-.icon-xl .lucide-icon { width: 24px; height: 24px; }
-.icon-xxl .lucide-icon { width: 32px; height: 32px; }
+.icon-xs .lucide-icon {
+  width: 12px;
+  height: 12px;
+}
+.icon-sm .lucide-icon {
+  width: 14px;
+  height: 14px;
+}
+.icon-md .lucide-icon {
+  width: 16px;
+  height: 16px;
+}
+.icon-lg .lucide-icon {
+  width: 20px;
+  height: 20px;
+}
+.icon-xl .lucide-icon {
+  width: 24px;
+  height: 24px;
+}
+.icon-xxl .lucide-icon {
+  width: 32px;
+  height: 32px;
+}
 
 /* Glass morphism integration */
 .glass-panel .lucide-icon {
@@ -306,10 +334,18 @@ a .lucide-icon,
 }
 
 /* Status icons */
-.status-success .lucide-icon { color: var(--color-success-500); }
-.status-warning .lucide-icon { color: var(--color-warning-500); }
-.status-error .lucide-icon { color: var(--color-error-500); }
-.status-info .lucide-icon { color: var(--color-info-500); }
+.status-success .lucide-icon {
+  color: var(--color-success-500);
+}
+.status-warning .lucide-icon {
+  color: var(--color-warning-500);
+}
+.status-error .lucide-icon {
+  color: var(--color-error-500);
+}
+.status-info .lucide-icon {
+  color: var(--color-info-500);
+}
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
@@ -318,7 +354,7 @@ a .lucide-icon,
     min-width: 20px;
     min-height: 20px;
   }
-  
+
   .icon-button {
     padding: var(--spacing-2);
   }
@@ -329,11 +365,11 @@ a .lucide-icon,
   .lucide-icon {
     color: rgba(0, 0, 0, 0.8);
   }
-  
+
   .toolbar-tool-btn .lucide-icon {
     color: rgba(0, 0, 0, 0.7);
   }
-  
+
   .toolbar-tool-btn:hover .lucide-icon {
     color: rgba(0, 0, 0, 0.9);
   }

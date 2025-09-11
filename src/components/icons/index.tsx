@@ -1,6 +1,6 @@
 /**
  * Central Icon Management Module
- * Exports all lucide-preact icons used throughout InfiniFox
+ * Exports all lucide-react icons used throughout InfiniFox
  */
 
 import type { FunctionComponent, ComponentProps } from 'react'

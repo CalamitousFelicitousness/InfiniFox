@@ -18,7 +18,7 @@ export const iconSizes = {
 } as const
 
 /**
- * Icon size numeric values (for lucide-preact size prop)
+ * Icon size numeric values (for lucide-react size prop)
  */
 export const iconSizeValues = {
   xs: 12,
