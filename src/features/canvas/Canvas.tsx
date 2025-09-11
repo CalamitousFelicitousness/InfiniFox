@@ -3,17 +3,22 @@ import React, { useRef, useEffect, useMemo } from 'react'
 
 // Store and utilities
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
+import { snappingManager } from '../../services/canvas/SnappingManager'
 import { useStore } from '../../store/store'
 import { preventDefaultTouch } from '../../utils/pointerEvents'
+import type { SnapGuide } from '../../services/canvas/SnappingManager'
 
 // Custom hooks (Phase 1)
 import { CanvasContextMenu } from './CanvasContextMenu'
 import { CanvasMinimap } from './CanvasMinimap'
+import { FloatingSnapControls } from './FloatingSnapControls'
 import { CanvasOverlays } from './components/CanvasOverlays'
 import { CanvasStage, useStageSize } from './components/CanvasStage'
 import { DrawingLayer } from './components/DrawingLayer'
 import { FrameLayer } from './components/FrameLayer'
+import { GridLayer } from './components/GridLayer'
 import { ImageLayer } from './components/ImageLayer'
+import { SnapGuideLayer } from './components/SnapGuideLayer'
 import { useCanvasEvents } from './hooks/useCanvasEvents'
 import { useCanvasTools, CanvasTool } from './hooks/useCanvasTools'
 import { useDrawingSystem } from './hooks/useDrawingSystem'
@@ -36,6 +41,10 @@ export function Canvas() {
   // Refs for stage and container
   const stageRef = useRef<Konva.Stage>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  
+  // Snapping state
+  const [snapGuides, setSnapGuides] = React.useState<SnapGuide[]>([])
+  const [gridEnabled, setGridEnabled] = React.useState(false)
 
   // Store state
   const {
@@ -60,6 +69,7 @@ export function Canvas() {
   const images_ = useImageManagement({
     currentTool: tools.currentTool,
     scale: viewport.scale,
+    onSnapGuidesChange: setSnapGuides,
   })
 
   const frames = useGenerationFrames({
@@ -94,6 +104,17 @@ export function Canvas() {
     const container = containerRef.current
     if (container) {
       preventDefaultTouch(container)
+    }
+  }, [])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Clear snap guides
+      setSnapGuides([])
+      // Reset snapping manager
+      snappingManager.setCurrentObject(null)
+      snappingManager.setObjects([])
     }
   }, [])
 
@@ -214,6 +235,13 @@ export function Canvas() {
 
   return (
     <div className={containerClasses} ref={containerRef}>
+      {/* FloatingSnapControls */}
+      <FloatingSnapControls
+        onSnapConfigChange={(config) => {
+          setGridEnabled(config.gridEnabled)
+        }}
+      />
+      
       {/* Canvas Overlays */}
       <CanvasOverlays
         keyboardMode={tools.getKeyboardMode()}
@@ -251,6 +279,17 @@ export function Canvas() {
         {...events.getStageEventHandlers()}
         onWheel={viewport.handleWheel}
       >
+        {/* Grid Layer */}
+        <GridLayer
+          viewportX={-viewport.position.x / viewport.scale}
+          viewportY={-viewport.position.y / viewport.scale}
+          viewportWidth={stageSize.width / viewport.scale}
+          viewportHeight={stageSize.height / viewport.scale}
+          scale={viewport.scale}
+          enabled={gridEnabled}
+          opacity={0.15}
+        />
+        
         {/* Frame Layer */}
         <FrameLayer
           frames={frames.generationFrames || []}
@@ -284,6 +323,8 @@ export function Canvas() {
           canvasSelectionMode={canvasSelectionMode}
           currentTool={tools.currentTool}
           onImageSelect={images_.handleImageSelect}
+          onImageDragStart={images_.handleImageDragStart}
+          onImageDragMove={images_.handleImageDragMove}
           onImageDragEnd={images_.handleImageDragEnd}
           onImageTransformEnd={images_.handleImageTransformEnd}
           onContextMenu={(e, imageId) => {
@@ -302,6 +343,12 @@ export function Canvas() {
           getImageBorderColor={images_.getImageBorderColor}
           getImageOpacity={images_.getImageOpacity}
           getTransformerConfig={images_.getTransformerConfig}
+        />
+        
+        {/* Snap Guide Layer */}
+        <SnapGuideLayer
+          guides={snapGuides}
+          scale={viewport.scale}
         />
 
         {/* Drawing Layer */}

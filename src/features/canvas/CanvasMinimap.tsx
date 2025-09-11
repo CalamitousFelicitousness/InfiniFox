@@ -34,7 +34,9 @@ export function CanvasMinimap({
   const [minimapSize, setMinimapSize] = useState({ width: 200, height: 150 })
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
+  const [isPanning, setIsPanning] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 })
 
   // Memoize images to prevent unnecessary updates when minimized
   const memoizedImages = useMemo(() => {
@@ -350,14 +352,13 @@ export function CanvasMinimap({
     return () => clearTimeout(timer)
   }, [isMinimized, stageRef, renderMinimap]) // Added missing dependencies
 
-  // Handle minimap click for navigation
-  const handleMinimapClick = (e: MouseEvent) => {
-    // Don't process clicks when minimized
+  // Handle minimap navigation (click or drag)
+  const handleMinimapNavigation = useCallback((clientX: number, clientY: number) => {
     if (isMinimized || !canvasRef.current || !onViewportChange || !stageRef?.current) return
 
     const rect = canvasRef.current.getBoundingClientRect()
-    const clickX = e.clientX - rect.left
-    const clickY = e.clientY - rect.top
+    const clickX = clientX - rect.left
+    const clickY = clientY - rect.top
 
     const transformData = canvasRef.current.dataset.transform
     if (!transformData) return
@@ -377,6 +378,37 @@ export function CanvasMinimap({
     const newY = -(worldY - viewportHeight / 2) * scale
 
     onViewportChange?.(newX, newY, scale)
+  }, [isMinimized, onViewportChange, scale, stageRef])
+
+  // Handle minimap pointer down (start panning)
+  const handleMinimapPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (isMinimized) return
+    
+    setIsPanning(true)
+    setPanStart({ x: e.clientX, y: e.clientY })
+    handleMinimapNavigation(e.clientX, e.clientY)
+    
+    // Capture pointer for smooth dragging
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId)
+    } catch (error) {
+      console.warn('Failed to capture pointer:', error)
+    }
+    e.preventDefault()
+  }
+
+  // Handle minimap pointer move (pan while dragging)
+  const handleMinimapPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isPanning) return
+    handleMinimapNavigation(e.clientX, e.clientY)
+  }
+
+  // Handle minimap pointer up (stop panning)
+  const handleMinimapPointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    setIsPanning(false)
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    }
   }
 
   // Handle dragging
@@ -444,7 +476,7 @@ export function CanvasMinimap({
   return (
     <div
       ref={panelRef}
-      className={`canvas-minimap ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''} ${isMinimized ? 'minimized' : ''}`}
+      className={`canvas-minimap ${isDragging ? 'dragging' : ''} ${isResizing ? 'resizing' : ''} ${isMinimized ? 'minimized' : ''} ${isPanning ? 'panning' : ''}`}
       style={{
         left: `${minimapPos.x}px`,
         top: `${minimapPos.y}px`,
@@ -474,7 +506,10 @@ export function CanvasMinimap({
             className="minimap-canvas"
             width={minimapSize.width - 4}
             height={minimapSize.height - 4}
-            onClick={handleMinimapClick}
+            onPointerDown={handleMinimapPointerDown}
+            onPointerMove={handleMinimapPointerMove}
+            onPointerUp={handleMinimapPointerUp}
+            onPointerCancel={handleMinimapPointerUp}
           />
           <div className="minimap-resize-handle" title="Drag to resize">
             <span className="resize-icon">◢</span>

@@ -25,6 +25,9 @@ export function useViewport(stageRef: React.RefObject<Konva.Stage>) {
   const [scale, setScale] = useState(canvasViewport.scale)
   const [position, setPosition] = useState(canvasViewport.position)
   const [isPanning, setIsPanning] = useState(false)
+  
+  // Temp position during drag (not in state to avoid re-renders)
+  const dragPositionRef = useRef(position)
 
   // Create debounced viewport update to prevent excessive localStorage writes
   const debouncedUpdateViewport = useRef(
@@ -41,14 +44,14 @@ export function useViewport(stageRef: React.RefObject<Konva.Stage>) {
   }, [debouncedUpdateViewport])
 
   /**
-   * Set initial stage position and scale
+   * Set initial stage position and scale only
    */
   useEffect(() => {
     if (stageRef.current) {
-      stageRef.current.position(position)
-      stageRef.current.scale({ x: scale, y: scale })
+      stageRef.current.position(canvasViewport.position)
+      stageRef.current.scale({ x: canvasViewport.scale, y: canvasViewport.scale })
     }
-  }, [stageRef, position, scale]) // Set initial viewport
+  }, [])
 
   /**
    * Convert screen coordinates to canvas coordinates
@@ -232,17 +235,26 @@ export function useViewport(stageRef: React.RefObject<Konva.Stage>) {
     // Only handle stage dragging
     if (e.target === e.target.getStage()) {
       setIsPanning(true)
+      // Initialize drag position
+      const stage = e.target
+      dragPositionRef.current = {
+        x: stage.x(),
+        y: stage.y(),
+      }
     }
   }, [])
 
   const handleStageDragMove = useCallback((e: Konva.KonvaEventObject<DragEvent>) => {
-    // Update position state for minimap during drag
+    // Update state for smooth minimap updates
     if (e.target === e.target.getStage()) {
       const stage = e.target
-      setPosition({
+      const newPos = {
         x: stage.x(),
         y: stage.y(),
-      })
+      }
+      dragPositionRef.current = newPos
+      // Update position state for minimap
+      setPosition(newPos)
     }
   }, [])
 
@@ -255,6 +267,7 @@ export function useViewport(stageRef: React.RefObject<Konva.Stage>) {
           y: e.target.y(),
         }
         setPosition(newPos)
+        dragPositionRef.current = newPos
         setIsPanning(false)
         updateCanvasViewport(scale, newPos)
       }

@@ -87,7 +87,7 @@ function usePreviewImage(src: string | undefined) {
  * Layer component responsible for rendering generation frames
  * Handles both placeholder frames and active generation frames with progress
  */
-export function FrameLayer({
+function FrameLayerComponent({
   frames,
   _selectedFrameId,
   _contextMenuFrameId,
@@ -385,3 +385,6 @@ export function FrameLayer({
     </Layer>
   )
 }
+
+// Memoize to prevent re-renders when snap guides change
+export const FrameLayer = React.memo(FrameLayerComponent)

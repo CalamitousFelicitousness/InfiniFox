@@ -114,6 +114,8 @@ export {
   Sidebar as SidebarIcon,
   PanelLeft as PanelLeftIcon,
   PanelRight as PanelRightIcon,
+  Magnet,
+  Ruler,
 
   // Media controls
   Volume2 as VolumeIcon,

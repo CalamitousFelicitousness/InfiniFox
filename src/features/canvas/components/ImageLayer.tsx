@@ -20,6 +20,8 @@ interface ImageLayerProps {
 
   // Callbacks
   onImageSelect: (imageId: string | null) => void
+  onImageDragStart: (imageId: string) => void
+  onImageDragMove: (imageId: string, x: number, y: number) => { x: number; y: number }
   onImageDragEnd: (imageId: string, newX: number, newY: number) => void
   onImageTransformEnd: (imageId: string, node: Konva.Node) => void
   onContextMenu: (e: Konva.KonvaEventObject<PointerEvent>, imageId: string) => void
@@ -35,13 +37,15 @@ interface ImageLayerProps {
  * Layer component responsible for rendering images and handling selection/transformation
  * Separated from the main Canvas component for better organization and performance
  */
-export function ImageLayer({
+function ImageLayerComponent({
   images,
   selectedId,
   activeImageRoles,
   _canvasSelectionMode,
   currentTool,
   onImageSelect,
+  onImageDragStart,
+  onImageDragMove,
   onImageDragEnd,
   onImageTransformEnd,
   onContextMenu,
@@ -81,6 +85,18 @@ export function ImageLayer({
   }, [selectedId, currentTool])
 
   /**
+   * Cleanup transformer on unmount only
+   */
+  useEffect(() => {
+    return () => {
+      if (transformerRef.current) {
+        transformerRef.current.nodes([])
+        transformerRef.current.destroy()
+      }
+    }
+  }, [])
+
+  /**
    * Handle drag start
    */
   const handleDragStart = (e: Konva.KonvaEventObject<DragEvent>, imageId: string) => {
@@ -89,18 +105,28 @@ export function ImageLayer({
       onImageSelect(imageId)
     }
 
-    // Force cache to prevent buffer issues
+    // Notify snapping system
+    onImageDragStart(imageId)
+
+    // Don't cache layers - causes more issues than it solves
+    // Just ensure smooth dragging through Konva's internal optimizations
     e.target.cache()
     e.target.getLayer()?.batchDraw()
   }
 
   /**
-   * Handle drag move to keep image on screen
+   * Handle drag move with snapping
    */
-  const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
+  const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>, imageId: string) => {
     const node = e.target
+    
+    // Apply snapping
+    const snappedPos = onImageDragMove(imageId, node.x(), node.y())
+    node.x(snappedPos.x)
+    node.y(snappedPos.y)
+    
+    // Keep image on screen
     if (!node.isClientRectOnScreen()) {
-      // If the image is being dragged off-screen, limit the movement
       const stage = node.getStage()
       if (stage) {
         const box = node.getClientRect()
@@ -110,7 +136,6 @@ export function ImageLayer({
           width: stage.width(),
           height: stage.height(),
         }
-        // Keep at least part of the image visible
         const minVisible = 50
         if (box.x > stageBox.width - minVisible) {
           node.x(node.x() - (box.x - stageBox.width + minVisible))
@@ -134,7 +159,7 @@ export function ImageLayer({
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>, imageId: string) => {
     const node = e.target
 
-    // Clear cache after drag
+    // Clear cache from dragged image
     node.clearCache()
 
     // Update position
@@ -204,7 +229,7 @@ export function ImageLayer({
           }}
           // Dragging
           onDragStart={(e) => handleDragStart(e, img.id)}
-          onDragMove={handleDragMove}
+          onDragMove={(e) => handleDragMove(e, img.id)}
           onDragEnd={(e) => handleDragEnd(e, img.id)}
           // Styling
           stroke={getImageBorderColor(img.id)}
@@ -227,3 +252,6 @@ export function ImageLayer({
     </Layer>
   )
 }
+
+// Memoize to prevent re-renders when snap guides change
+export const ImageLayer = React.memo(ImageLayerComponent)
