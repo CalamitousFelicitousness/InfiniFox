@@ -233,13 +233,20 @@ export function MaskEditor({ baseImage, onMaskUpdate, disabled = false }: MaskEd
           />
         </div>
 
-        {pointerType !== 'mouse' && <div className="input-type-indicator">Using: {pointerType}</div>}
+        {pointerType !== 'mouse' && (
+          <div className="input-type-indicator">Using: {pointerType}</div>
+        )}
 
         <div className="mask-actions">
           <button type="button" className="btn btn-ghost" onClick={clearMask} disabled={disabled}>
             Clear
           </button>
-          <button type="button" className="btn btn-ghost" onClick={downloadMask} disabled={disabled}>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={downloadMask}
+            disabled={disabled}
+          >
             Download
           </button>
         </div>

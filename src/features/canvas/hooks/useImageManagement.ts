@@ -1,6 +1,8 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
 import Konva from 'konva'
+import { useState, useEffect, useCallback, useRef } from 'react'
+
 import { useStore } from '../../../store/store'
+
 import { CanvasTool } from './useCanvasTools'
 
 export interface KonvaImageData {
@@ -22,7 +24,7 @@ interface UseImageManagementProps {
 /**
  * Hook for managing image loading, selection, transformation, and roles
  */
-export function useImageManagement({ currentTool, scale }: UseImageManagementProps) {
+export function useImageManagement({ currentTool, scale: _scale }: UseImageManagementProps) {
   const {
     images,
     removeImage,
@@ -43,85 +45,167 @@ export function useImageManagement({ currentTool, scale }: UseImageManagementPro
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const transformerRef = useRef<Konva.Transformer | null>(null)
   const imageCache = useRef<Map<string, HTMLImageElement>>(new Map())
+  const activeLoadsRef = useRef<Set<HTMLImageElement>>(new Set())
+  const mountedRef = useRef(true)
+
+  // Track mounted state
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
   /**
    * Load images as Konva-compatible format
    */
   useEffect(() => {
-    const newKonvaImages: KonvaImageData[] = []
-    const imagePromises: Promise<KonvaImageData | null>[] = []
+    const abortController = new AbortController()
+    const pendingImages = new Set<HTMLImageElement>()
 
-    images.forEach((imgData) => {
-      // Check if we already have this image cached
-      const cachedImg = imageCache.current.get(imgData.id)
-      
-      if (cachedImg && cachedImg.src === imgData.src) {
-        // Use cached image
-        newKonvaImages.push({
-          id: imgData.id,
-          src: imgData.src,
-          x: imgData.x,
-          y: imgData.y,
-          scaleX: imgData.scaleX,
-          scaleY: imgData.scaleY,
-          rotation: imgData.rotation,
-          image: cachedImg,
-        })
-      } else {
-        // Load new image
-        const promise = new Promise<KonvaImageData | null>((resolve) => {
-          const img = new window.Image()
-          img.crossOrigin = 'anonymous'
-          
-          img.onload = () => {
-            if (img.complete && img.naturalHeight !== 0) {
-              // Cache the image
-              imageCache.current.set(imgData.id, img)
-              resolve({
-                id: imgData.id,
-                src: imgData.src,
-                x: imgData.x,
-                y: imgData.y,
-                scaleX: imgData.scaleX,
-                scaleY: imgData.scaleY,
-                rotation: imgData.rotation,
-                image: img,
-              })
-            } else {
-              console.error(`Image ${imgData.id} not fully loaded`)
+    const loadImages = async () => {
+      const newKonvaImages: KonvaImageData[] = []
+      const imagePromises: Promise<KonvaImageData | null>[] = []
+
+      images.forEach((imgData) => {
+        // Check if we already have this image cached
+        const cachedImg = imageCache.current.get(imgData.id)
+
+        if (cachedImg && cachedImg.src === imgData.src) {
+          // Use cached image
+          newKonvaImages.push({
+            id: imgData.id,
+            src: imgData.src,
+            x: imgData.x,
+            y: imgData.y,
+            scaleX: imgData.scaleX,
+            scaleY: imgData.scaleY,
+            rotation: imgData.rotation,
+            image: cachedImg,
+          })
+        } else {
+          // Load new image
+          const promise = new Promise<KonvaImageData | null>((resolve) => {
+            if (abortController.signal.aborted) {
+              resolve(null)
+              return
+            }
+
+            const img = new window.Image()
+            img.crossOrigin = 'anonymous'
+
+            // Track this image load
+            pendingImages.add(img)
+            activeLoadsRef.current.add(img)
+
+            const cleanup = () => {
+              pendingImages.delete(img)
+              activeLoadsRef.current.delete(img)
+              img.onload = null
+              img.onerror = null
+            }
+
+            img.onload = () => {
+              if (!mountedRef.current || abortController.signal.aborted) {
+                cleanup()
+                resolve(null)
+                return
+              }
+
+              if (img.complete && img.naturalHeight !== 0) {
+                // Cache the image
+                imageCache.current.set(imgData.id, img)
+                resolve({
+                  id: imgData.id,
+                  src: imgData.src,
+                  x: imgData.x,
+                  y: imgData.y,
+                  scaleX: imgData.scaleX,
+                  scaleY: imgData.scaleY,
+                  rotation: imgData.rotation,
+                  image: img,
+                })
+              } else {
+                console.error(`Image ${imgData.id} not fully loaded`)
+                resolve(null)
+              }
+              cleanup()
+            }
+
+            img.onerror = () => {
+              console.error(`Failed to load image ${imgData.id}`)
+              cleanup()
               resolve(null)
             }
-          }
-          
-          img.onerror = () => {
-            console.error(`Failed to load image ${imgData.id}`)
-            resolve(null)
-          }
-          
-          img.src = imgData.src
-        })
-        imagePromises.push(promise)
-      }
-    })
 
-    // Clean up removed images from cache
-    const currentIds = new Set(images.map(img => img.id))
-    for (const [id, img] of imageCache.current.entries()) {
-      if (!currentIds.has(id)) {
-        img.src = '' // Clear src to stop any pending loads
-        imageCache.current.delete(id)
+            img.src = imgData.src
+          })
+          imagePromises.push(promise)
+        }
+      })
+
+      // Clean up removed images from cache
+      const currentIds = new Set(images.map((img) => img.id))
+      for (const [id, img] of imageCache.current.entries()) {
+        if (!currentIds.has(id)) {
+          img.onload = null
+          img.onerror = null
+          img.src = '' // Clear src to stop any pending loads
+          imageCache.current.delete(id)
+        }
+      }
+
+      if (imagePromises.length > 0) {
+        const loadedImages = await Promise.all(imagePromises)
+        if (mountedRef.current && !abortController.signal.aborted) {
+          const validImages = loadedImages.filter((img): img is KonvaImageData => img !== null)
+          setKonvaImages([...newKonvaImages, ...validImages])
+        }
+      } else {
+        setKonvaImages(newKonvaImages)
       }
     }
 
-    if (imagePromises.length > 0) {
-      Promise.all(imagePromises).then((loadedImages) => {
-        const validImages = loadedImages.filter((img): img is KonvaImageData => img !== null)
-        setKonvaImages([...newKonvaImages, ...validImages])
+    loadImages()
+
+    // Cleanup function
+    return () => {
+      abortController.abort()
+
+      // Clean up all pending image loads
+      pendingImages.forEach((img) => {
+        img.onload = null
+        img.onerror = null
+        img.src = ''
       })
-    } else {
-      setKonvaImages(newKonvaImages)
+      pendingImages.clear()
     }
   }, [images])
+
+  // Clean up all resources on unmount
+  useEffect(() => {
+    // Capture refs at effect time to avoid stale closure issues
+    const activeLoads = activeLoadsRef.current
+    const cache = imageCache.current
+
+    return () => {
+      // Clear all active loads
+      activeLoads.forEach((img) => {
+        img.onload = null
+        img.onerror = null
+        img.src = ''
+      })
+      activeLoads.clear()
+
+      // Clear image cache
+      cache.forEach((img) => {
+        img.onload = null
+        img.onerror = null
+        img.src = ''
+      })
+      cache.clear()
+    }
+  }, [])
 
   /**
    * Get image border color based on role and selection
@@ -240,11 +324,9 @@ export function useImageManagement({ currentTool, scale }: UseImageManagementPro
   const handleImageDragEnd = useCallback(
     (imageId: string, newX: number, newY: number) => {
       updateImagePosition(imageId, newX, newY)
-      
+
       // Update local state
-      setKonvaImages((prev) =>
-        prev.map((i) => (i.id === imageId ? { ...i, x: newX, y: newY } : i))
-      )
+      setKonvaImages((prev) => prev.map((i) => (i.id === imageId ? { ...i, x: newX, y: newY } : i)))
     },
     [updateImagePosition]
   )
@@ -261,14 +343,12 @@ export function useImageManagement({ currentTool, scale }: UseImageManagementPro
         scaleY: node.scaleY(),
         rotation: node.rotation(),
       }
-      
+
       // Update transform in store
       updateImageTransform(imageId, transform)
-      
+
       // Update local state
-      setKonvaImages((prev) =>
-        prev.map((i) => (i.id === imageId ? { ...i, ...transform } : i))
-      )
+      setKonvaImages((prev) => prev.map((i) => (i.id === imageId ? { ...i, ...transform } : i)))
     },
     [updateImageTransform]
   )
@@ -345,7 +425,10 @@ export function useImageManagement({ currentTool, scale }: UseImageManagementPro
       anchorStrokeWidth: 2,
       anchorCornerRadius: 2,
       shouldOverdrawWholeArea: false,
-      boundBoxFunc: (oldBox: any, newBox: any) => {
+      boundBoxFunc: (
+        oldBox: { width: number; height: number },
+        newBox: { width: number; height: number }
+      ) => {
         // Limit resize to prevent negative values
         if (newBox.width < 5 || newBox.height < 5) {
           return oldBox
@@ -371,6 +454,7 @@ export function useImageManagement({ currentTool, scale }: UseImageManagementPro
     // State
     konvaImages,
     selectedId,
+    setSelectedId,
     canvasSelectionMode,
     activeImageRoles,
     transformerRef: transformerRef.current,

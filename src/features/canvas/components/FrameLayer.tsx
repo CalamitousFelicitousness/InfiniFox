@@ -1,5 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react'
+import type { KonvaEventObject } from 'konva/lib/Node'
+import React, { useEffect, useState } from 'react'
 import { Layer, Rect, Text, Circle, Image as KonvaImage } from 'react-konva'
+
 import { useKonvaTokens } from '../../../hooks/useKonvaTokens'
 import { CanvasTool } from '../hooks/useCanvasTools'
 
@@ -23,15 +25,15 @@ interface FrameLayerProps {
   frames: GenerationFrame[]
   selectedFrameId: string | null
   contextMenuFrameId: string | null
-  
+
   // Tool state
   currentTool: CanvasTool
-  
+
   // Callbacks
   onFrameSelect: (frameId: string | null) => void
   onFrameDragEnd: (frameId: string, newX: number, newY: number) => void
-  onFrameContextMenu: (e: any, frameId: string) => void
-  
+  onFrameContextMenu: (e: KonvaEventObject<PointerEvent>, frameId: string) => void
+
   // Utilities
   isFrameDraggable: (frame: GenerationFrame) => boolean
   getFrameStrokeColor: (frame: GenerationFrame) => string
@@ -53,20 +55,20 @@ function usePreviewImage(src: string | undefined) {
     // Create new image for each src change
     const img = new window.Image()
     let cancelled = false
-    
+
     img.onload = () => {
       if (!cancelled) {
         setImage(img)
       }
     }
-    
+
     img.onerror = () => {
       if (!cancelled) {
         console.error('Failed to load preview image:', src)
         setImage(null)
       }
     }
-    
+
     // Set src after attaching handlers
     img.src = src
 
@@ -87,8 +89,8 @@ function usePreviewImage(src: string | undefined) {
  */
 export function FrameLayer({
   frames,
-  selectedFrameId,
-  contextMenuFrameId,
+  _selectedFrameId,
+  _contextMenuFrameId,
   currentTool,
   onFrameSelect,
   onFrameDragEnd,
@@ -111,10 +113,10 @@ export function FrameLayer({
   /**
    * Handle frame drag start
    */
-  const handleFrameDragStart = (e: any, frame: GenerationFrame) => {
+  const handleFrameDragStart = (e: KonvaEventObject<DragEvent>, frame: GenerationFrame) => {
     e.cancelBubble = true
     onFrameSelect(frame.id)
-    
+
     // Update cursor
     const container = document.querySelector('.canvas-container') as HTMLElement
     if (container) {
@@ -125,11 +127,11 @@ export function FrameLayer({
   /**
    * Handle frame drag end
    */
-  const handleFrameDragEnd = (e: any, frame: GenerationFrame) => {
+  const handleFrameDragEnd = (e: KonvaEventObject<DragEvent>, frame: GenerationFrame) => {
     e.cancelBubble = true
     const node = e.target
     onFrameDragEnd(frame.id, node.x(), node.y())
-    
+
     // Reset cursor
     const container = document.querySelector('.canvas-container') as HTMLElement
     if (container) {
@@ -140,7 +142,7 @@ export function FrameLayer({
   /**
    * Handle frame context menu
    */
-  const handleFrameContextMenu = (e: any, frame: GenerationFrame) => {
+  const handleFrameContextMenu = (e: KonvaEventObject<PointerEvent>, frame: GenerationFrame) => {
     e.evt.preventDefault()
     e.cancelBubble = true
     onFrameContextMenu(e, frame.id)
@@ -227,7 +229,7 @@ export function FrameLayer({
           cornerRadius={tokens.borders.radiusBase}
           listening={false}
         />
-        
+
         {/* Size text */}
         <Text
           x={frame.x + frame.width / 2 - 30}
@@ -239,7 +241,7 @@ export function FrameLayer({
           fill={tokens.colors.textPrimary}
           listening={false}
         />
-        
+
         {/* Unit text */}
         <Text
           x={frame.x + frame.width / 2 + 30}
@@ -295,7 +297,7 @@ export function FrameLayer({
    */
   const PreviewImage = ({ frame }: { frame: GenerationFrame }) => {
     const image = usePreviewImage(frame.previewImage)
-    
+
     if (!image) return null
 
     return (
@@ -348,13 +350,11 @@ export function FrameLayer({
             fill={getFrameFillColor(frame)}
             dash={getDashPattern(frame)}
             draggable={isFrameDraggable(frame)}
-            
             // Events
             onPointerDown={() => handleFramePointerDown(frame)}
             onDragStart={(e) => handleFrameDragStart(e, frame)}
             onDragEnd={(e) => handleFrameDragEnd(e, frame)}
             onContextMenu={(e) => handleFrameContextMenu(e, frame)}
-            
             // Hover effects
             onPointerEnter={() => {
               if (frame.isPlaceholder && !frame.locked && currentTool === CanvasTool.SELECT) {
@@ -370,7 +370,6 @@ export function FrameLayer({
                 container.style.cursor = ''
               }
             }}
-            
             listening={true}
           />
 

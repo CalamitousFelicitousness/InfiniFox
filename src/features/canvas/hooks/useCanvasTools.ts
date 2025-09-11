@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
+
 import { useStore } from '../../../store/store'
 
 /**
@@ -21,7 +22,7 @@ export function useCanvasTools() {
   // Tool state
   const [currentTool, setCurrentToolInternal] = useState<CanvasTool>(CanvasTool.SELECT)
   const [previousTool, setPreviousTool] = useState<CanvasTool | null>(null)
-  
+
   // Keyboard modifier states
   const [isSpacePressed, setIsSpacePressed] = useState(false)
   const [isShiftPressed, setIsShiftPressed] = useState(false)
@@ -36,11 +37,11 @@ export function useCanvasTools() {
       if (isSpacePressed && !isTemporary) return
 
       setCurrentToolInternal(tool)
-      
+
       // Automatically enable/disable drawing mode based on tool
       const isDrawingTool = tool === CanvasTool.BRUSH || tool === CanvasTool.ERASER
       setDrawingMode(isDrawingTool)
-      
+
       if (isDrawingTool) {
         setDrawingTool(tool === CanvasTool.ERASER ? 'eraser' : 'brush')
       }
@@ -109,7 +110,7 @@ export function useCanvasTools() {
       // Reset modifier state when window loses focus
       setIsShiftPressed(false)
       setIsCtrlPressed(false)
-      
+
       // Reset space-to-pan if window loses focus while space is pressed
       if (isSpacePressed && previousTool !== null) {
         setIsSpacePressed(false)
@@ -166,12 +167,12 @@ export function useCanvasTools() {
     currentTool,
     setCurrentTool,
     previousTool,
-    
+
     // Keyboard modifiers
     isSpacePressed,
     isShiftPressed,
     isCtrlPressed,
-    
+
     // Helper methods
     getCursorClass,
     isDrawingTool,

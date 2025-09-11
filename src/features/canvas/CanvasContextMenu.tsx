@@ -40,6 +40,7 @@ export function CanvasContextMenu({
   onClose,
 }: CanvasContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
   const {
     setImageRole,
     getImageRole,
@@ -64,13 +65,17 @@ export function CanvasContextMenu({
 
     if (visible) {
       // Use capture phase to handle before button clicks
-      setTimeout(() => {
+      timeoutRef.current = setTimeout(() => {
         document.addEventListener('pointerdown', handlePointerDown)
       }, 0)
       document.addEventListener('keydown', handleEscape)
     }
 
     return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
       document.removeEventListener('pointerdown', handlePointerDown)
       document.removeEventListener('keydown', handleEscape)
     }

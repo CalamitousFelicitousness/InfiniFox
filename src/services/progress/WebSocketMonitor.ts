@@ -7,6 +7,7 @@ export class WebSocketMonitor extends BaseProgressMonitor {
   private reconnectAttempts = 0
   private maxReconnectAttempts = 5
   private reconnectDelay = 1000
+  private reconnectTimeoutId: NodeJS.Timeout | null = null
 
   constructor() {
     super()
@@ -107,10 +108,25 @@ export class WebSocketMonitor extends BaseProgressMonitor {
 
   disconnect(): void {
     this.connected = false
+
+    // Cancel any pending reconnection
+    if (this.reconnectTimeoutId) {
+      clearTimeout(this.reconnectTimeoutId)
+      this.reconnectTimeoutId = null
+    }
+
+    // Remove all event handlers before closing to prevent memory leaks
     if (this.ws) {
+      this.ws.onopen = null
+      this.ws.onmessage = null
+      this.ws.onerror = null
+      this.ws.onclose = null
       this.ws.close()
       this.ws = null
     }
+
+    // Clear handler set
+    this.handlers.clear()
   }
 
   private reconnect(): void {
@@ -124,7 +140,13 @@ export class WebSocketMonitor extends BaseProgressMonitor {
 
     console.log(`WebSocket reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`)
 
-    setTimeout(() => {
+    // Clear any existing reconnect timeout
+    if (this.reconnectTimeoutId) {
+      clearTimeout(this.reconnectTimeoutId)
+    }
+
+    this.reconnectTimeoutId = setTimeout(() => {
+      this.reconnectTimeoutId = null
       this.connect().catch(console.error)
     }, delay)
   }

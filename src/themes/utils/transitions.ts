@@ -132,6 +132,8 @@ export function removeTransition(): void {
 /**
  * Transition between themes with animation
  */
+let transitionTimeoutId: NodeJS.Timeout | null = null
+
 export async function transitionTheme(
   fromTheme: Theme,
   toTheme: Theme,
@@ -139,6 +141,13 @@ export async function transitionTheme(
   onTransitionStart?: () => void,
   onTransitionEnd?: () => void
 ): Promise<void> {
+  // Clear any existing transition
+  if (transitionTimeoutId) {
+    clearTimeout(transitionTimeoutId)
+    transitionTimeoutId = null
+    removeTransition()
+  }
+
   return new Promise((resolve) => {
     // Call start callback
     onTransitionStart?.()
@@ -151,8 +160,9 @@ export async function transitionTheme(
       // Theme will be applied by ThemeProvider
       // We just need to wait for transition to complete
 
-      setTimeout(
+      transitionTimeoutId = setTimeout(
         () => {
+          transitionTimeoutId = null
           // Remove transition styles
           removeTransition()
 
@@ -165,6 +175,17 @@ export async function transitionTheme(
       )
     })
   })
+}
+
+/**
+ * Cancel any ongoing transition
+ */
+export function cancelTransition(): void {
+  if (transitionTimeoutId) {
+    clearTimeout(transitionTimeoutId)
+    transitionTimeoutId = null
+  }
+  removeTransition()
 }
 
 /**

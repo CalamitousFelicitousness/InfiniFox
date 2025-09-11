@@ -102,33 +102,29 @@ export function HistoryPanel() {
         </div>
       </div>
 
-      <div className="panel-content">
-        {isExpanded && (
-          <>
-            <div className="history-list" ref={listRef}>
-              {history.length === 0 ? (
-                <div className="history-empty">No actions yet</div>
-              ) : (
-                history.map((item) => (
-                  <div key={item.id} className={`history-item ${item.isCurrent ? 'current' : ''}`}>
-                    <span className="history-item-icon">
-                      <Clock className="icon-sm" />
-                    </span>
-                    <span className="history-item-label">{item.description}</span>
-                    <span className="history-item-time">{formatTime(item.timestamp)}</span>
-                  </div>
-                ))
-              )}
-            </div>
+      <div className={`panel-content ${!isExpanded ? 'collapsed' : ''}`}>
+        <div className="history-list" ref={listRef}>
+          {history.length === 0 ? (
+            <div className="history-empty">No actions yet</div>
+          ) : (
+            history.map((item) => (
+              <div key={item.id} className={`history-item ${item.isCurrent ? 'current' : ''}`}>
+                <span className="history-item-icon">
+                  <Clock className="icon-sm" />
+                </span>
+                <span className="history-item-label">{item.description}</span>
+                <span className="history-item-time">{formatTime(item.timestamp)}</span>
+              </div>
+            ))
+          )}
+        </div>
 
-            <div className="history-footer">
-              <span>
-                {history.length} action{history.length !== 1 ? 's' : ''}
-              </span>
-              <span>Max: 50</span>
-            </div>
-          </>
-        )}
+        <div className="history-footer">
+          <span>
+            {history.length} action{history.length !== 1 ? 's' : ''}
+          </span>
+          <span>Max: 50</span>
+        </div>
       </div>
     </div>
   )

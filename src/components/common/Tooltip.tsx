@@ -1,5 +1,5 @@
 import type { VNode } from 'react'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 import './Tooltip.css'
 
@@ -12,25 +12,37 @@ interface TooltipProps {
 
 export function Tooltip({ content, children, position = 'top', delay = 500 }: TooltipProps) {
   const [visible, setVisible] = useState(false)
-  const [timer, setTimer] = useState<number | null>(null)
+  const timerRef = useRef<number | null>(null)
 
   const handleMouseEnter = () => {
-    const newTimer = window.setTimeout(() => {
+    timerRef.current = window.setTimeout(() => {
       setVisible(true)
     }, delay)
-    setTimer(newTimer)
   }
 
   const handleMouseLeave = () => {
-    if (timer) {
-      clearTimeout(timer)
-      setTimer(null)
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
     }
     setVisible(false)
   }
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current)
+      }
+    }
+  }, [])
+
   return (
-    <div className="tooltip-wrapper" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+    <div
+      className="tooltip-wrapper"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
       {children}
       {visible && (
         <div className={`tooltip tooltip-${position}`}>

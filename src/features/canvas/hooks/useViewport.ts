@@ -1,5 +1,6 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
 import Konva from 'konva'
+import { useState, useRef, useCallback, useEffect } from 'react'
+
 import { useStore } from '../../../store/store'
 import { debounce } from '../../../utils/helpers'
 
@@ -19,7 +20,7 @@ export type ViewportState = {
  */
 export function useViewport(stageRef: React.RefObject<Konva.Stage>) {
   const { canvasViewport, updateCanvasViewport } = useStore()
-  
+
   // Viewport state
   const [scale, setScale] = useState(canvasViewport.scale)
   const [position, setPosition] = useState(canvasViewport.position)
@@ -32,6 +33,13 @@ export function useViewport(stageRef: React.RefObject<Konva.Stage>) {
     }, 250) // Debounce for 250ms
   ).current
 
+  // Cancel debounced calls on unmount
+  useEffect(() => {
+    return () => {
+      debouncedUpdateViewport.cancel()
+    }
+  }, [debouncedUpdateViewport])
+
   /**
    * Set initial stage position and scale
    */
@@ -40,7 +48,7 @@ export function useViewport(stageRef: React.RefObject<Konva.Stage>) {
       stageRef.current.position(position)
       stageRef.current.scale({ x: scale, y: scale })
     }
-  }, []) // Only on mount
+  }, [stageRef, position, scale]) // Set initial viewport
 
   /**
    * Convert screen coordinates to canvas coordinates
@@ -159,12 +167,12 @@ export function useViewport(stageRef: React.RefObject<Konva.Stage>) {
     const newScale = scale * 1.2
     const clampedScale = Math.max(0.05, Math.min(10, newScale))
     setScale(clampedScale)
-    
+
     if (stageRef.current) {
       stageRef.current.scale({ x: clampedScale, y: clampedScale })
       stageRef.current.batchDraw()
     }
-    
+
     updateCanvasViewport(clampedScale, position)
   }, [scale, position, stageRef, updateCanvasViewport])
 
@@ -175,12 +183,12 @@ export function useViewport(stageRef: React.RefObject<Konva.Stage>) {
     const newScale = scale / 1.2
     const clampedScale = Math.max(0.05, Math.min(10, newScale))
     setScale(clampedScale)
-    
+
     if (stageRef.current) {
       stageRef.current.scale({ x: clampedScale, y: clampedScale })
       stageRef.current.batchDraw()
     }
-    
+
     updateCanvasViewport(clampedScale, position)
   }, [scale, position, stageRef, updateCanvasViewport])
 
@@ -190,13 +198,13 @@ export function useViewport(stageRef: React.RefObject<Konva.Stage>) {
   const resetViewport = useCallback(() => {
     setScale(1)
     setPosition({ x: 0, y: 0 })
-    
+
     if (stageRef.current) {
       stageRef.current.position({ x: 0, y: 0 })
       stageRef.current.scale({ x: 1, y: 1 })
       stageRef.current.batchDraw()
     }
-    
+
     updateCanvasViewport(1, { x: 0, y: 0 })
   }, [stageRef, updateCanvasViewport])
 

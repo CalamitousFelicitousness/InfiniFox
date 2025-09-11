@@ -1,5 +1,6 @@
-import { useState, useCallback, useRef } from 'react'
 import Konva from 'konva'
+import { useState, useCallback } from 'react'
+
 import { CanvasTool } from './useCanvasTools'
 
 type Position = {
@@ -21,7 +22,7 @@ interface UseCanvasEventsProps {
   scale: number
   position: Position
   isPanning: boolean
-  
+
   // Handler functions from other hooks
   onDrawingPointerDown?: (e: Konva.KonvaEventObject<PointerEvent>) => boolean
   onDrawingPointerMove?: (e: Konva.KonvaEventObject<PointerEvent>) => boolean
@@ -130,7 +131,7 @@ export function useCanvasEvents({
               }
               parent = parent.getParent()
             }
-            
+
             // Only deselect if not clicking on transformer or its children
             if (!isTransformerElement) {
               if (onImageSelect) onImageSelect(null)
@@ -262,12 +263,9 @@ export function useCanvasEvents({
   /**
    * Handle pointer enter/leave for cursor management
    */
-  const handleStagePointerEnter = useCallback(
-    (_e: Konva.KonvaEventObject<PointerEvent>) => {
-      // Could be used for cursor visibility
-    },
-    []
-  )
+  const handleStagePointerEnter = useCallback((_e: Konva.KonvaEventObject<PointerEvent>) => {
+    // Could be used for cursor visibility
+  }, [])
 
   const handleStagePointerLeave = useCallback(
     (_e: Konva.KonvaEventObject<PointerEvent>) => {

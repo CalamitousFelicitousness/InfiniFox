@@ -1,30 +1,30 @@
-import React, { useRef, useEffect, useMemo } from 'react'
 import Konva from 'konva'
+import React, { useRef, useEffect, useMemo } from 'react'
 
 // Store and utilities
-import { useStore } from '../../store/store'
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
+import { useStore } from '../../store/store'
 import { preventDefaultTouch } from '../../utils/pointerEvents'
 
 // Custom hooks (Phase 1)
-import { useCanvasTools, CanvasTool } from './hooks/useCanvasTools'
-import { useViewport } from './hooks/useViewport'
-import { useDrawingSystem } from './hooks/useDrawingSystem'
-import { useImageManagement } from './hooks/useImageManagement'
-import { useGenerationFrames } from './hooks/useGenerationFrames'
-import { useFileOperations } from './hooks/useFileOperations'
+import { CanvasContextMenu } from './CanvasContextMenu'
+import { CanvasMinimap } from './CanvasMinimap'
+import { CanvasOverlays } from './components/CanvasOverlays'
+import { CanvasStage, useStageSize } from './components/CanvasStage'
+import { DrawingLayer } from './components/DrawingLayer'
+import { FrameLayer } from './components/FrameLayer'
+import { ImageLayer } from './components/ImageLayer'
 import { useCanvasEvents } from './hooks/useCanvasEvents'
+import { useCanvasTools, CanvasTool } from './hooks/useCanvasTools'
+import { useDrawingSystem } from './hooks/useDrawingSystem'
+import { useFileOperations } from './hooks/useFileOperations'
+import { useGenerationFrames } from './hooks/useGenerationFrames'
+import { useImageManagement } from './hooks/useImageManagement'
+import { useViewport } from './hooks/useViewport'
 
 // Components (Phase 2)
-import { CanvasStage, useStageSize } from './components/CanvasStage'
-import { CanvasOverlays } from './components/CanvasOverlays'
-import { DrawingLayer } from './components/DrawingLayer'
-import { ImageLayer } from './components/ImageLayer'
-import { FrameLayer } from './components/FrameLayer'
 
 // Existing components
-import { CanvasMinimap } from './CanvasMinimap'
-import { CanvasContextMenu } from './CanvasContextMenu'
 
 import './Canvas.css'
 
@@ -39,51 +39,40 @@ export function Canvas() {
 
   // Store state
   const {
-    images,
     removeImage,
     duplicateImage,
     setImageAsInput,
     canvasSelectionMode,
     cancelCanvasSelection,
-    
-    // Generation params
-    width,
-    height,
-    generateTxt2Img,
-    
-    // Store exports for context menu
-    exportImageAsBase64,
-    generateImg2Img,
-    generateInpaint,
   } = useStore()
 
   // Initialize all hooks
   const tools = useCanvasTools()
   const viewport = useViewport(stageRef)
   const stageSize = useStageSize(400) // 400px sidebar width
-  
-  const drawing = useDrawingSystem({ 
+
+  const drawing = useDrawingSystem({
     currentTool: tools.currentTool,
     scale: viewport.scale,
     position: viewport.position,
   })
-  
-  const images_ = useImageManagement({ 
+
+  const images_ = useImageManagement({
     currentTool: tools.currentTool,
     scale: viewport.scale,
   })
-  
-  const frames = useGenerationFrames({ 
+
+  const frames = useGenerationFrames({
     currentTool: tools.currentTool,
   })
-  
+
   const fileOps = useFileOperations({
     containerRef,
     scale: viewport.scale,
     position: viewport.position,
     onImageUpload: images_.handleImageFile,
   })
-  
+
   const events = useCanvasEvents({
     currentTool: tools.currentTool,
     stageRef,
@@ -121,63 +110,70 @@ export function Canvas() {
   // Handle context menu actions
   const handleContextMenuAction = (action: string) => {
     const { contextMenu } = events
-    const { selectedFrameId } = frames
-    
+    // Capture values before menu closes
+    const imageId = contextMenu.imageId
+    const contextX = contextMenu.x
+    const contextY = contextMenu.y
+
     switch (action) {
       case 'delete':
-        if (contextMenu.imageId) {
-          removeImage(contextMenu.imageId)
-          images_.setSelectedId(null)
+        if (imageId) {
+          // Clear selection first to remove transformer
+          if (images_.selectedId === imageId) {
+            images_.setSelectedId(null)
+          }
+          // Then remove the image
+          removeImage(imageId)
         }
         break
-        
+
       case 'duplicate':
-        if (contextMenu.imageId) {
-          duplicateImage(contextMenu.imageId)
+        if (imageId) {
+          duplicateImage(imageId)
         }
         break
-        
+
       case 'sendToImg2Img':
-        if (contextMenu.imageId) {
-          const image = images_.konvaImages.find((img) => img.id === contextMenu.imageId)
+        if (imageId) {
+          const image = images_.konvaImages.find((img) => img.id === imageId)
           if (image) {
             setImageAsInput(image.src)
           }
         }
         break
-        
+
       case 'download':
-        if (contextMenu.imageId) {
-          const image = images_.konvaImages.find((img) => img.id === contextMenu.imageId)
+        if (imageId) {
+          const image = images_.konvaImages.find((img) => img.id === imageId)
           if (image) {
             const link = document.createElement('a')
             link.href = image.src
-            link.download = `generated-${contextMenu.imageId}.png`
+            link.download = `generated-${imageId}.png`
             link.click()
           }
         }
         break
-        
+
       case 'uploadImage':
         fileOps.fileInputRef.current?.click()
         break
-        
+
       case 'placeEmptyFrame':
         {
-          const canvasPos = events.screenToCanvas({ x: contextMenu.x, y: contextMenu.y })
+          const canvasPos = events.screenToCanvas({ x: contextX, y: contextY })
           frames.placeEmptyFrame(canvasPos.x, canvasPos.y)
         }
         break
-        
+
       case 'generateHere':
         {
-          const canvasPos = events.screenToCanvas({ x: contextMenu.x, y: contextMenu.y })
+          const canvasPos = events.screenToCanvas({ x: contextX, y: contextY })
           frames.generateAtPosition(canvasPos.x, canvasPos.y)
         }
         break
     }
-    
-    events.hideContextMenu()
+
+    // Menu closing is handled by the button handlers
   }
 
   // Handle viewport change from minimap
@@ -185,18 +181,22 @@ export function Canvas() {
     viewport.setViewport(x, y, newScale)
   }
 
+  // Extract the specific values needed for memoization
+  const { konvaImages, getImageBorderColor } = images_
+
   // Memoize minimap images data
   const minimapImages = useMemo(
-    () => images_.konvaImages.map((img) => ({
-      id: img.id,
-      x: img.x,
-      y: img.y,
-      src: img.src,
-      width: img.image?.naturalWidth,
-      height: img.image?.naturalHeight,
-      borderColor: images_.getImageBorderColor(img.id),
-    })),
-    [images_.konvaImages, images_.getImageBorderColor]
+    () =>
+      konvaImages.map((img) => ({
+        id: img.id,
+        x: img.x,
+        y: img.y,
+        src: img.src,
+        width: img.image?.naturalWidth,
+        height: img.image?.naturalHeight,
+        borderColor: getImageBorderColor(img.id),
+      })),
+    [konvaImages, getImageBorderColor]
   )
 
   // Get container classes
@@ -204,10 +204,13 @@ export function Canvas() {
     'canvas-container',
     fileOps.isDraggingFile && 'dragging-file',
     canvasSelectionMode.active && 'selection-mode',
-    (tools.currentTool === CanvasTool.BRUSH || tools.currentTool === CanvasTool.ERASER) && 'drawing-mode',
+    (tools.currentTool === CanvasTool.BRUSH || tools.currentTool === CanvasTool.ERASER) &&
+      'drawing-mode',
     tools.currentTool === CanvasTool.PAN && 'pan-mode',
     viewport.isPanning && 'panning',
-  ].filter(Boolean).join(' ')
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return (
     <div className={containerClasses} ref={containerRef}>
@@ -229,7 +232,7 @@ export function Canvas() {
         onCancelSelection={cancelCanvasSelection}
         isDraggingFile={fileOps.isDraggingFile}
       />
-      
+
       {/* Hidden file input */}
       <input
         ref={fileOps.fileInputRef}
@@ -238,7 +241,7 @@ export function Canvas() {
         style={{ display: 'none' }}
         onChange={fileOps.handleFileSelect}
       />
-      
+
       {/* Main Canvas Stage */}
       <CanvasStage
         ref={stageRef}
@@ -272,7 +275,7 @@ export function Canvas() {
           getFrameStrokeColor={frames.getFrameStrokeColor}
           getFrameFillColor={frames.getFrameFillColor}
         />
-        
+
         {/* Image Layer */}
         <ImageLayer
           images={images_.konvaImages}
@@ -300,7 +303,7 @@ export function Canvas() {
           getImageOpacity={images_.getImageOpacity}
           getTransformerConfig={images_.getTransformerConfig}
         />
-        
+
         {/* Drawing Layer */}
         <DrawingLayer
           currentTool={tools.currentTool}
@@ -316,7 +319,7 @@ export function Canvas() {
           tokens={images_.tokens}
         />
       </CanvasStage>
-      
+
       {/* Minimap */}
       <CanvasMinimap
         stageRef={stageRef}
@@ -325,7 +328,7 @@ export function Canvas() {
         images={minimapImages}
         onViewportChange={handleViewportChange}
       />
-      
+
       {/* Context Menu */}
       <CanvasContextMenu
         visible={events.contextMenu.visible}

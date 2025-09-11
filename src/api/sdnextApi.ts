@@ -1,3 +1,4 @@
+import { AuthManager } from '../auth/core/AuthManager'
 import type {
   ApiError,
   Txt2ImgPayload,
@@ -56,7 +57,7 @@ class ApiClientError extends Error {
  * @throws {ApiClientError} if the request fails.
  */
 async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  // Get API URL from store
+  // Get API URL and auth state from store
   const { useStore } = await import('../store/store')
   const apiSettings = useStore.getState().apiSettings
   const API_BASE_URL = apiSettings.apiUrl
@@ -67,7 +68,7 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
     Accept: 'application/json',
   }
 
-  const config: RequestInit = {
+  const baseConfig: RequestInit = {
     ...options,
     headers: {
       ...defaultHeaders,
@@ -75,23 +76,34 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
     },
   }
 
-  try {
-    const response = await fetch(url, config)
+  // Enhance request with authentication
+  const authManager = AuthManager.getInstance()
+  const enhancedConfig = await authManager.enhanceRequest({
+    ...baseConfig,
+    url, // Include URL for HMAC signing
+    method: baseConfig.method || 'GET',
+  })
 
-    if (!response.ok) {
-      const errorData: ApiError = await response.json().catch(() => ({
+  try {
+    const response = await fetch(url, enhancedConfig)
+
+    // Process response through auth manager (handles token refresh, etc.)
+    const processedResponse = await authManager.handleResponse(response)
+
+    if (!processedResponse.ok) {
+      const errorData: ApiError = await processedResponse.json().catch(() => ({
         error: 'Failed to parse error response',
-        detail: `Status: ${response.status} ${response.statusText}`,
+        detail: `Status: ${processedResponse.status} ${processedResponse.statusText}`,
       }))
       throw new ApiClientError(
-        `API request failed: ${response.status} ${response.statusText}`,
-        response,
+        `API request failed: ${processedResponse.status} ${processedResponse.statusText}`,
+        processedResponse,
         errorData
       )
     }
 
     // Handle cases where the response might be empty
-    const text = await response.text()
+    const text = await processedResponse.text()
     return text ? JSON.parse(text) : ({} as T)
   } catch (error) {
     if (error instanceof ApiClientError) {

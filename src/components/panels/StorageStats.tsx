@@ -87,7 +87,9 @@ export function StorageStats() {
           </button>
         </div>
 
-        <div className="form-help mt-3">Images are stored locally in your browser using IndexedDB</div>
+        <div className="form-help mt-3">
+          Images are stored locally in your browser using IndexedDB
+        </div>
       </div>
     </div>
   )

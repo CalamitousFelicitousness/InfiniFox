@@ -134,6 +134,7 @@
 .panel-content {
   padding: var(--spacing-panel-padding-base);
   overflow-y: auto;
+  transition: var(--transition-panel);
 
   &.no-padding {
     padding: 0;
@@ -168,9 +169,10 @@
    Collapsible Panel Animation
    ========================================== */
 
-/* Collapsible panels - no animation */
-.panel.collapsed .panel-content,
-.settings-panel.collapsed .settings-content {
+/* Hide collapsed content - prevents DOM leaks from conditional rendering */
+.panel-content.collapsed,
+.settings-content.collapsed,
+.auth-config-section.collapsed {
   display: none;
 }
 
@@ -343,10 +345,6 @@
   &.collapsed {
     padding: 0;
     min-height: var(--height-panel-collapsed);
-
-    .settings-content {
-      display: none;
-    }
 
     .settings-header {
       padding: var(--spacing-2) var(--spacing-4);
@@ -561,20 +559,11 @@
   &.collapsed {
     min-height: var(--height-panel-collapsed);
 
-    .queue-stats,
-    .queue-list {
-      display: none;
-    }
-
     .panel-header {
       border-bottom: none;
       padding: var(--spacing-2) var(--spacing-3);
       min-height: auto !important;
       height: var(--height-panel-collapsed);
-    }
-
-    .panel-content {
-      display: none;
     }
   }
 
@@ -827,20 +816,11 @@
   &.collapsed {
     min-height: var(--height-panel-collapsed);
 
-    .history-list,
-    .history-footer {
-      display: none;
-    }
-
     .panel-header {
       border-bottom: none;
       padding: var(--spacing-2) var(--spacing-3) !important;
       min-height: auto !important;
       height: var(--height-panel-collapsed);
-    }
-
-    .panel-content {
-      display: none;
     }
   }
 
@@ -966,10 +946,6 @@
   &.collapsed {
     min-height: var(--height-panel-collapsed);
 
-    .panel-content {
-      display: none;
-    }
-
     .panel-header {
       border-bottom: none;
       padding: var(--spacing-2) var(--spacing-4) !important;
@@ -1048,10 +1024,6 @@
 
   &.collapsed {
     min-height: var(--height-panel-collapsed);
-
-    .panel-content {
-      display: none;
-    }
 
     .panel-header {
       border-bottom: none;

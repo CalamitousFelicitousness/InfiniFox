@@ -83,7 +83,19 @@ export class CSSTokens {
   }
 }
 
+// Named function for theme change listener
+function handleThemeChange() {
+  CSSTokens.refresh()
+}
+
 // Listen for theme changes
 if (typeof window !== 'undefined') {
-  window.addEventListener('theme-change', () => CSSTokens.refresh())
+  window.addEventListener('theme-change', handleThemeChange)
+}
+
+// Export for cleanup if needed
+export function removeThemeListener() {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('theme-change', handleThemeChange)
+  }
 }

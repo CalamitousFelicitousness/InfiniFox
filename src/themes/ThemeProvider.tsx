@@ -3,8 +3,8 @@
  * React context provider for advanced theme management
  */
 
-import { createContext } from 'react'
 import type { ReactNode } from 'react'
+import { createContext } from 'react'
 import { useContext, useEffect, useState, useCallback, useRef } from 'react'
 
 import darkTheme from './themes/dark'

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 interface NumberInputProps {
   label: string
@@ -22,6 +22,7 @@ export function NumberInput({
   const [isFocused, setIsFocused] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const dragStartRef = useRef<{ x: number; value: number } | null>(null)
+  const cleanupRef = useRef<(() => void) | null>(null)
 
   const handlePointerDown = (e: PointerEvent) => {
     if (disabled || e.target === inputRef.current) return
@@ -48,7 +49,11 @@ export function NumberInput({
       document.removeEventListener('pointermove', handlePointerMove)
       document.removeEventListener('pointerup', handlePointerUp)
       document.removeEventListener('pointercancel', handlePointerUp)
+      cleanupRef.current = null
     }
+
+    // Store cleanup function for unmount scenario
+    cleanupRef.current = handlePointerUp
 
     document.addEventListener('pointermove', handlePointerMove)
     document.addEventListener('pointerup', handlePointerUp)
@@ -65,6 +70,15 @@ export function NumberInput({
 
     onInput(clampedValue)
   }
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (cleanupRef.current) {
+        cleanupRef.current()
+      }
+    }
+  }, [])
 
   return (
     <div className="number-input-group" onPointerDown={handlePointerDown} onWheel={handleWheel}>

@@ -13,7 +13,10 @@ type StoreRef = {
     addImageDirect: (image: ImageData) => void
     removeImageDirect: (id: string) => void
     updateImagePositionDirect: (id: string, x: number, y: number) => void
-  updateImageTransform: (id: string, transform: { x: number; y: number; scaleX: number; scaleY: number; rotation: number }) => void
+    updateImageTransform: (
+      id: string,
+      transform: { x: number; y: number; scaleX: number; scaleY: number; rotation: number }
+    ) => void
     updateStorageStats?: () => void
   }
 }
@@ -60,7 +63,10 @@ export interface CanvasSlice {
   duplicateImage: (id: string) => void
   updateImagePosition: (id: string, x: number, y: number) => void
   updateImagePositionDirect: (id: string, x: number, y: number) => void
-  updateImageTransform: (id: string, transform: { x: number; y: number; scaleX: number; scaleY: number; rotation: number }) => void
+  updateImageTransform: (
+    id: string,
+    transform: { x: number; y: number; scaleX: number; scaleY: number; rotation: number }
+  ) => void
   setImageRole: (
     imageId: string,
     role: 'img2img_init' | 'inpaint_image' | 'controlnet' | null
@@ -137,6 +143,12 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
   removeImage: (id: string) => {
     const image = get().images.find((img) => img.id === id)
     if (image && storeRef) {
+      // Revoke blob URL immediately if it's a blob URL
+      if (image.src.startsWith('blob:')) {
+        URL.revokeObjectURL(image.src)
+        console.log(`Revoked blob URL for image ${id}`)
+      }
+
       const command = new RemoveImageCommand(image, storeRef)
       useHistoryStore.getState().executeCommand(command)
 
@@ -152,6 +164,12 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
 
   removeImageDirect: (id: string) => {
     const image = get().images.find((img) => img.id === id)
+
+    // Revoke blob URL immediately if it's a blob URL
+    if (image?.src.startsWith('blob:')) {
+      URL.revokeObjectURL(image.src)
+      console.log(`Revoked blob URL for image ${id}`)
+    }
 
     // Clean up storage
     if (image?.blobId) {
@@ -219,13 +237,12 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
     }
   },
 
-  updateImageTransform: (id: string, transform: { x: number; y: number; scaleX: number; scaleY: number; rotation: number }) => {
+  updateImageTransform: (
+    id: string,
+    transform: { x: number; y: number; scaleX: number; scaleY: number; rotation: number }
+  ) => {
     set((state) => ({
-      images: state.images.map((img) => 
-        img.id === id 
-          ? { ...img, ...transform }
-          : img
-      ),
+      images: state.images.map((img) => (img.id === id ? { ...img, ...transform } : img)),
     }))
 
     // Save transform to IndexedDB if image has a blobId
@@ -357,6 +374,12 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
     // Clean up all images from storage
     const { images } = get()
     for (const image of images) {
+      // Revoke blob URL immediately if it's a blob URL
+      if (image.src.startsWith('blob:')) {
+        URL.revokeObjectURL(image.src)
+        console.log(`Revoked blob URL for image ${image.id}`)
+      }
+
       if (image.blobId) {
         await imageStorage.deleteImage(image.blobId).catch(console.error)
       }
@@ -397,8 +420,12 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
       // Get image dimensions
       const dimensions = await new Promise<{ width: number; height: number }>((resolve) => {
         const img = new Image()
-        img.onload = () => resolve({ width: img.width, height: img.height })
-        img.src = URL.createObjectURL(file)
+        const tempUrl = URL.createObjectURL(file)
+        img.onload = () => {
+          URL.revokeObjectURL(tempUrl) // Clean up temp URL
+          resolve({ width: img.width, height: img.height })
+        }
+        img.src = tempUrl
       })
 
       // Store the image
@@ -467,18 +494,43 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
   },
 
   removeGenerationFrame: (id: string) => {
+    // Clean up preview image if it's a blob URL
+    const frame = get().generationFrames.find((f) => f.id === id)
+    if (frame?.previewImage?.startsWith('blob:')) {
+      URL.revokeObjectURL(frame.previewImage)
+      console.log(`Revoked blob URL for frame preview ${id}`)
+    }
+
     set((state) => ({
       generationFrames: state.generationFrames.filter((f) => f.id !== id),
     }))
   },
 
   updateGenerationFrame: (id: string, updates: Partial<GenerationFrame>) => {
+    // If updating preview image, revoke old blob URL
+    if (updates.previewImage) {
+      const frame = get().generationFrames.find((f) => f.id === id)
+      if (frame?.previewImage?.startsWith('blob:')) {
+        URL.revokeObjectURL(frame.previewImage)
+        console.log(`Revoked old blob URL for frame preview ${id}`)
+      }
+    }
+
     set((state) => ({
       generationFrames: state.generationFrames.map((f) => (f.id === id ? { ...f, ...updates } : f)),
     }))
   },
 
   clearGenerationFrames: () => {
+    // Clean up all preview images
+    const frames = get().generationFrames
+    frames.forEach((frame) => {
+      if (frame.previewImage?.startsWith('blob:')) {
+        URL.revokeObjectURL(frame.previewImage)
+        console.log(`Revoked blob URL for frame preview ${frame.id}`)
+      }
+    })
+
     set({ generationFrames: [] })
   },
 

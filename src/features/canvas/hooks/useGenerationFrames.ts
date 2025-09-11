@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useStore } from '../../../store/store'
+
 import { progressService } from '../../../services/progress/ProgressService'
+import { useStore } from '../../../store/store'
+
 import { CanvasTool } from './useCanvasTools'
 
 export interface GenerationFrame {
@@ -55,6 +57,8 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
   useEffect(() => {
     if (!activeGenerationFrameId) return
 
+    let timeoutId: NodeJS.Timeout | null = null
+
     const unsubscribe = progressService.onProgress((message) => {
       // Handle progress messages from REST polling monitor
       console.log('Progress event for frame:', activeGenerationFrameId, message)
@@ -86,7 +90,7 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
           error: message.error || 'Generation failed',
         })
         // Keep error frames visible longer
-        setTimeout(() => {
+        timeoutId = setTimeout(() => {
           removeGenerationFrame(activeGenerationFrameId)
           setActiveGenerationFrameId(null)
         }, 3000)
@@ -95,8 +99,17 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
 
     return () => {
       unsubscribe()
+      // Clear any pending timeout
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
     }
-  }, [activeGenerationFrameId, updateGenerationFrame, removeGenerationFrame])
+  }, [
+    activeGenerationFrameId,
+    updateGenerationFrame,
+    removeGenerationFrame,
+    setActiveGenerationFrameId,
+  ])
 
   /**
    * Cleanup orphaned frames
@@ -115,7 +128,13 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
         }
       })
     }
-  }, [isLoading, generationFrames, activeGenerationFrameId, updateGenerationFrame, removeGenerationFrame])
+  }, [
+    isLoading,
+    generationFrames,
+    activeGenerationFrameId,
+    updateGenerationFrame,
+    removeGenerationFrame,
+  ])
 
   /**
    * Clear stale frames on mount
@@ -151,9 +170,7 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
    */
   const isFrameDraggable = useCallback(
     (frame: GenerationFrame) => {
-      return Boolean(
-        frame.isPlaceholder && !frame.locked && currentTool === CanvasTool.SELECT
-      )
+      return Boolean(frame.isPlaceholder && !frame.locked && currentTool === CanvasTool.SELECT)
     },
     [currentTool]
   )
@@ -220,10 +237,10 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
           // Default to txt2img if no image roles are set
           await generateTxt2Img(frameId)
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         updateGenerationFrame(frameId, {
           isGenerating: false,
-          error: error.message,
+          error: error instanceof Error ? error.message : 'Generation failed',
         })
         console.error('Generation failed:', error)
       }
@@ -239,6 +256,7 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
       generateTxt2Img,
       generateImg2Img,
       generateInpaint,
+      setActiveGenerationFrameId,
     ]
   )
 
@@ -274,25 +292,19 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
   /**
    * Get frame stroke color
    */
-  const getFrameStrokeColor = useCallback(
-    (frame: GenerationFrame) => {
-      if (frame.error) return '#dc3545' // error color
-      if (frame.isPlaceholder) return '#6c757d' // muted color
-      return '#007bff' // primary color
-    },
-    []
-  )
+  const getFrameStrokeColor = useCallback((frame: GenerationFrame) => {
+    if (frame.error) return '#dc3545' // error color
+    if (frame.isPlaceholder) return '#6c757d' // muted color
+    return '#007bff' // primary color
+  }, [])
 
   /**
    * Get frame fill color
    */
-  const getFrameFillColor = useCallback(
-    (frame: GenerationFrame) => {
-      if (frame.isPlaceholder) return 'rgba(108, 117, 125, 0.1)' // muted with low opacity
-      return 'rgba(0, 123, 255, 0.05)' // primary with very low opacity
-    },
-    []
-  )
+  const getFrameFillColor = useCallback((frame: GenerationFrame) => {
+    if (frame.isPlaceholder) return 'rgba(108, 117, 125, 0.1)' // muted with low opacity
+    return 'rgba(0, 123, 255, 0.05)' // primary with very low opacity
+  }, [])
 
   /**
    * Clear selection

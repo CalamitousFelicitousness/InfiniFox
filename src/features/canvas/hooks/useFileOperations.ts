@@ -63,7 +63,7 @@ export function useFileOperations({
     const handleDragOver = (e: DragEvent) => {
       e.preventDefault()
       e.stopPropagation()
-      
+
       // Check if dragging files
       if (e.dataTransfer?.types.includes('Files')) {
         setIsDraggingFile(true)
@@ -74,7 +74,7 @@ export function useFileOperations({
     const handleDragEnter = (e: DragEvent) => {
       e.preventDefault()
       e.stopPropagation()
-      
+
       // Check if dragging files
       if (e.dataTransfer?.types.includes('Files')) {
         setIsDraggingFile(true)
@@ -84,7 +84,7 @@ export function useFileOperations({
     const handleDragLeave = (e: DragEvent) => {
       e.preventDefault()
       e.stopPropagation()
-      
+
       // Only set to false if we're leaving the container entirely
       const relatedTarget = e.relatedTarget as Node
       if (!container.contains(relatedTarget)) {
@@ -106,7 +106,7 @@ export function useFileOperations({
         const screenX = e.clientX - rect.left
         const screenY = e.clientY - rect.top
         const canvasPos = screenToCanvas({ x: screenX, y: screenY })
-        
+
         handleImageFile(imageFile, canvasPos.x, canvasPos.y)
       }
     }

@@ -80,6 +80,15 @@ export function Slider({
     }
   }, [isDragging, updateValueFromPointer])
 
+  // Cleanup on unmount - reset body styles if dragging
+  useEffect(() => {
+    return () => {
+      if (isDragging) {
+        document.body.style.userSelect = ''
+      }
+    }
+  }, [isDragging])
+
   const handlePointerDown = (e: PointerEvent) => {
     if (disabled) return
     e.preventDefault()

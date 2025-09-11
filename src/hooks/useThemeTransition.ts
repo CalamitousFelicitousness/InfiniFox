@@ -12,6 +12,7 @@ import {
   measureThemeSwitch,
   preloadTheme,
   defaultTransition,
+  cancelTransition as cancelThemeTransition,
 } from '../themes/utils/transitions'
 import type { TransitionConfig } from '../themes/utils/transitions'
 
@@ -87,6 +88,9 @@ export function useThemeTransition(
       clearTimeout(transitionRef.current)
       transitionRef.current = null
     }
+
+    // Cancel theme transition timeout
+    cancelThemeTransition()
 
     setTransitionState({
       isTransitioning: false,

@@ -74,7 +74,11 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers = {}) {
       }
     }
 
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
+    // Use capture phase to intercept before bubbling
+    document.addEventListener('keydown', handleKeyDown, { capture: true })
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown, { capture: true })
+    }
   }, [handlers, clearCanvas, undo, redo, canUndo, canRedo])
 }

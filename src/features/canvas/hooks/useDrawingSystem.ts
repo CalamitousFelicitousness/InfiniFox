@@ -1,12 +1,14 @@
-import { useRef, useCallback, useEffect, useState } from 'react'
 import Konva from 'konva'
-import { useStore } from '../../../store/store'
+import { useRef, useCallback, useEffect, useState } from 'react'
+
 import { LazyBrush } from '../../../services/drawing/LazyBrush'
 import {
   PerfectFreehandService,
   BRUSH_PRESETS,
 } from '../../../services/drawing/PerfectFreehandService'
 import { PressureManager } from '../../../services/drawing/PressureManager'
+import { useStore } from '../../../store/store'
+
 import { CanvasTool } from './useCanvasTools'
 
 type Position = {
@@ -48,7 +50,7 @@ export function useDrawingSystem({ currentTool, scale, position }: DrawingSystem
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 })
   const [showDrawingCursor, setShowDrawingCursor] = useState(false)
   const [currentPressure, setCurrentPressure] = useState(0.5)
-  
+
   // Refs for drawing services
   const perfectFreehandRef = useRef<PerfectFreehandService | null>(null)
   const pressureManagerRef = useRef<PressureManager | null>(null)
@@ -60,17 +62,28 @@ export function useDrawingSystem({ currentTool, scale, position }: DrawingSystem
    */
   useEffect(() => {
     const preset = BRUSH_PRESETS[brushPreset as keyof typeof BRUSH_PRESETS] || BRUSH_PRESETS.soft
-    perfectFreehandRef.current = new PerfectFreehandService({
+    const perfectFreehand = new PerfectFreehandService({
       ...preset,
       size: brushSize,
     })
-    pressureManagerRef.current = new PressureManager()
-    lazyBrushRef.current = new LazyBrush({ radius: smoothing, enabled: true })
+    const pressureManager = new PressureManager()
+    const lazyBrush = new LazyBrush({ radius: smoothing, enabled: true })
 
-    pressureManagerRef.current.initialize()
+    perfectFreehandRef.current = perfectFreehand
+    pressureManagerRef.current = pressureManager
+    lazyBrushRef.current = lazyBrush
+
+    pressureManager.initialize()
 
     return () => {
-      pressureManagerRef.current?.cleanup()
+      // Clean up all services
+      pressureManager.cleanup()
+
+      // Clear refs to allow garbage collection
+      perfectFreehandRef.current = null
+      pressureManagerRef.current = null
+      lazyBrushRef.current = null
+      strokePointsRef.current = []
     }
   }, [brushPreset, brushSize, smoothing])
 
@@ -148,7 +161,7 @@ export function useDrawingSystem({ currentTool, scale, position }: DrawingSystem
         globalCompositeOperation:
           currentTool === CanvasTool.ERASER ? 'destination-out' : 'source-over',
       })
-      
+
       setDrawingActive(true)
       return true // Indicates drawing was started
     },
@@ -230,7 +243,14 @@ export function useDrawingSystem({ currentTool, scale, position }: DrawingSystem
     setDrawingActive(false)
 
     return true // Indicates drawing was ended
-  }, [currentTool, isDrawingActive, currentStroke, updateCurrentStroke, endDrawingStroke, setDrawingActive])
+  }, [
+    currentTool,
+    isDrawingActive,
+    currentStroke,
+    updateCurrentStroke,
+    endDrawingStroke,
+    setDrawingActive,
+  ])
 
   /**
    * Handle pointer enter for cursor visibility

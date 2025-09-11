@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
 
+import { AuthDebugPanel } from './components/auth/AuthDebugPanel'
 import { PaletteIcon } from './components/icons'
 import { ControlPanel } from './components/layout/ControlPanel'
+import { AuthDebugContext } from './components/panels/SettingsPanel'
 import { ThemeSwitcher } from './components/ThemeSwitcher'
+import { ProgressProvider } from './contexts/ProgressContext'
 import { Canvas } from './features/canvas/Canvas'
 import { DrawingModal } from './features/drawing'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
@@ -12,6 +15,9 @@ import { useStore } from './store/store'
 export function App() {
   const { generateTxt2Img, testConnection, loadImagesFromStorage, updateStorageStats } = useStore()
   const [showDrawingModal, setShowDrawingModal] = useState(false)
+  const [showAuthDebug, setShowAuthDebug] = useState(() => {
+    return localStorage.getItem('authDebugPanel') === 'true'
+  })
 
   // Global keyboard shortcuts
   useKeyboardShortcuts({
@@ -67,30 +73,37 @@ export function App() {
   }, [])
 
   return (
-    <div className="app-layout">
-      <ControlPanel />
-      <Canvas />
+    <AuthDebugContext.Provider value={{ showAuthDebug, setShowAuthDebug }}>
+      <ProgressProvider>
+        <div className="app-layout">
+          <ControlPanel />
+          <Canvas />
 
-      {/* Theme Switcher */}
-      <ThemeSwitcher
-        position="top-right"
-        showPreview={true}
-        animated={true}
-        showSystemOption={true}
-      />
+          {/* Theme Switcher */}
+          <ThemeSwitcher
+            position="top-right"
+            showPreview={true}
+            animated={true}
+            showSystemOption={true}
+          />
 
-      {/* Floating Action Button for Full Drawing Panel */}
-      <button
-        className="drawing-fab"
-        onClick={() => setShowDrawingModal(true)}
-        title="Open Advanced Drawing Panel"
-        aria-label="Open Advanced Drawing Panel"
-      >
-        <PaletteIcon size={20} className="lucide-icon" />
-      </button>
+          {/* Floating Action Button for Full Drawing Panel */}
+          <button
+            className="drawing-fab"
+            onClick={() => setShowDrawingModal(true)}
+            title="Open Advanced Drawing Panel"
+            aria-label="Open Advanced Drawing Panel"
+          >
+            <PaletteIcon size={20} className="lucide-icon" />
+          </button>
 
-      {/* Drawing Modal */}
-      <DrawingModal isOpen={showDrawingModal} onClose={() => setShowDrawingModal(false)} />
-    </div>
+          {/* Drawing Modal */}
+          <DrawingModal isOpen={showDrawingModal} onClose={() => setShowDrawingModal(false)} />
+
+          {/* Auth Debug Panel - Development Only */}
+          {import.meta.env.DEV && showAuthDebug && <AuthDebugPanel />}
+        </div>
+      </ProgressProvider>
+    </AuthDebugContext.Provider>
   )
 }
