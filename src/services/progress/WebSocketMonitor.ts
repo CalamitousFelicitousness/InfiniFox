@@ -108,13 +108,13 @@ export class WebSocketMonitor extends BaseProgressMonitor {
 
   disconnect(): void {
     this.connected = false
-    
+
     // Cancel any pending reconnection
     if (this.reconnectTimeoutId) {
       clearTimeout(this.reconnectTimeoutId)
       this.reconnectTimeoutId = null
     }
-    
+
     // Remove all event handlers before closing to prevent memory leaks
     if (this.ws) {
       this.ws.onopen = null
@@ -124,7 +124,7 @@ export class WebSocketMonitor extends BaseProgressMonitor {
       this.ws.close()
       this.ws = null
     }
-    
+
     // Clear handler set
     this.handlers.clear()
   }

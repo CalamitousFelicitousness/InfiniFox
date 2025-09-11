@@ -23,11 +23,11 @@ export function useResource<T extends Resource>(
   deps: React.DependencyList = []
 ): T | null {
   const resourceRef = useRef<T | null>(null)
-  
+
   useEffect(() => {
     const resource = factory()
     resourceRef.current = resource
-    
+
     return () => {
       const r = resourceRef.current
       if (r) {
@@ -43,7 +43,7 @@ export function useResource<T extends Resource>(
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps)
-  
+
   return resourceRef.current
 }
 
@@ -58,17 +58,17 @@ export function useResources<T extends Record<string, Resource>>(
   deps: React.DependencyList = []
 ): T {
   const resourcesRef = useRef<T>({} as T)
-  
+
   useEffect(() => {
     const resources = {} as T
-    
+
     // Create all resources
     for (const key in factories) {
       resources[key] = factories[key]()
     }
-    
+
     resourcesRef.current = resources
-    
+
     return () => {
       // Cleanup all resources
       for (const key in resourcesRef.current) {
@@ -86,6 +86,6 @@ export function useResources<T extends Record<string, Resource>>(
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps)
-  
+
   return resourcesRef.current
 }

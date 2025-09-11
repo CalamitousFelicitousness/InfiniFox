@@ -123,136 +123,136 @@ export function QueuePanel() {
 
       <div className={`panel-content ${!isExpanded ? 'collapsed' : ''}`}>
         <div className="queue-stats">
-              <span className="queue-stat pending">
-                <Clock className="icon-sm" />
-                <span>{stats.pending}</span>
-              </span>
-              <span className="queue-stat processing">
-                <Loader2 className="icon-sm" />
-                <span>{stats.processing}</span>
-              </span>
-              <span className="queue-stat completed">
-                <CheckCircle className="icon-sm" />
-                <span>{stats.completed}</span>
-              </span>
-              <span className="queue-stat failed">
-                <XCircle className="icon-sm" />
-                <span>{stats.failed}</span>
-              </span>
-            </div>
+          <span className="queue-stat pending">
+            <Clock className="icon-sm" />
+            <span>{stats.pending}</span>
+          </span>
+          <span className="queue-stat processing">
+            <Loader2 className="icon-sm" />
+            <span>{stats.processing}</span>
+          </span>
+          <span className="queue-stat completed">
+            <CheckCircle className="icon-sm" />
+            <span>{stats.completed}</span>
+          </span>
+          <span className="queue-stat failed">
+            <XCircle className="icon-sm" />
+            <span>{stats.failed}</span>
+          </span>
+        </div>
 
-            <div className="queue-list" ref={listRef}>
-              {queue.length === 0 ? (
-                <div className="queue-empty">Queue is empty</div>
-              ) : (
-                queue.map((item, index) => (
-                  <div
-                    key={item.id}
-                    className={`queue-item ${item.status} ${
-                      currentItem?.id === item.id ? 'active' : ''
-                    }`}
-                  >
-                    <div className="queue-item-header">
-                      <span className={`queue-item-status status-${item.status}`}>
-                        {getStatusIcon(item.status)}
-                      </span>
-                      <span className="queue-item-prompt">{getItemDescription(item)}</span>
-                    </div>
+        <div className="queue-list" ref={listRef}>
+          {queue.length === 0 ? (
+            <div className="queue-empty">Queue is empty</div>
+          ) : (
+            queue.map((item, index) => (
+              <div
+                key={item.id}
+                className={`queue-item ${item.status} ${
+                  currentItem?.id === item.id ? 'active' : ''
+                }`}
+              >
+                <div className="queue-item-header">
+                  <span className={`queue-item-status status-${item.status}`}>
+                    {getStatusIcon(item.status)}
+                  </span>
+                  <span className="queue-item-prompt">{getItemDescription(item)}</span>
+                </div>
 
-                    <div className="queue-item-params">
-                      <span className="queue-item-time">{formatTime(item.createdAt)}</span>
-                      {item.retryCount > 0 && (
-                        <span className="queue-item-retry">
-                          Retry {item.retryCount}/{item.maxRetries}
-                        </span>
-                      )}
-                    </div>
+                <div className="queue-item-params">
+                  <span className="queue-item-time">{formatTime(item.createdAt)}</span>
+                  {item.retryCount > 0 && (
+                    <span className="queue-item-retry">
+                      Retry {item.retryCount}/{item.maxRetries}
+                    </span>
+                  )}
+                </div>
 
-                    {item.progress !== undefined && item.status === 'processing' && (
-                      <div className="queue-progress">
-                        <div className="queue-progress-bar" style={`width: ${item.progress}%`} />
-                      </div>
-                    )}
+                {item.progress !== undefined && item.status === 'processing' && (
+                  <div className="queue-progress">
+                    <div className="queue-progress-bar" style={`width: ${item.progress}%`} />
+                  </div>
+                )}
 
-                    <div className="queue-item-actions">
-                      {item.status === 'pending' && (
-                        <>
-                          <button
-                            className="btn btn-xs btn-ghost"
-                            onPointerDown={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              moveInQueue(item.id, 'up')
-                            }}
-                            disabled={index === 0}
-                            title="Move up"
-                          >
-                            <ChevronUp className="icon-sm" />
-                          </button>
-                          <button
-                            className="btn btn-xs btn-ghost"
-                            onPointerDown={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              moveInQueue(item.id, 'down')
-                            }}
-                            disabled={index === queue.length - 1}
-                            title="Move down"
-                          >
-                            <ChevronDown className="icon-sm" />
-                          </button>
-                        </>
-                      )}
-
-                      {item.status === 'failed' && (
-                        <button
-                          className="btn btn-xs btn-ghost"
-                          onPointerDown={(e) => {
-                            e.preventDefault()
-                            retryItem(item.id)
-                          }}
-                          title="Retry"
-                        >
-                          <RefreshCw className="icon-sm" />
-                        </button>
-                      )}
-
-                      {(item.status === 'pending' || item.status === 'processing') && (
-                        <button
-                          className="btn btn-xs btn-ghost"
-                          onPointerDown={(e) => {
-                            e.preventDefault()
-                            cancelItem(item.id)
-                          }}
-                          title="Cancel"
-                        >
-                          <X className="icon-sm" />
-                        </button>
-                      )}
-
+                <div className="queue-item-actions">
+                  {item.status === 'pending' && (
+                    <>
                       <button
                         className="btn btn-xs btn-ghost"
                         onPointerDown={(e) => {
                           e.preventDefault()
-                          removeFromQueue(item.id)
+                          e.stopPropagation()
+                          moveInQueue(item.id, 'up')
                         }}
-                        title="Remove"
+                        disabled={index === 0}
+                        title="Move up"
                       >
-                        <Trash2 className="icon-sm" />
+                        <ChevronUp className="icon-sm" />
                       </button>
-                    </div>
+                      <button
+                        className="btn btn-xs btn-ghost"
+                        onPointerDown={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          moveInQueue(item.id, 'down')
+                        }}
+                        disabled={index === queue.length - 1}
+                        title="Move down"
+                      >
+                        <ChevronDown className="icon-sm" />
+                      </button>
+                    </>
+                  )}
 
-                    {item.result && (
-                      <div className="queue-item-result">
-                        <img src={`data:image/png;base64,${item.result}`} alt="Result" />
-                      </div>
-                    )}
+                  {item.status === 'failed' && (
+                    <button
+                      className="btn btn-xs btn-ghost"
+                      onPointerDown={(e) => {
+                        e.preventDefault()
+                        retryItem(item.id)
+                      }}
+                      title="Retry"
+                    >
+                      <RefreshCw className="icon-sm" />
+                    </button>
+                  )}
 
-                    {item.error && <div className="queue-item-error">Error: {item.error}</div>}
+                  {(item.status === 'pending' || item.status === 'processing') && (
+                    <button
+                      className="btn btn-xs btn-ghost"
+                      onPointerDown={(e) => {
+                        e.preventDefault()
+                        cancelItem(item.id)
+                      }}
+                      title="Cancel"
+                    >
+                      <X className="icon-sm" />
+                    </button>
+                  )}
+
+                  <button
+                    className="btn btn-xs btn-ghost"
+                    onPointerDown={(e) => {
+                      e.preventDefault()
+                      removeFromQueue(item.id)
+                    }}
+                    title="Remove"
+                  >
+                    <Trash2 className="icon-sm" />
+                  </button>
+                </div>
+
+                {item.result && (
+                  <div className="queue-item-result">
+                    <img src={`data:image/png;base64,${item.result}`} alt="Result" />
                   </div>
-                ))
-              )}
-            </div>
+                )}
+
+                {item.error && <div className="queue-item-error">Error: {item.error}</div>}
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   )

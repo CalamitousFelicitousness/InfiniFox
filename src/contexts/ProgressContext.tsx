@@ -12,18 +12,14 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Connect on mount
     progressService.connect().catch(console.error)
-    
+
     return () => {
       // Disconnect on unmount
       progressService.disconnect()
     }
   }, [])
-  
-  return (
-    <ProgressContext.Provider value={progressService}>
-      {children}
-    </ProgressContext.Provider>
-  )
+
+  return <ProgressContext.Provider value={progressService}>{children}</ProgressContext.Provider>
 }
 
 /**
@@ -31,12 +27,12 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
  */
 export function useProgress(handler: ProgressHandler) {
   const service = useContext(ProgressContext)
-  
+
   useEffect(() => {
     const unsubscribe = service.onProgress(handler)
     return unsubscribe
   }, [service, handler])
-  
+
   return service
 }
 

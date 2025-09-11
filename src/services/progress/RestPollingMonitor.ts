@@ -75,7 +75,7 @@ export class RestPollingMonitor extends BaseProgressMonitor {
   disconnect(): void {
     this.connected = false
     this.stopPolling()
-    
+
     // Ensure all state is reset
     this.lastJobId = null
     this.generationStarted = false
@@ -87,10 +87,10 @@ export class RestPollingMonitor extends BaseProgressMonitor {
     this.vaeCompleted = false
     this.completionCheckCount = 0
     this.lastActiveState = null
-    
+
     // Clear handlers
     this.handlers.clear()
-    
+
     console.log('REST Polling monitor disconnected and cleaned up')
   }
 

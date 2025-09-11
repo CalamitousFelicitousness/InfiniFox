@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 
 import { AuthDebugPanel } from './components/auth/AuthDebugPanel'
-import { AuthDebugContext } from './components/panels/SettingsPanel'
 import { PaletteIcon } from './components/icons'
 import { ControlPanel } from './components/layout/ControlPanel'
+import { AuthDebugContext } from './components/panels/SettingsPanel'
 import { ThemeSwitcher } from './components/ThemeSwitcher'
 import { ProgressProvider } from './contexts/ProgressContext'
 import { Canvas } from './features/canvas/Canvas'
@@ -75,34 +75,34 @@ export function App() {
   return (
     <AuthDebugContext.Provider value={{ showAuthDebug, setShowAuthDebug }}>
       <ProgressProvider>
-      <div className="app-layout">
-        <ControlPanel />
-        <Canvas />
+        <div className="app-layout">
+          <ControlPanel />
+          <Canvas />
 
-        {/* Theme Switcher */}
-        <ThemeSwitcher
-          position="top-right"
-          showPreview={true}
-          animated={true}
-          showSystemOption={true}
-        />
+          {/* Theme Switcher */}
+          <ThemeSwitcher
+            position="top-right"
+            showPreview={true}
+            animated={true}
+            showSystemOption={true}
+          />
 
-        {/* Floating Action Button for Full Drawing Panel */}
-        <button
-          className="drawing-fab"
-          onClick={() => setShowDrawingModal(true)}
-          title="Open Advanced Drawing Panel"
-          aria-label="Open Advanced Drawing Panel"
-        >
-          <PaletteIcon size={20} className="lucide-icon" />
-        </button>
+          {/* Floating Action Button for Full Drawing Panel */}
+          <button
+            className="drawing-fab"
+            onClick={() => setShowDrawingModal(true)}
+            title="Open Advanced Drawing Panel"
+            aria-label="Open Advanced Drawing Panel"
+          >
+            <PaletteIcon size={20} className="lucide-icon" />
+          </button>
 
-        {/* Drawing Modal */}
-        <DrawingModal isOpen={showDrawingModal} onClose={() => setShowDrawingModal(false)} />
+          {/* Drawing Modal */}
+          <DrawingModal isOpen={showDrawingModal} onClose={() => setShowDrawingModal(false)} />
 
-        {/* Auth Debug Panel - Development Only */}
-        {import.meta.env.DEV && showAuthDebug && <AuthDebugPanel />}
-      </div>
+          {/* Auth Debug Panel - Development Only */}
+          {import.meta.env.DEV && showAuthDebug && <AuthDebugPanel />}
+        </div>
       </ProgressProvider>
     </AuthDebugContext.Provider>
   )

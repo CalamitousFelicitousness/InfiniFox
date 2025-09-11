@@ -1,3 +1,4 @@
+import { Settings, ChevronRight, CheckCircle, XCircle, Shield } from 'lucide-react'
 import { useState, useEffect, useRef, lazy, Suspense, memo, createContext, useContext } from 'react'
 
 // Context for Auth Debug Panel state
@@ -15,7 +16,6 @@ import { useStore } from '../../store/store'
 import { AuthStatusIndicator } from '../auth/AuthStatusIndicator'
 import { Dropdown } from '../common/Dropdown'
 import { Input } from '../common/Input'
-import { Settings, ChevronRight, CheckCircle, XCircle, Shield } from 'lucide-react'
 
 // Lazy load AuthConfigPanel to prevent unnecessary imports
 const AuthConfigPanel = lazy(() =>
@@ -171,8 +171,8 @@ const SettingsPanelContent = memo(function SettingsPanelContent({
 
       <div className={`auth-config-section ${!showAuthConfig ? 'collapsed' : ''}`}>
         <Suspense fallback={<div>Loading authentication settings...</div>}>
-          <AuthConfigPanel 
-            isVisible={showAuthConfig} 
+          <AuthConfigPanel
+            isVisible={showAuthConfig}
             onToggleDebug={toggleAuthDebug}
             showAuthDebug={showAuthDebug}
           />
@@ -187,18 +187,10 @@ const SettingsPanelContent = memo(function SettingsPanelContent({
         >
           {isTesting ? 'Testing...' : 'Test Connection'}
         </button>
-        <button
-          className="btn btn-sm btn-primary"
-          onPointerDown={handleSave}
-          disabled={isTesting}
-        >
+        <button className="btn btn-sm btn-primary" onPointerDown={handleSave} disabled={isTesting}>
           Save Settings
         </button>
-        <button
-          className="btn btn-sm btn-ghost"
-          onPointerDown={handleReset}
-          disabled={isTesting}
-        >
+        <button className="btn btn-sm btn-ghost" onPointerDown={handleReset} disabled={isTesting}>
           Reset to Default
         </button>
       </div>
@@ -319,7 +311,7 @@ export function SettingsPanel() {
   }
 
   const toggleAuthDebug = () => {
-    setShowAuthDebug(prev => {
+    setShowAuthDebug((prev) => {
       const newState = !prev
       localStorage.setItem('authDebugPanel', newState.toString())
       return newState
@@ -352,24 +344,24 @@ export function SettingsPanel() {
 
       <div className={`settings-content ${!isExpanded ? 'collapsed' : ''}`}>
         <SettingsPanelContent
-            apiUrl={apiUrl}
-            setApiUrl={setApiUrl}
-            wsUrl={wsUrl}
-            setWsUrl={setWsUrl}
-            progressMethod={progressMethod}
-            setProgressMethod={setProgressMethod}
-            apiType={apiType}
-            setApiType={setApiType}
-            handleSave={handleSave}
-            handleTest={handleTest}
-            handleReset={handleReset}
-            isTesting={isTesting}
-            connectionStatus={connectionStatus}
-            detectedProgressMethod={detectedProgressMethod}
-            showAuthConfig={showAuthConfig}
-            toggleAuthConfig={toggleAuthConfig}
-            showAuthDebug={showAuthDebug}
-            toggleAuthDebug={toggleAuthDebug}
+          apiUrl={apiUrl}
+          setApiUrl={setApiUrl}
+          wsUrl={wsUrl}
+          setWsUrl={setWsUrl}
+          progressMethod={progressMethod}
+          setProgressMethod={setProgressMethod}
+          apiType={apiType}
+          setApiType={setApiType}
+          handleSave={handleSave}
+          handleTest={handleTest}
+          handleReset={handleReset}
+          isTesting={isTesting}
+          connectionStatus={connectionStatus}
+          detectedProgressMethod={detectedProgressMethod}
+          showAuthConfig={showAuthConfig}
+          toggleAuthConfig={toggleAuthConfig}
+          showAuthDebug={showAuthDebug}
+          toggleAuthDebug={toggleAuthDebug}
         />
       </div>
     </div>

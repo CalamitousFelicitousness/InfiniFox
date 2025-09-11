@@ -188,7 +188,7 @@ export const AuthDebugPanel = () => {
       }
 
       // Only update if tokens changed
-      setTokens(prev => {
+      setTokens((prev) => {
         const hasChanged = JSON.stringify(prev) !== JSON.stringify(tokenInfos)
         return hasChanged ? tokenInfos : prev
       })

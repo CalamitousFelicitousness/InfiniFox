@@ -76,7 +76,7 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers = {}) {
 
     // Use capture phase to intercept before bubbling
     document.addEventListener('keydown', handleKeyDown, { capture: true })
-    
+
     return () => {
       document.removeEventListener('keydown', handleKeyDown, { capture: true })
     }

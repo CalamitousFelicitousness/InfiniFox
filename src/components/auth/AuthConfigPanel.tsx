@@ -9,10 +9,10 @@ interface AuthConfigPanelProps {
   showAuthDebug?: boolean
 }
 
-export const AuthConfigPanel: React.FC<AuthConfigPanelProps> = ({ 
+export const AuthConfigPanel: React.FC<AuthConfigPanelProps> = ({
   isVisible = true,
   onToggleDebug,
-  showAuthDebug = false
+  showAuthDebug = false,
 }) => {
   const {
     strategies,

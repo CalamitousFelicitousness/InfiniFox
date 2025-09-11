@@ -78,7 +78,7 @@ export function useDrawingSystem({ currentTool, scale, position }: DrawingSystem
     return () => {
       // Clean up all services
       pressureManager.cleanup()
-      
+
       // Clear refs to allow garbage collection
       perfectFreehandRef.current = null
       pressureManagerRef.current = null
