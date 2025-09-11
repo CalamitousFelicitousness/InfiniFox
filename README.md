@@ -1,96 +1,191 @@
-<p align="center">
-  <img src="./src/assets/InfiniFox.svg" width="640" alt="Infinifox Logo">
-</p>
-# InfiniFox
-
-A modern, professional web interface for SD.Next with an infinite canvas powered by Konva.js. Features universal input support for mouse, touch, and stylus devices with pressure sensitivity.
-
-## 🚀 Features Implemented
-
-### Core Generation
-- ✅ **Text-to-Image (txt2img)** - Full implementation with all parameters
-- ✅ **Image-to-Image (img2img)** - Complete with drag-and-drop upload
-- ✅ **Inpainting** - Advanced mask drawing system with brush/eraser tools
-  - Pressure-sensitive drawing for stylus devices
-  - Adjustable brush size (1-100px)
-  - Real-time red overlay preview
-  - Mask upload/download support
-  - Multiple fill modes and blur options
-
-### Canvas System
-- ✅ **Infinite Canvas** - Powered by Konva.js for 60fps performance
-- ✅ **Zoom & Pan** - Mouse wheel zoom, drag to pan, pinch-to-zoom ready
-- ✅ **Image Manipulation** - Select, move, transform, and layer images
-- ✅ **Context Menu** - Right-click options:
-  - Send to img2img
-  - Send to inpaint
-  - Duplicate
-  - Download
-  - Delete
-
-### Advanced Features
-- ✅ **Batch Processing & Queue Management**
-  - Batch generation with parameter variations
-  - Visual queue with drag-to-reorder
-  - Auto-retry on failure
-  - Progress tracking per item
-  - Start/pause/cancel controls
+<div align="center">
+  <br/>
+  <img src="./src/assets/InfiniFox.svg" alt="InfiniFox" width="400"/>
+  <br/>
+  <br/>
   
-- ✅ **History System with Undo/Redo**
-  - Command pattern implementation
-  - Visual history panel
-  - Keyboard shortcuts (Ctrl+Z, Ctrl+Shift+Z)
-  - 50 action limit with auto-trimming
-
-- ✅ **State Persistence**
-  - LocalStorage integration
-  - Session restoration
-  - Settings preservation
-
-### Modern Input Handling
-- ✅ **Universal Device Support** via Pointer Events API
-  - Mouse, touch, and pen unified handling
-  - Pressure-sensitive drawing for stylus/pen
-  - Touch-friendly 44px minimum targets
-  - Photoshop-style drag-to-change number inputs
+  <h1>InfiniFox</h1>
   
-- ✅ **Professional Custom Controls**
-  - Visual slider with drag support
-  - Custom dropdown with keyboard navigation
-  - Enhanced number inputs with scroll wheel support
-
-### Real-time Features
-- ✅ **WebSocket Integration** - Live progress updates
-- ✅ **Progress Indicator** - Step counter with preview
-- ✅ **Model/Sampler Selection** - Dynamic loading from API
-
-### User Experience
-- ✅ **Keyboard Shortcuts**:
-  - `Ctrl/Cmd + Enter` - Generate
-  - `Ctrl/Cmd + Z` - Undo
-  - `Ctrl/Cmd + Shift + Z` - Redo
-  - `Delete` - Delete selected
-  - `Ctrl/Cmd + D` - Duplicate
-  - `Ctrl/Cmd + Shift + Delete` - Clear canvas
+  <p align="center">
+    <strong>Image Generation Interface with Infinite Canvas so you can focus on what matters</strong>
+    <br/>
+    <em>Universal creative task UI with a modern design, cross-device support, and powerful editing capabilities, leveraging API to bring AI features right to the canvas</em>
+  </p>
   
-- ✅ **Modern UI**
-  - Dark theme with consistent design
-  - Tooltips and contextual help
-  - Responsive controls
-  - Custom scrollbars
+  <p align="center">
+    <a href="#-features"><img src="https://img.shields.io/badge/Features-Complete-success?style=for-the-badge" alt="Features"/></a>
+    <a href="#-quick-start"><img src="https://img.shields.io/badge/Quick_Start-Ready-blue?style=for-the-badge" alt="Quick Start"/></a>
+    <a href="#-development"><img src="https://img.shields.io/badge/Status-Active-brightgreen?style=for-the-badge" alt="Development"/></a>
+    <a href="https://github.com/CalamitousFelicitousness/InfiniFox/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="License"/></a>
+  </p>
+  
+  <p align="center">
+    <a href="https://konvajs.org/"><img src="https://img.shields.io/badge/Canvas-Konva.js-FF6B6B?style=flat-square&logo=javascript" alt="Konva.js"/></a>
+    <a href="https://react.dev/"><img src="https://img.shields.io/badge/Framework-React-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React"/></a>
+    <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/Language-TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript"/></a>
+    <a href="https://zustand-demo.pmnd.rs/"><img src="https://img.shields.io/badge/State-Zustand-orange?style=flat-square" alt="Zustand"/></a>
+  </p>
 
-## 🛠️ Setup & Installation
+  <br/>
+  <!-- 
+  Uncomment the following lines once interface screenshots are ready:
+  <br/>
+  <img src="./docs/images/interface-preview.png" alt="InfiniFox Interface" width="90%" style="border-radius: 10px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);"/>
+  <br/>
+  <br/>
+  -->
+</div>
+
+---
+
+## 🎯 Overview
+
+**InfiniFox** is a universal web interface for creative visuals, built from the ground up with enterprise requirements in mind. It aims to deliver a professional-grade experience through its infinite canvas system, sophisticated image editing, artboard support, and modular architecture to give the creator control over their workspace.
+
+The core principle of InfiniFox is letting users focus on their creative work, without being distracted by the tool itself, with smart, contextual menus and a minimalist UI that only shows what you need when you need it, without sacrificing ease of use and functionality.
+
+For AI-powered features it leverages its support of various APIs, including SD.Next, ComfyUI, and Automatic1111.
+
+### Core Principles
+
+- **🎨 User Experience** - Intuitive interface with professional-grade tools and workflows
+- **📱 Universal Input** - Seamless support for mouse, touch, and pressure-sensitive stylus
+- **🏗️ Modularity** - Component-based architecture for easy maintenance and extension
+- **⚡ Performance** - Smooth canvas interactions with optimized rendering pipeline
+- **🔧 Extensibility** - Plugin-ready architecture for custom features and backends
+- **♿ Accessibility** - Embrace WCAG 2.1 AA and general accessibility best practices
+
+---
+
+## ✨ Features
+
+### 🎨 Generation Capabilities
+
+<table>
+<tr>
+<td width="33%" valign="top">
+
+#### Text-to-Image
+
+- Full parameter control
+- Batch generation support
+- Real-time preview
+- Model/sampler selection
+- Seed management
+- CFG scale optimization
+
+</td>
+<td width="33%" valign="top">
+
+#### Image-to-Image
+
+- Drag-and-drop upload
+- Denoising strength control
+- Source image preservation
+- Mask-based editing
+- Resolution matching
+- Batch transformations
+
+</td>
+<td width="33%" valign="top">
+
+#### Inpainting
+
+- Pressure-sensitive brushes
+- Real-time mask preview
+- Multiple fill modes
+- Mask blur control
+- Upload/download masks
+- Undo/redo support
+
+</td>
+</tr>
+</table>
+
+### 🖼️ Infinite Canvas System
+
+- **Creative workbench** - Your materials where you need them, at hand
+- **High-Performance Rendering** - Konva.js-powered smooth interactions
+- **Smart Viewport Management** - Efficient culling and lazy loading
+- **Advanced Selection** - Multi-select, group operations, layer management
+- **Transform Controls** - Resize, rotate, flip with visual handles
+- **Context Actions** - Right-click menus with contextual options
+- **Zoom & Pan** - Smooth navigation from 10% to 500% zoom
+
+### 🛠️ Professional Tools
+
+#### Drawing System
+
+- **Perfect Freehand Integration** - Natural stroke dynamics
+- **Pressure Sensitivity** - Full stylus/pen tablet support
+- **LazyBrush Algorithm** - Intelligent smoothing and stabilization
+- **Brush Presets** - Hard, soft, and watercolor-style brushes
+- **Dynamic Sizing** - 1-100px with real-time preview
+
+#### Filter Pipeline
+
+- **40+ Custom Filters** - Professional-grade image adjustments
+- **Non-Destructive Editing** - Preserve originals with live preview
+- **Filter Chaining** - Combine multiple effects
+- **WebAssembly Acceleration** - Near-native performance
+- **GPU Processing** - Hardware-accelerated operations
+
+### 📊 Workflow Management
+
+<details>
+<summary><b>Queue System</b></summary>
+
+- Visual queue with drag-to-reorder
+- Parallel and sequential processing
+- Auto-retry with exponential backoff
+- Progress tracking per item
+- Priority management
+- Resource optimization
+
+</details>
+
+<details>
+<summary><b>History & Undo</b></summary>
+
+- Command pattern architecture
+- Visual history timeline
+- Unlimited undo/redo
+- State snapshots
+- Selective rollback
+- History export/import
+
+</details>
+
+<details>
+<summary><b>Batch Processing</b></summary>
+
+- Parameter matrix generation
+- Seed incrementing strategies
+- Prompt variations
+- Resolution sweeps
+- Model comparisons
+- Export presets
+
+</details>
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ and npm
-- SD.Next running with `--api` flag
-- Modern browser with Pointer Events support (all browsers since 2019)
+
+Development stage uses SD.Next as the main backend. More API support coming soon.
+
+- **Node.js** 18+ and npm
+- **SD.Next** running with `--api` flag
+- Modern browser (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)
 
 ### Installation
+
 ```bash
 # Clone the repository
-git clone https://github.com/CalamitousFelicitousness/sdnextnewui
-cd sdnextnewui
+git clone https://github.com/CalamitousFelicitousness/InfiniFox.git
+cd InfiniFox
 
 # Install dependencies
 npm install
@@ -99,213 +194,209 @@ npm install
 npm run dev
 ```
 
+The application will be available at `http://localhost:5173`
+
 ### Configuration
-Create a `.env.local` file for custom endpoints:
-```env
-VITE_SDNEXT_API_URL=http://localhost:7860/sdapi/v1
-VITE_SDNEXT_WS_URL=localhost:7860
-```
 
-### Build for Production
-```bash
-# Create optimized build
-npm run build
-
-# Preview production build
-npm run preview
-```
-
-## 📁 Project Structure
-
-```
-src/
-├── api/                    # API Layer
-│   └── sdnextApi.ts       # SD.Next API client
-├── components/            
-│   ├── common/            # Reusable UI components
-│   │   ├── Dropdown.tsx
-│   │   ├── ImageUpload.tsx
-│   │   ├── NumberInput.tsx
-│   │   ├── ProgressIndicator.tsx
-│   │   ├── Slider.tsx
-│   │   └── Tooltip.tsx
-│   ├── layout/            # Layout components
-│   │   ├── ControlPanel.tsx
-│   │   └── Tabs.tsx
-│   └── panels/            # Feature panels
-│       ├── BatchSettingsPanel.tsx
-│       ├── HistoryPanel.tsx
-│       └── QueuePanel.tsx
-├── features/              
-│   ├── canvas/            # Canvas system
-│   │   ├── Canvas.tsx
-│   │   └── CanvasContextMenu.tsx
-│   ├── generation/        # Generation interfaces
-│   │   ├── Txt2ImgPanel.tsx
-│   │   └── Img2ImgPanel.tsx
-│   └── inpaint/           # Inpainting system
-│       ├── InpaintPanel.tsx
-│       └── MaskEditor.tsx
-├── hooks/                 # Custom hooks
-│   ├── useKeyboardShortcuts.ts
-│   ├── usePointerDrag.ts
-│   ├── usePointerHover.ts
-│   └── usePinchZoom.ts
-├── services/              
-│   └── websocket.ts       # WebSocket client
-├── store/                 # State management
-│   ├── store.ts          # Main app state
-│   ├── historyStore.ts   # Undo/redo system
-│   └── queueStore.ts     # Batch queue
-├── utils/
-│   └── pointerEvents.ts  # Input handling utilities
-└── types/
-    └── sdnext.ts         # TypeScript definitions
-```
-
-## 🎯 Usage Guide
-
-### Text-to-Image
-1. Enter prompt and negative prompt
-2. Adjust parameters (steps, CFG, dimensions)
-3. Press `Ctrl/Cmd + Enter` or click Generate
-4. Images appear on canvas automatically
-
-### Image-to-Image
-1. Switch to "Image to Image" tab
-2. Drag & drop or click to upload source image
-3. Enter prompt for modifications
-4. Adjust denoising strength (0-1)
-5. Generate to see results
-
-### Inpainting
-1. Switch to "Inpainting" tab
-2. Upload base image
-3. Draw mask with brush tool (red areas = regenerate)
-4. Use eraser to refine mask
-5. Enter prompt for masked area
-6. Adjust mask blur and fill mode
-7. Generate inpainted result
-
-### Batch Processing
-1. Enable "Batch Mode" in settings panel
-2. Configure variations:
-   - Seed incrementing
-   - Multiple prompts (line-separated)
-   - Steps variations (comma-separated)
-   - CFG variations
-3. Generate to add all variations to queue
-4. Monitor progress in Queue panel
-
-### Canvas Operations
-- **Zoom**: Mouse wheel or buttons (10%-500%)
-- **Pan**: Drag on empty space
-- **Select**: Click on image
-- **Transform**: Drag corners to resize
-- **Multi-select**: Hold Shift (planned)
-- **Context Menu**: Right-click for options
-
-### Keyboard Shortcuts
-- `Ctrl/Cmd + Enter` - Generate
-- `Ctrl/Cmd + Z` - Undo
-- `Ctrl/Cmd + Shift + Z` - Redo
-- `Delete` - Delete selected
-- `Ctrl/Cmd + D` - Duplicate selected
-- `Ctrl/Cmd + Shift + Delete` - Clear canvas
-
-## 🔧 Development
-
-### Scripts
-```bash
-npm run dev        # Start dev server
-npm run build      # Production build
-npm run preview    # Preview build
-npm run lint       # Run ESLint
-npm run format     # Format with Prettier
-npm run type-check # TypeScript check
-```
-
-### Code Standards
-- TypeScript with strict mode (in progress)
-- Functional components with hooks
-- Zustand for state management
-- Pointer Events for input handling
-- 44px minimum touch targets
-- JSDoc for public APIs
-
-## 📈 Current Development Phase
-
-**"Polish Before Progress"** - The project is in a refinement phase, focusing on perfecting existing features before adding new ones.
-
-### Recently Completed Polish Work
-- ✅ Migrated all components to Pointer Events API
-- ✅ Implemented pressure-sensitive stylus support
-- ✅ Created professional custom form controls
-- ✅ Added Photoshop-style number inputs
-- ✅ Unified input handling for all devices
-
-### Current Polish Priorities
-1. Canvas performance optimization for large images
-2. Bug fixes (queue scroll, history panel auto-scroll)
-3. Comprehensive error handling
-4. Test coverage (70% target)
-5. Bundle size optimization
-6. Accessibility improvements
-
-## 🎯 Roadmap
-
-### Phase 1: Polish & Refinement (Current)
-- Performance optimization
-- Bug fixes and stability
-- Test implementation
-- Documentation
-- Accessibility
-
-### Phase 2: Feature Expansion (After Polish)
-- ControlNet integration
-- Model/LoRA management UI
-- Canvas layers system
-- Workflow automation
-- Gallery view
-
-### Phase 3: Advanced Features (Future)
-- SDXL support
-- Regional prompting
-- Plugin system
-- Collaboration features
-- Mobile app
-
-## 🐛 Known Issues
-
-### Priority Bugs
-- Canvas zoom occasionally jumps near limits
-- Queue panel scroll position resets on update
-- Mask editor cursor sometimes lags
-- History panel doesn't auto-scroll to current
-- Images jumping after being dragged
-- UI elements misaligned
-- Image generation error despite correct generation and image appearing on canvas
-
-### Limitations
-- Large images (>4K) may impact performance
-- No SDXL-specific parameters yet
-- Mobile layout incomplete (touch support ready)
-- WebSocket may need reconnection after interruption
-
-## 📝 License
-
-MIT
-
-## 🙏 Acknowledgments
-
-Built with:
-- [Preact](https://preactjs.com/) - Fast React alternative
-- [TypeScript](https://www.typescriptlang.org/) - Type safety
-- [Konva.js](https://konvajs.org/) - 2D canvas library
-- [Zustand](https://zustand-demo.pmnd.rs/) - State management
-- [SD.Next](https://github.com/vladmandic/sdnext) - Backend API
+No configuration is required for the initial setup. All user configuration is handled through the UI.
 
 ---
 
-**Device Support:** Mouse, Touch, Stylus (with pressure)  
-**Performance Target:** 60fps with 50+ images
+## 💻 Development
+
+### Project Structure
+
+```markdown
+InfiniFox/
+├── 📁 src/
+│   ├── 📁 api/              # API integration layer
+│   ├── 📁 auth/             # Authentication system
+│   ├── 📁 components/       # Reusable UI components
+│   ├── 📁 features/         # Feature modules
+│   │   ├── canvas/          # Infinite canvas system
+│   │   ├── generation/      # Image generation
+│   │   ├── filters/         # Filter pipeline
+│   │   └── inpaint/         # Inpainting tools
+│   ├── 📁 hooks/            # Custom React hooks
+│   ├── 📁 services/         # Business logic
+│   ├── 📁 store/            # State management
+│   ├── 📁 types/            # TypeScript definitions
+│   └── 📁 utils/            # Utility functions
+├── 📁 docs/                 # Documentation
+├── 📁 tests/                # Test suites
+└── 📁 public/               # Static assets
+```
+
+### Available Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server with HMR |
+| `npm run build` | Create production build |
+| `npm run preview` | Preview production build |
+| `npm run test` | Run test suite |
+| `npm run lint` | Lint code with ESLint |
+| `npm run format` | Format code with Prettier |
+| `npm run type-check` | Validate TypeScript |
+
+### Technology Stack
+
+- **Frontend Framework**: React 18
+- **Language**: TypeScript (strict mode)
+- **Canvas Engine**: Konva.js
+- **State Management**: Zustand
+- **Styling**: CSS Modules + Tailwind utilities
+- **Build Tool**: Vite
+- **Testing**: Vitest + Testing Library
+- **Input Handling**: Pointer Events API
+
+---
+
+## ⌨️ Keyboard Shortcuts
+
+| Action | Windows/Linux | macOS |
+|--------|--------------|-------|
+| Generate | `Ctrl + Enter` | `⌘ + Enter` |
+| Undo | `Ctrl + Z` | `⌘ + Z` |
+| Redo | `Ctrl + Shift + Z` | `⌘ + Shift + Z` |
+| Delete Selected | `Delete` | `Delete` |
+| Duplicate | `Ctrl + D` | `⌘ + D` |
+| Clear Canvas | `Ctrl + Shift + Delete` | `⌘ + Shift + Delete` |
+| Save | `Ctrl + S` | `⌘ + S` |
+| Select All | `Ctrl + A` | `⌘ + A` |
+
+---
+
+## Accessibility
+
+### Principle
+
+InfiniFox project also makes conscious choices for accessibility, so that no matter the skill level, familiarity, or whether user has disabilities or relies on assistive technologies, everyone can participate fully.
+
+To achieve this the project strives to embrace WCAG 2.1 AA guidelines.
+
+### Features
+
+Here are accessibility features for InfiniFox in that format:
+
+- **Keyboard Navigation**: Full keyboard support for all features
+- **Screen Reader Support**: ARIA labels and live regions for canvas state changes
+- **High Contrast and Colorblindness Mode**: Alternative color schemes for visual accomodation
+- **Scalable UI**: Functional interface at any UI scaling level
+- **Reduced Motion**: Respects prefers-reduced-motion for animations and transitions
+- **Customizable Shortcuts**: Remappable keyboard shortcuts for motor accomodation
+- **Large Click Targets**: Minimum 44x44px touch targets with adjustable sizing
+- **Status Announcements**: Audio/visual feedback for generation progress and errors
+- **Simplified Mode**: Streamlined interface option with essential controls only
+
+---
+
+## 📈 Roadmap
+
+### Current Phase: Polish & Optimization
+
+Focusing on perfecting existing features before adding new capabilities.
+
+### ✅ Recently Completed
+
+- Universal Pointer Events migration
+- Pressure-sensitive stylus support
+- Professional custom controls
+- Filter pipeline system
+- WebAssembly integration prep
+- Enhanced drawing tools
+- Authentication framework
+
+### 🚧 In Progress
+
+- Workspace management
+- Layer management
+- In-canvas inpainting
+- Advanced brush engine
+- Controlnet workflows support
+- Improved UI, UX, and accessibility
+- Streamlining parameter management
+- Video playback and generation
+- WebAssembly backend integration
+- Advanced filter system
+- Performance optimization for 4K+ images
+- Comprehensive error handling
+- Test coverage expansion (target: 80%)
+- Bundle size optimization
+- Accessibility improvements (WCAG 2.1 AA)
+
+### 📅 Upcoming Features
+
+<details>
+<summary><b>Q1 2025</b></summary>
+
+- [ ] ControlNet integration
+- [ ] Model/LoRA management UI
+- [ ] Canvas layers system
+- [ ] Workflow automation
+- [ ] Plugin API
+
+</details>
+
+<details>
+<summary><b>Q2 2025</b></summary>
+
+- [ ] Gallery view with tagging
+- [ ] SDXL-specific parameters
+- [ ] Regional prompting
+- [ ] Animation support
+- [ ] Cloud sync
+
+</details>
+
+<details>
+<summary><b>Future</b></summary>
+
+- [ ] Collaboration features
+- [ ] Mobile application
+- [ ] Desktop app (Electron)
+- [ ] AI-assisted editing
+- [ ] Video generation support
+
+</details>
+
+---
+
+## 🤝 Contributing
+
+Thank you for the interest! Opening up contributions and creation contribution guidelines might come in the future.
+
+### Development Guidelines
+
+- Follow TypeScript strict mode
+- Maintain 80% test coverage
+- Use functional components
+- Implement proper error boundaries
+- Follow accessibility standards
+- Document public APIs
+
+---
+
+## 📚 Documentation
+
+Currently awaiting feature completeness
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+Built with these excellent libraries:
+
+- [Konva.js](https://konvajs.org/) - 2D Canvas framework
+- [React](https://react.dev/) - UI library for web interfaces
+- [SD.Next](https://github.com/vladmandic/sdnext) - Stable Diffusion backend
+- [Perfect Freehand](https://github.com/steveruizok/perfect-freehand) - Drawing dynamics
+- [Zustand](https://zustand-demo.pmnd.rs/) - State management
+
+---
