@@ -110,3 +110,6 @@ export interface AppState {
 
 // Helper type for creating slices
 export type SliceCreator<T> = StateCreator<AppState, [], [], T>
+
+// Store type for slices that need full store reference
+export type Store = AppState
