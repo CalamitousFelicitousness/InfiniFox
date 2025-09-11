@@ -3,7 +3,17 @@ import React, { useState, useEffect, useRef } from 'react'
 import type { StrategyConfig } from '../../store/slices/authSlice'
 import { useStore } from '../../store/store'
 
-export const AuthConfigPanel: React.FC = () => {
+interface AuthConfigPanelProps {
+  isVisible?: boolean
+  onToggleDebug?: () => void
+  showAuthDebug?: boolean
+}
+
+export const AuthConfigPanel: React.FC<AuthConfigPanelProps> = ({ 
+  isVisible = true,
+  onToggleDebug,
+  showAuthDebug = false
+}) => {
   const {
     strategies,
     activeStrategy,
@@ -40,7 +50,7 @@ export const AuthConfigPanel: React.FC = () => {
       intervalRef.current = null
     }
 
-    if (!tokenExpiry || !isMountedRef.current) {
+    if (!tokenExpiry || !isMountedRef.current || !isVisible) {
       setTimeToExpiry('')
       return
     }
@@ -68,7 +78,7 @@ export const AuthConfigPanel: React.FC = () => {
         intervalRef.current = null
       }
     }
-  }, [tokenExpiry])
+  }, [tokenExpiry, isVisible])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -319,6 +329,24 @@ export const AuthConfigPanel: React.FC = () => {
           <button onClick={handleLogout} className="glass-button-secondary">
             Logout
           </button>
+        </div>
+      )}
+
+      {/* Debug Panel Toggle - Development Only */}
+      {import.meta.env.DEV && (
+        <div className="auth-debug-toggle-section" style={{ marginTop: '1rem' }}>
+          <button
+            onClick={onToggleDebug}
+            className={`btn btn-sm ${showAuthDebug ? 'btn-success' : 'btn-secondary'} w-full`}
+          >
+            <span style={{ marginRight: '0.5rem' }}>🔍</span>
+            {showAuthDebug ? 'Hide' : 'Show'} Debug Panel
+          </button>
+          {showAuthDebug && (
+            <div className="form-help mt-2">
+              Debug panel is active - monitoring all auth requests
+            </div>
+          )}
         </div>
       )}
     </div>

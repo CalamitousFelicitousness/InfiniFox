@@ -57,6 +57,8 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
   useEffect(() => {
     if (!activeGenerationFrameId) return
 
+    let timeoutId: NodeJS.Timeout | null = null
+
     const unsubscribe = progressService.onProgress((message) => {
       // Handle progress messages from REST polling monitor
       console.log('Progress event for frame:', activeGenerationFrameId, message)
@@ -88,7 +90,7 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
           error: message.error || 'Generation failed',
         })
         // Keep error frames visible longer
-        setTimeout(() => {
+        timeoutId = setTimeout(() => {
           removeGenerationFrame(activeGenerationFrameId)
           setActiveGenerationFrameId(null)
         }, 3000)
@@ -97,6 +99,10 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
 
     return () => {
       unsubscribe()
+      // Clear any pending timeout
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
     }
   }, [
     activeGenerationFrameId,

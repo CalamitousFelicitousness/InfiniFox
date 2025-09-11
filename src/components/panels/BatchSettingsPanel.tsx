@@ -1,12 +1,11 @@
 import { Layers, ChevronRight } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 
 import { useQueueStore } from '../../store/queueStore'
 
 export function BatchSettingsPanel() {
   const [isExpanded, setIsExpanded] = useState(false)
   const { batchSettings, setBatchSettings } = useQueueStore()
-  const panelRef = useRef<HTMLDivElement>(null)
 
   const handlePromptVariationsChange = (value: string) => {
     const variations = value.split('\n').filter((v) => v.trim())
@@ -30,7 +29,7 @@ export function BatchSettingsPanel() {
   }
 
   return (
-    <div className={`panel batch-settings-panel ${isExpanded ? '' : 'collapsed'}`} ref={panelRef}>
+    <div className={`panel batch-settings-panel ${isExpanded ? '' : 'collapsed'}`}>
       <div className="panel-header">
         <div className="d-flex items-center gap-2">
           <Layers className="icon-base" />
@@ -51,9 +50,7 @@ export function BatchSettingsPanel() {
       </div>
 
       <div className={`panel-content ${!isExpanded ? 'collapsed' : ''}`}>
-        {isExpanded && (
-          <>
-            <div className="form-group">
+        <div className="form-group">
               <label className="form-label">Batch Count</label>
               <input
                 type="number"
@@ -203,9 +200,7 @@ export function BatchSettingsPanel() {
                       : 1)}
                 </strong>
               </p>
-            </div>
-          </>
-        )}
+        </div>
       </div>
     </div>
   )

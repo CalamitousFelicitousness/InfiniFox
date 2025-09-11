@@ -110,24 +110,32 @@ export function Canvas() {
   // Handle context menu actions
   const handleContextMenuAction = (action: string) => {
     const { contextMenu } = events
+    // Capture values before menu closes
+    const imageId = contextMenu.imageId
+    const contextX = contextMenu.x
+    const contextY = contextMenu.y
 
     switch (action) {
       case 'delete':
-        if (contextMenu.imageId) {
-          removeImage(contextMenu.imageId)
-          images_.setSelectedId(null)
+        if (imageId) {
+          // Clear selection first to remove transformer
+          if (images_.selectedId === imageId) {
+            images_.setSelectedId(null)
+          }
+          // Then remove the image
+          removeImage(imageId)
         }
         break
 
       case 'duplicate':
-        if (contextMenu.imageId) {
-          duplicateImage(contextMenu.imageId)
+        if (imageId) {
+          duplicateImage(imageId)
         }
         break
 
       case 'sendToImg2Img':
-        if (contextMenu.imageId) {
-          const image = images_.konvaImages.find((img) => img.id === contextMenu.imageId)
+        if (imageId) {
+          const image = images_.konvaImages.find((img) => img.id === imageId)
           if (image) {
             setImageAsInput(image.src)
           }
@@ -135,12 +143,12 @@ export function Canvas() {
         break
 
       case 'download':
-        if (contextMenu.imageId) {
-          const image = images_.konvaImages.find((img) => img.id === contextMenu.imageId)
+        if (imageId) {
+          const image = images_.konvaImages.find((img) => img.id === imageId)
           if (image) {
             const link = document.createElement('a')
             link.href = image.src
-            link.download = `generated-${contextMenu.imageId}.png`
+            link.download = `generated-${imageId}.png`
             link.click()
           }
         }
@@ -152,20 +160,20 @@ export function Canvas() {
 
       case 'placeEmptyFrame':
         {
-          const canvasPos = events.screenToCanvas({ x: contextMenu.x, y: contextMenu.y })
+          const canvasPos = events.screenToCanvas({ x: contextX, y: contextY })
           frames.placeEmptyFrame(canvasPos.x, canvasPos.y)
         }
         break
 
       case 'generateHere':
         {
-          const canvasPos = events.screenToCanvas({ x: contextMenu.x, y: contextMenu.y })
+          const canvasPos = events.screenToCanvas({ x: contextX, y: contextY })
           frames.generateAtPosition(canvasPos.x, canvasPos.y)
         }
         break
     }
 
-    events.hideContextMenu()
+    // Menu closing is handled by the button handlers
   }
 
   // Handle viewport change from minimap

@@ -187,13 +187,20 @@ export const AuthDebugPanel = () => {
         }
       }
 
-      setTokens(tokenInfos)
+      // Only update if tokens changed
+      setTokens(prev => {
+        const hasChanged = JSON.stringify(prev) !== JSON.stringify(tokenInfos)
+        return hasChanged ? tokenInfos : prev
+      })
     }
 
     updateTokens()
-    const interval = setInterval(updateTokens, 1000)
-    return () => clearInterval(interval)
-  }, [strategies, tokenExpiry])
+    // Reduce frequency to 5 seconds and only run if panel is open
+    if (isOpen) {
+      const interval = setInterval(updateTokens, 5000)
+      return () => clearInterval(interval)
+    }
+  }, [strategies, tokenExpiry, isOpen])
 
   const decodeToken = (token: string): unknown => {
     try {

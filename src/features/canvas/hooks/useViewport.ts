@@ -33,6 +33,13 @@ export function useViewport(stageRef: React.RefObject<Konva.Stage>) {
     }, 250) // Debounce for 250ms
   ).current
 
+  // Cancel debounced calls on unmount
+  useEffect(() => {
+    return () => {
+      debouncedUpdateViewport.cancel()
+    }
+  }, [debouncedUpdateViewport])
+
   /**
    * Set initial stage position and scale
    */

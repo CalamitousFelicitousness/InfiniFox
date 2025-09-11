@@ -454,6 +454,7 @@ export function useImageManagement({ currentTool, scale: _scale }: UseImageManag
     // State
     konvaImages,
     selectedId,
+    setSelectedId,
     canvasSelectionMode,
     activeImageRoles,
     transformerRef: transformerRef.current,

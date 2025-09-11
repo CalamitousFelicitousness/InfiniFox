@@ -102,10 +102,8 @@ export function HistoryPanel() {
         </div>
       </div>
 
-      <div className="panel-content">
-        {isExpanded && (
-          <>
-            <div className="history-list" ref={listRef}>
+      <div className={`panel-content ${!isExpanded ? 'collapsed' : ''}`}>
+        <div className="history-list" ref={listRef}>
               {history.length === 0 ? (
                 <div className="history-empty">No actions yet</div>
               ) : (
@@ -126,9 +124,7 @@ export function HistoryPanel() {
                 {history.length} action{history.length !== 1 ? 's' : ''}
               </span>
               <span>Max: 50</span>
-            </div>
-          </>
-        )}
+        </div>
       </div>
     </div>
   )

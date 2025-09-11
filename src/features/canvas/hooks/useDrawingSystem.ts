@@ -62,17 +62,28 @@ export function useDrawingSystem({ currentTool, scale, position }: DrawingSystem
    */
   useEffect(() => {
     const preset = BRUSH_PRESETS[brushPreset as keyof typeof BRUSH_PRESETS] || BRUSH_PRESETS.soft
-    perfectFreehandRef.current = new PerfectFreehandService({
+    const perfectFreehand = new PerfectFreehandService({
       ...preset,
       size: brushSize,
     })
-    pressureManagerRef.current = new PressureManager()
-    lazyBrushRef.current = new LazyBrush({ radius: smoothing, enabled: true })
+    const pressureManager = new PressureManager()
+    const lazyBrush = new LazyBrush({ radius: smoothing, enabled: true })
 
-    pressureManagerRef.current.initialize()
+    perfectFreehandRef.current = perfectFreehand
+    pressureManagerRef.current = pressureManager
+    lazyBrushRef.current = lazyBrush
+
+    pressureManager.initialize()
 
     return () => {
-      pressureManagerRef.current?.cleanup()
+      // Clean up all services
+      pressureManager.cleanup()
+      
+      // Clear refs to allow garbage collection
+      perfectFreehandRef.current = null
+      pressureManagerRef.current = null
+      lazyBrushRef.current = null
+      strokePointsRef.current = []
     }
   }, [brushPreset, brushSize, smoothing])
 

@@ -122,9 +122,7 @@ export function QueuePanel() {
       </div>
 
       <div className={`panel-content ${!isExpanded ? 'collapsed' : ''}`}>
-        {isExpanded && (
-          <>
-            <div className="queue-stats">
+        <div className="queue-stats">
               <span className="queue-stat pending">
                 <Clock className="icon-sm" />
                 <span>{stats.pending}</span>
@@ -255,8 +253,6 @@ export function QueuePanel() {
                 ))
               )}
             </div>
-          </>
-        )}
       </div>
     </div>
   )
