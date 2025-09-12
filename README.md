@@ -13,7 +13,7 @@
   </p>
   
   <p align="center">
-    <a href="#-features"><img src="https://img.shields.io/badge/Features-Complete-success?style=for-the-badge" alt="Features"/></a>
+    <a href="#-features"><img src="https://img.shields.io/badge/Features-In development-brightgreen?style=for-the-badge" alt="Features"/></a>
     <a href="#-quick-start"><img src="https://img.shields.io/badge/Quick_Start-Ready-blue?style=for-the-badge" alt="Quick Start"/></a>
     <a href="#-development"><img src="https://img.shields.io/badge/Status-Active-brightgreen?style=for-the-badge" alt="Development"/></a>
     <a href="https://github.com/CalamitousFelicitousness/InfiniFox/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="License"/></a>
