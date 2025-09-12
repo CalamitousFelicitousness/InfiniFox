@@ -291,80 +291,9 @@ Here are accessibility features for InfiniFox in that format:
 
 ---
 
-## 📈 Roadmap
-
-### Current Phase: Polish & Optimization
-
-Focusing on perfecting existing features before adding new capabilities.
-
-### ✅ Recently Completed
-
-- Universal Pointer Events migration
-- Pressure-sensitive stylus support
-- Professional custom controls
-- Filter pipeline system
-- WebAssembly integration prep
-- Enhanced drawing tools
-- Authentication framework
-
-### 🚧 In Progress
-
-- Workspace management
-- Layer management
-- In-canvas inpainting
-- Advanced brush engine
-- Controlnet workflows support
-- Improved UI, UX, and accessibility
-- Streamlining parameter management
-- Video playback and generation
-- WebAssembly backend integration
-- Advanced filter system
-- Performance optimization for 4K+ images
-- Comprehensive error handling
-- Test coverage expansion (target: 80%)
-- Bundle size optimization
-- Accessibility improvements (WCAG 2.1 AA)
-
-### 📅 Upcoming Features
-
-<details>
-<summary><b>Q1 2025</b></summary>
-
-- [ ] ControlNet integration
-- [ ] Model/LoRA management UI
-- [ ] Canvas layers system
-- [ ] Workflow automation
-- [ ] Plugin API
-
-</details>
-
-<details>
-<summary><b>Q2 2025</b></summary>
-
-- [ ] Gallery view with tagging
-- [ ] SDXL-specific parameters
-- [ ] Regional prompting
-- [ ] Animation support
-- [ ] Cloud sync
-
-</details>
-
-<details>
-<summary><b>Future</b></summary>
-
-- [ ] Collaboration features
-- [ ] Mobile application
-- [ ] Desktop app (Electron)
-- [ ] AI-assisted editing
-- [ ] Video generation support
-
-</details>
-
----
-
 ## 🤝 Contributing
 
-Thank you for the interest! Opening up contributions and creation contribution guidelines might come in the future.
+Opening up contributions and creation of contribution guidelines might come in the future.
 
 ### Development Guidelines
 
