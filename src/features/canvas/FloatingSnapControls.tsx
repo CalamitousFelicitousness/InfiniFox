@@ -1,6 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react'
 
-import { GridIcon, ChevronUpIcon, ChevronDownIcon, Magnet, Ruler, GripIcon } from '../../components/icons'
+import {
+  GridIcon,
+  ChevronUpIcon,
+  ChevronDownIcon,
+  Magnet,
+  Ruler,
+  GripIcon,
+} from '../../components/icons'
 import { snappingManager } from '../../services/canvas/SnappingManager'
 
 import './FloatingSnapControls.css'
@@ -19,11 +26,14 @@ interface FloatingSnapControlsProps {
   }) => void
 }
 
-export function FloatingSnapControls({ className = '', onSnapConfigChange }: FloatingSnapControlsProps) {
+export function FloatingSnapControls({
+  className = '',
+  onSnapConfigChange,
+}: FloatingSnapControlsProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
-  
+
   // Load saved position or use defaults
   const loadSavedPosition = () => {
     try {
@@ -36,10 +46,10 @@ export function FloatingSnapControls({ className = '', onSnapConfigChange }: Flo
     }
     return { x: 20, y: 200 }
   }
-  
+
   const [position, setPosition] = useState(loadSavedPosition())
   const dragStart = useRef({ x: 0, y: 0 })
-  
+
   // Load saved config or use defaults
   const loadSavedConfig = () => {
     try {
@@ -52,14 +62,14 @@ export function FloatingSnapControls({ className = '', onSnapConfigChange }: Flo
     }
     return snappingManager.getConfig()
   }
-  
+
   const [config, setConfig] = useState(loadSavedConfig())
 
   // Save config to localStorage and update snapping manager
   useEffect(() => {
     snappingManager.updateConfig(config)
     onSnapConfigChange?.(config)
-    
+
     // Save to localStorage
     try {
       localStorage.setItem(SNAP_CONFIG_KEY, JSON.stringify(config))
@@ -71,7 +81,7 @@ export function FloatingSnapControls({ className = '', onSnapConfigChange }: Flo
   const handlePointerDown = (e: React.PointerEvent) => {
     const target = e.target as HTMLElement
     if (!target.closest('.toolbar-grip')) return
-    
+
     setIsDragging(true)
     dragStart.current = {
       x: e.clientX - position.x,
@@ -111,23 +121,23 @@ export function FloatingSnapControls({ className = '', onSnapConfigChange }: Flo
   }
 
   const toggleGridSnap = () => {
-    setConfig(prev => ({ ...prev, gridEnabled: !prev.gridEnabled }))
+    setConfig((prev) => ({ ...prev, gridEnabled: !prev.gridEnabled }))
   }
 
   const toggleObjectSnap = () => {
-    setConfig(prev => ({ ...prev, objectSnapEnabled: !prev.objectSnapEnabled }))
+    setConfig((prev) => ({ ...prev, objectSnapEnabled: !prev.objectSnapEnabled }))
   }
 
   const toggleSnapGuides = () => {
-    setConfig(prev => ({ ...prev, showSnapGuides: !prev.showSnapGuides }))
+    setConfig((prev) => ({ ...prev, showSnapGuides: !prev.showSnapGuides }))
   }
 
   const updateGridSize = (size: number) => {
-    setConfig(prev => ({ ...prev, gridSize: size }))
+    setConfig((prev) => ({ ...prev, gridSize: size }))
   }
 
   const updateSnapThreshold = (threshold: number) => {
-    setConfig(prev => ({ ...prev, snapThreshold: threshold }))
+    setConfig((prev) => ({ ...prev, snapThreshold: threshold }))
   }
 
   const containerClasses = [
@@ -170,7 +180,11 @@ export function FloatingSnapControls({ className = '', onSnapConfigChange }: Flo
           data-tooltip="Snap Settings"
         >
           <GridIcon />
-          {isExpanded ? <ChevronUpIcon className="snap-chevron" /> : <ChevronDownIcon className="snap-chevron" />}
+          {isExpanded ? (
+            <ChevronUpIcon className="snap-chevron" />
+          ) : (
+            <ChevronDownIcon className="snap-chevron" />
+          )}
         </button>
       </div>
 
@@ -246,45 +260,51 @@ export function FloatingSnapControls({ className = '', onSnapConfigChange }: Flo
           )}
 
           <div className="snap-panel-separator" />
-          
+
           <div className="snap-presets">
             <span className="snap-presets-label">Presets</span>
             <div className="snap-preset-buttons">
               <button
                 className="toolbar-item snap-preset"
-                onClick={() => setConfig({
-                  gridEnabled: true,
-                  gridSize: 50,
-                  objectSnapEnabled: false,
-                  snapThreshold: 20,
-                  showSnapGuides: true,
-                })}
+                onClick={() =>
+                  setConfig({
+                    gridEnabled: true,
+                    gridSize: 50,
+                    objectSnapEnabled: false,
+                    snapThreshold: 20,
+                    showSnapGuides: true,
+                  })
+                }
                 title="Grid Only"
               >
                 Grid
               </button>
               <button
                 className="toolbar-item snap-preset"
-                onClick={() => setConfig({
-                  gridEnabled: false,
-                  gridSize: 50,
-                  objectSnapEnabled: true,
-                  snapThreshold: 20,
-                  showSnapGuides: true,
-                })}
+                onClick={() =>
+                  setConfig({
+                    gridEnabled: false,
+                    gridSize: 50,
+                    objectSnapEnabled: true,
+                    snapThreshold: 20,
+                    showSnapGuides: true,
+                  })
+                }
                 title="Smart Snap"
               >
                 Smart
               </button>
               <button
                 className="toolbar-item snap-preset"
-                onClick={() => setConfig({
-                  gridEnabled: true,
-                  gridSize: 25,
-                  objectSnapEnabled: true,
-                  snapThreshold: 30,
-                  showSnapGuides: true,
-                })}
+                onClick={() =>
+                  setConfig({
+                    gridEnabled: true,
+                    gridSize: 25,
+                    objectSnapEnabled: true,
+                    snapThreshold: 30,
+                    showSnapGuides: true,
+                  })
+                }
                 title="All Snapping"
               >
                 All

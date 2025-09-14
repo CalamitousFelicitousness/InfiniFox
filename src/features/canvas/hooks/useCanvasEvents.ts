@@ -1,6 +1,6 @@
 import Konva from 'konva'
-import { useState, useCallback } from 'react'
-
+import { useState, useCallback, useRef } from 'react'
+import { useStore } from '../../../store/store'
 import { CanvasTool } from './useCanvasTools'
 
 type Position = {
@@ -75,6 +75,20 @@ export function useCanvasEvents({
     [scale, position]
   )
 
+  // Get selection box actions from store
+  const startSelectionBox = useStore((state) => state.startSelectionBox)
+  const updateSelectionBox = useStore((state) => state.updateSelectionBox)
+  const endSelectionBox = useStore((state) => state.endSelectionBox)
+  const deselectAll = useStore((state) => state.deselectAll)
+  
+  // Track if we're dragging a selection box
+  const [isSelectionBoxDragging, setIsSelectionBoxDragging] = useState(false)
+  
+  // Throttling for selection box updates
+  const lastUpdateTime = useRef(0)
+  const pendingUpdate = useRef<{x: number, y: number} | null>(null)
+  const updateAnimationFrame = useRef<number | null>(null)
+
   /**
    * Main pointer down handler - routes to appropriate system
    */
@@ -120,6 +134,16 @@ export function useCanvasEvents({
             if (onFrameSelect) {
               onFrameSelect(frameId)
             }
+          } else if (target === stage || targetClassName === 'Layer') {
+            // Clicked on empty stage/layer - start selection box
+            const canvasPos = screenToCanvas(pointer)
+            startSelectionBox(canvasPos.x, canvasPos.y)
+            setIsSelectionBoxDragging(true)
+            
+            // Also deselect all if not holding ctrl
+            if (!e.evt.ctrlKey && !e.evt.metaKey) {
+              deselectAll()
+            }
           } else {
             // Check if target is part of a transformer (handles are child shapes)
             let isTransformerElement = targetClassName === 'Transformer'
@@ -134,6 +158,9 @@ export function useCanvasEvents({
 
             // Only deselect if not clicking on transformer or its children
             if (!isTransformerElement) {
+              if (!e.evt.ctrlKey && !e.evt.metaKey) {
+                deselectAll()
+              }
               if (onImageSelect) onImageSelect(null)
               if (onFrameSelect) onFrameSelect(null)
             }
@@ -147,14 +174,56 @@ export function useCanvasEvents({
         }
       }
     },
-    [currentTool, stageRef, onDrawingPointerDown, onImageSelect, onFrameSelect]
+    [currentTool, stageRef, onDrawingPointerDown, onImageSelect, onFrameSelect, startSelectionBox, deselectAll, screenToCanvas]
   )
+
+  /**
+   * Throttled selection box update
+   */
+  const throttledUpdateSelectionBox = useCallback((x: number, y: number) => {
+    const now = Date.now()
+    const timeSinceLastUpdate = now - lastUpdateTime.current
+    
+    // Update immediately if enough time has passed (16ms for ~60fps)
+    if (timeSinceLastUpdate >= 16) {
+      updateSelectionBox(x, y)
+      lastUpdateTime.current = now
+      pendingUpdate.current = null
+    } else {
+      // Store pending update and schedule it
+      pendingUpdate.current = { x, y }
+      
+      if (updateAnimationFrame.current === null) {
+        updateAnimationFrame.current = requestAnimationFrame(() => {
+          if (pendingUpdate.current) {
+            updateSelectionBox(pendingUpdate.current.x, pendingUpdate.current.y)
+            lastUpdateTime.current = Date.now()
+            pendingUpdate.current = null
+          }
+          updateAnimationFrame.current = null
+        })
+      }
+    }
+  }, [updateSelectionBox])
 
   /**
    * Main pointer move handler
    */
   const handleStagePointerMove = useCallback(
     (e: Konva.KonvaEventObject<PointerEvent>) => {
+      // Handle selection box dragging
+      if (isSelectionBoxDragging && currentTool === CanvasTool.SELECT) {
+        const stage = stageRef.current
+        if (!stage) return
+        
+        const pointer = stage.getPointerPosition()
+        if (!pointer) return
+        
+        const canvasPos = screenToCanvas(pointer)
+        throttledUpdateSelectionBox(canvasPos.x, canvasPos.y)
+        return
+      }
+      
       // Route to drawing system if applicable
       if (
         (currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER) &&
@@ -163,7 +232,7 @@ export function useCanvasEvents({
         onDrawingPointerMove(e)
       }
     },
-    [currentTool, onDrawingPointerMove]
+    [currentTool, onDrawingPointerMove, isSelectionBoxDragging, stageRef, screenToCanvas, throttledUpdateSelectionBox]
   )
 
   /**
@@ -171,6 +240,21 @@ export function useCanvasEvents({
    */
   const handleStagePointerUp = useCallback(
     (e?: Konva.KonvaEventObject<PointerEvent>) => {
+      // End selection box if dragging
+      if (isSelectionBoxDragging) {
+        // Cancel any pending throttled updates
+        if (updateAnimationFrame.current !== null) {
+          cancelAnimationFrame(updateAnimationFrame.current)
+          updateAnimationFrame.current = null
+        }
+        pendingUpdate.current = null
+        lastUpdateTime.current = 0
+        
+        endSelectionBox()
+        setIsSelectionBoxDragging(false)
+        return
+      }
+      
       // Route to drawing system if applicable
       if (
         (currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER) &&
@@ -179,7 +263,7 @@ export function useCanvasEvents({
         onDrawingPointerUp(e)
       }
     },
-    [currentTool, onDrawingPointerUp]
+    [currentTool, onDrawingPointerUp, isSelectionBoxDragging, endSelectionBox]
   )
 
   /**

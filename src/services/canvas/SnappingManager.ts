@@ -104,7 +104,7 @@ export class SnappingManager {
         width,
         height
       )
-      
+
       if (objectSnap.snapped) {
         snappedX = objectSnap.x
         snappedY = objectSnap.y
@@ -121,20 +121,20 @@ export class SnappingManager {
    */
   private snapToGrid(x: number, y: number, width: number, height: number): SnapResult {
     const { gridSize } = this.config
-    
+
     // Snap center point
     const centerX = x + width / 2
     const centerY = y + height / 2
-    
+
     const snappedCenterX = Math.round(centerX / gridSize) * gridSize
     const snappedCenterY = Math.round(centerY / gridSize) * gridSize
-    
+
     // Calculate position from snapped center
     const snappedX = snappedCenterX - width / 2
     const snappedY = snappedCenterY - height / 2
-    
+
     const snapped = Math.abs(snappedX - x) < gridSize / 2 || Math.abs(snappedY - y) < gridSize / 2
-    
+
     return { x: snappedX, y: snappedY, snapped, guides: [] }
   }
 
@@ -150,7 +150,7 @@ export class SnappingManager {
 
     // Get snap points for current object
     const currentPoints = this.getSnapPoints(x, y, width, height)
-    const targetObjects = this.objects.filter(obj => obj.id !== this.currentObjectId)
+    const targetObjects = this.objects.filter((obj) => obj.id !== this.currentObjectId)
 
     // Track best snap distances
     let bestXDistance = snapThreshold
@@ -165,19 +165,21 @@ export class SnappingManager {
       for (const currentPoint of currentPoints) {
         for (const targetPoint of targetPoints) {
           const xDistance = Math.abs(currentPoint.x - targetPoint.x)
-          
+
           if (xDistance < bestXDistance) {
             bestXDistance = xDistance
             const xOffset = targetPoint.x - currentPoint.x
             bestXSnap = {
               position: x + xOffset,
-              guide: this.config.showSnapGuides ? {
-                type: 'vertical',
-                position: targetPoint.x,
-                start: Math.min(y, target.y),
-                end: Math.max(y + height, target.y + target.height),
-                color: '#4CAF50'
-              } : undefined
+              guide: this.config.showSnapGuides
+                ? {
+                    type: 'vertical',
+                    position: targetPoint.x,
+                    start: Math.min(y, target.y),
+                    end: Math.max(y + height, target.y + target.height),
+                    color: '#4CAF50',
+                  }
+                : undefined,
             }
           }
         }
@@ -187,19 +189,21 @@ export class SnappingManager {
       for (const currentPoint of currentPoints) {
         for (const targetPoint of targetPoints) {
           const yDistance = Math.abs(currentPoint.y - targetPoint.y)
-          
+
           if (yDistance < bestYDistance) {
             bestYDistance = yDistance
             const yOffset = targetPoint.y - currentPoint.y
             bestYSnap = {
               position: y + yOffset,
-              guide: this.config.showSnapGuides ? {
-                type: 'horizontal',
-                position: targetPoint.y,
-                start: Math.min(x, target.x),
-                end: Math.max(x + width, target.x + target.width),
-                color: '#4CAF50'
-              } : undefined
+              guide: this.config.showSnapGuides
+                ? {
+                    type: 'horizontal',
+                    position: targetPoint.y,
+                    start: Math.min(x, target.x),
+                    end: Math.max(x + width, target.x + target.width),
+                    color: '#4CAF50',
+                  }
+                : undefined,
             }
           }
         }
@@ -207,13 +211,26 @@ export class SnappingManager {
 
       // Check spacing snaps (equal spacing between objects)
       this.checkSpacingSnaps(
-        x, y, width, height,
+        x,
+        y,
+        width,
+        height,
         target,
         targetObjects,
         bestXDistance,
         bestYDistance,
-        (xSnap) => { if (xSnap.distance < bestXDistance) { bestXDistance = xSnap.distance; bestXSnap = xSnap } },
-        (ySnap) => { if (ySnap.distance < bestYDistance) { bestYDistance = ySnap.distance; bestYSnap = ySnap } }
+        (xSnap) => {
+          if (xSnap.distance < bestXDistance) {
+            bestXDistance = xSnap.distance
+            bestXSnap = xSnap
+          }
+        },
+        (ySnap) => {
+          if (ySnap.distance < bestYDistance) {
+            bestYDistance = ySnap.distance
+            bestYSnap = ySnap
+          }
+        }
       )
     }
 
@@ -254,7 +271,7 @@ export class SnappingManager {
       { x, y: centerY },
       { x: right, y: centerY },
       // Center
-      { x: centerX, y: centerY }
+      { x: centerX, y: centerY },
     ]
   }
 
@@ -262,7 +279,10 @@ export class SnappingManager {
    * Check for equal spacing snaps
    */
   private checkSpacingSnaps(
-    x: number, y: number, width: number, height: number,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
     target: BoundingBox,
     allTargets: BoundingBox[],
     bestXDistance: number,
@@ -276,21 +296,24 @@ export class SnappingManager {
 
       // Check horizontal spacing
       const targetSpacing = target.x - other.x
-      if (Math.abs(targetSpacing) > 10) { // Minimum spacing threshold
+      if (Math.abs(targetSpacing) > 10) {
+        // Minimum spacing threshold
         const suggestedX = target.x + targetSpacing
         const distance = Math.abs(suggestedX - x)
-        
+
         if (distance < bestXDistance) {
           onXSnap({
             position: suggestedX,
             distance,
-            guide: this.config.showSnapGuides ? {
-              type: 'vertical',
-              position: suggestedX + width / 2,
-              start: Math.min(y, target.y, other.y),
-              end: Math.max(y + height, target.y + target.height, other.y + other.height),
-              color: '#FF9800'
-            } : undefined
+            guide: this.config.showSnapGuides
+              ? {
+                  type: 'vertical',
+                  position: suggestedX + width / 2,
+                  start: Math.min(y, target.y, other.y),
+                  end: Math.max(y + height, target.y + target.height, other.y + other.height),
+                  color: '#FF9800',
+                }
+              : undefined,
           })
         }
       }
@@ -300,18 +323,20 @@ export class SnappingManager {
       if (Math.abs(verticalSpacing) > 10) {
         const suggestedY = target.y + verticalSpacing
         const distance = Math.abs(suggestedY - y)
-        
+
         if (distance < bestYDistance) {
           onYSnap({
             position: suggestedY,
             distance,
-            guide: this.config.showSnapGuides ? {
-              type: 'horizontal',
-              position: suggestedY + height / 2,
-              start: Math.min(x, target.x, other.x),
-              end: Math.max(x + width, target.x + target.width, other.x + other.width),
-              color: '#FF9800'
-            } : undefined
+            guide: this.config.showSnapGuides
+              ? {
+                  type: 'horizontal',
+                  position: suggestedY + height / 2,
+                  start: Math.min(x, target.x, other.x),
+                  end: Math.max(x + width, target.x + target.width, other.x + other.width),
+                  color: '#FF9800',
+                }
+              : undefined,
           })
         }
       }

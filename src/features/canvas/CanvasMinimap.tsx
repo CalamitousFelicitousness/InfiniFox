@@ -36,7 +36,7 @@ export function CanvasMinimap({
   const [isResizing, setIsResizing] = useState(false)
   const [isPanning, setIsPanning] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
-  const [panStart, setPanStart] = useState({ x: 0, y: 0 })
+  // Removed unused panStart state
 
   // Memoize images to prevent unnecessary updates when minimized
   const memoizedImages = useMemo(() => {
@@ -353,41 +353,43 @@ export function CanvasMinimap({
   }, [isMinimized, stageRef, renderMinimap]) // Added missing dependencies
 
   // Handle minimap navigation (click or drag)
-  const handleMinimapNavigation = useCallback((clientX: number, clientY: number) => {
-    if (isMinimized || !canvasRef.current || !onViewportChange || !stageRef?.current) return
+  const handleMinimapNavigation = useCallback(
+    (clientX: number, clientY: number) => {
+      if (isMinimized || !canvasRef.current || !onViewportChange || !stageRef?.current) return
 
-    const rect = canvasRef.current.getBoundingClientRect()
-    const clickX = clientX - rect.left
-    const clickY = clientY - rect.top
+      const rect = canvasRef.current.getBoundingClientRect()
+      const clickX = clientX - rect.left
+      const clickY = clientY - rect.top
 
-    const transformData = canvasRef.current.dataset.transform
-    if (!transformData) return
+      const transformData = canvasRef.current.dataset.transform
+      if (!transformData) return
 
-    const transform = JSON.parse(transformData)
+      const transform = JSON.parse(transformData)
 
-    // Convert click position to world coordinates
-    const worldX = (clickX - transform.offsetX) / transform.minimapScale + transform.minX
-    const worldY = (clickY - transform.offsetY) / transform.minimapScale + transform.minY
+      // Convert click position to world coordinates
+      const worldX = (clickX - transform.offsetX) / transform.minimapScale + transform.minX
+      const worldY = (clickY - transform.offsetY) / transform.minimapScale + transform.minY
 
-    // Center viewport on clicked position
-    const stage = stageRef.current
-    const viewportWidth = stage.width() / scale
-    const viewportHeight = stage.height() / scale
+      // Center viewport on clicked position
+      const stage = stageRef.current
+      const viewportWidth = stage.width() / scale
+      const viewportHeight = stage.height() / scale
 
-    const newX = -(worldX - viewportWidth / 2) * scale
-    const newY = -(worldY - viewportHeight / 2) * scale
+      const newX = -(worldX - viewportWidth / 2) * scale
+      const newY = -(worldY - viewportHeight / 2) * scale
 
-    onViewportChange?.(newX, newY, scale)
-  }, [isMinimized, onViewportChange, scale, stageRef])
+      onViewportChange?.(newX, newY, scale)
+    },
+    [isMinimized, onViewportChange, scale, stageRef]
+  )
 
   // Handle minimap pointer down (start panning)
   const handleMinimapPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (isMinimized) return
-    
+
     setIsPanning(true)
-    setPanStart({ x: e.clientX, y: e.clientY })
     handleMinimapNavigation(e.clientX, e.clientY)
-    
+
     // Capture pointer for smooth dragging
     try {
       e.currentTarget.setPointerCapture(e.pointerId)

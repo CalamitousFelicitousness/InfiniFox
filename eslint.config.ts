@@ -18,7 +18,7 @@ const config: Linter.Config[] = [
 
   // Global ignores
   {
-    ignores: ['dist/**', 'build/**', 'node_modules/**', '*.config.js'],
+    ignores: ['dist/**', 'build/**', 'node_modules/**', 'coverage/**', 'scripts/**', '*.config.js'],
   },
 
   // Main configuration

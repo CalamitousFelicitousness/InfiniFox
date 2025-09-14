@@ -10,6 +10,9 @@ import {
   createGenerationActionsSlice,
   createDrawingSlice,
   createAuthSlice,
+  createSelectionSlice,
+  createAlignmentSlice,
+  createGroupingSlice,
   setStoreRef,
   type GenerationSlice,
   type ModelSlice,
@@ -18,6 +21,9 @@ import {
   type GenerationActionsSlice,
   type DrawingSlice,
   type AuthSlice,
+  type SelectionSlice,
+  type AlignmentSlice,
+  type GroupingSlice,
 } from './slices'
 
 // Re-export types for convenience
@@ -30,7 +36,10 @@ export type AppState = GenerationSlice &
   CanvasSlice &
   GenerationActionsSlice &
   DrawingSlice &
-  AuthSlice
+  AuthSlice &
+  SelectionSlice &
+  AlignmentSlice &
+  GroupingSlice
 
 // Create the store by combining all slices
 export const useStore = create<AppState>()(
@@ -43,6 +52,9 @@ export const useStore = create<AppState>()(
       ...createGenerationActionsSlice(...a),
       ...createDrawingSlice(...a),
       ...createAuthSlice(...a),
+      ...createSelectionSlice(...a),
+      ...createAlignmentSlice(...a),
+      ...createGroupingSlice(...a),
     }),
     {
       name: 'sdnextnewui-store',

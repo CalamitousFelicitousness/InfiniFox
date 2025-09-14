@@ -4,21 +4,23 @@ import React, { useRef, useEffect, useMemo } from 'react'
 // Store and utilities
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
 import { snappingManager } from '../../services/canvas/SnappingManager'
+import type { SnapGuide } from '../../services/canvas/SnappingManager'
 import { useStore } from '../../store/store'
 import { preventDefaultTouch } from '../../utils/pointerEvents'
-import type { SnapGuide } from '../../services/canvas/SnappingManager'
 
 // Custom hooks (Phase 1)
 import { CanvasContextMenu } from './CanvasContextMenu'
 import { CanvasMinimap } from './CanvasMinimap'
-import { FloatingSnapControls } from './FloatingSnapControls'
 import { CanvasOverlays } from './components/CanvasOverlays'
 import { CanvasStage, useStageSize } from './components/CanvasStage'
 import { DrawingLayer } from './components/DrawingLayer'
 import { FrameLayer } from './components/FrameLayer'
 import { GridLayer } from './components/GridLayer'
 import { ImageLayer } from './components/ImageLayer'
+import { SelectionBox } from './components/SelectionBox'
+import { SelectionCounter } from './components/SelectionCounter'
 import { SnapGuideLayer } from './components/SnapGuideLayer'
+import { FloatingSnapControls } from './FloatingSnapControls'
 import { useCanvasEvents } from './hooks/useCanvasEvents'
 import { useCanvasTools, CanvasTool } from './hooks/useCanvasTools'
 import { useDrawingSystem } from './hooks/useDrawingSystem'
@@ -41,7 +43,7 @@ export function Canvas() {
   // Refs for stage and container
   const stageRef = useRef<Konva.Stage>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  
+
   // Snapping state
   const [snapGuides, setSnapGuides] = React.useState<SnapGuide[]>([])
   const [gridEnabled, setGridEnabled] = React.useState(false)
@@ -53,6 +55,10 @@ export function Canvas() {
     setImageAsInput,
     canvasSelectionMode,
     cancelCanvasSelection,
+    selectionBox,
+    deleteSelectedImages,
+    duplicateSelectedImages,
+    selectedIds,
   } = useStore()
 
   // Initialize all hooks
@@ -121,9 +127,13 @@ export function Canvas() {
   // Setup keyboard shortcuts
   useKeyboardShortcuts({
     onDelete: () => {
-      if (images_.selectedId && tools.currentTool === CanvasTool.SELECT) {
-        removeImage(images_.selectedId)
-        images_.setSelectedId(null)
+      if (tools.currentTool === CanvasTool.SELECT) {
+        if (selectedIds.size > 0) {
+          deleteSelectedImages()
+        } else if (images_.selectedId) {
+          removeImage(images_.selectedId)
+          images_.setSelectedId(null)
+        }
       }
     },
   })
@@ -241,7 +251,10 @@ export function Canvas() {
           setGridEnabled(config.gridEnabled)
         }}
       />
-      
+
+      {/* Selection Counter */}
+      <SelectionCounter />
+
       {/* Canvas Overlays */}
       <CanvasOverlays
         keyboardMode={tools.getKeyboardMode()}
@@ -289,7 +302,7 @@ export function Canvas() {
           enabled={gridEnabled}
           opacity={0.15}
         />
-        
+
         {/* Frame Layer */}
         <FrameLayer
           frames={frames.generationFrames || []}
@@ -318,11 +331,9 @@ export function Canvas() {
         {/* Image Layer */}
         <ImageLayer
           images={images_.konvaImages}
-          selectedId={images_.selectedId}
           activeImageRoles={images_.activeImageRoles}
           canvasSelectionMode={canvasSelectionMode}
           currentTool={tools.currentTool}
-          onImageSelect={images_.handleImageSelect}
           onImageDragStart={images_.handleImageDragStart}
           onImageDragMove={images_.handleImageDragMove}
           onImageDragEnd={images_.handleImageDragEnd}
@@ -344,12 +355,21 @@ export function Canvas() {
           getImageOpacity={images_.getImageOpacity}
           getTransformerConfig={images_.getTransformerConfig}
         />
-        
+
+        {/* Selection Box Layer */}
+        {selectionBox && (
+          <SelectionBox
+            startX={selectionBox.startX}
+            startY={selectionBox.startY}
+            endX={selectionBox.endX}
+            endY={selectionBox.endY}
+            visible={selectionBox.active}
+            scale={viewport.scale}
+          />
+        )}
+
         {/* Snap Guide Layer */}
-        <SnapGuideLayer
-          guides={snapGuides}
-          scale={viewport.scale}
-        />
+        <SnapGuideLayer guides={snapGuides} scale={viewport.scale} />
 
         {/* Drawing Layer */}
         <DrawingLayer

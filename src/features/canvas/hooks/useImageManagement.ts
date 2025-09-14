@@ -2,8 +2,8 @@ import Konva from 'konva'
 import { useState, useEffect, useCallback, useRef } from 'react'
 
 import { snappingManager } from '../../../services/canvas/SnappingManager'
-import { useStore } from '../../../store/store'
 import type { SnapGuide } from '../../../services/canvas/SnappingManager'
+import { useStore } from '../../../store/store'
 
 import { CanvasTool } from './useCanvasTools'
 
@@ -27,7 +27,11 @@ interface UseImageManagementProps {
 /**
  * Hook for managing image loading, selection, transformation, and roles
  */
-export function useImageManagement({ currentTool, scale: _scale, onSnapGuidesChange }: UseImageManagementProps) {
+export function useImageManagement({
+  currentTool,
+  scale: _scale,
+  onSnapGuidesChange,
+}: UseImageManagementProps) {
   const {
     images,
     removeImage,
@@ -51,7 +55,7 @@ export function useImageManagement({ currentTool, scale: _scale, onSnapGuidesCha
   const imageCache = useRef<Map<string, HTMLImageElement>>(new Map())
   const activeLoadsRef = useRef<Set<HTMLImageElement>>(new Set())
   const mountedRef = useRef(true)
-  
+
   // RAF throttling for snap guide updates
   const rafRef = useRef<number | null>(null)
   const pendingSnapGuidesRef = useRef<SnapGuide[] | null>(null)
@@ -94,14 +98,14 @@ export function useImageManagement({ currentTool, scale: _scale, onSnapGuidesCha
         if (cachedImg && cachedImg.src === imgData.src) {
           // Use cached image immediately
           newKonvaImages.push({
-            id: imgData.id,
-            src: imgData.src,
-            x: imgData.x,
-            y: imgData.y,
-            scaleX: imgData.scaleX,
-            scaleY: imgData.scaleY,
-            rotation: imgData.rotation,
-            image: cachedImg,
+          id: imgData.id,
+          src: imgData.src,
+          x: imgData.x,
+          y: imgData.y,
+          scaleX: imgData.scaleX,
+          scaleY: imgData.scaleY,
+          rotation: imgData.rotation,
+          image: cachedImg,
           })
         } else {
           imagesToLoad.push(imgData)
@@ -110,10 +114,10 @@ export function useImageManagement({ currentTool, scale: _scale, onSnapGuidesCha
 
       // Set cached images immediately
       if (newKonvaImages.length > 0) {
-        setKonvaImages(prev => {
-          const existingIds = new Set(prev.map(img => img.id))
-          const filtered = prev.filter(img => images.some(i => i.id === img.id))
-          const toAdd = newKonvaImages.filter(img => !existingIds.has(img.id))
+        setKonvaImages((prev) => {
+          const existingIds = new Set(prev.map((img) => img.id))
+          const filtered = prev.filter((img) => images.some((i) => i.id === img.id))
+          const toAdd = newKonvaImages.filter((img) => !existingIds.has(img.id))
           return [...filtered, ...toAdd]
         })
       }
@@ -123,78 +127,79 @@ export function useImageManagement({ currentTool, scale: _scale, onSnapGuidesCha
         if (abortController.signal.aborted) break
 
         const batch = imagesToLoad.slice(i, i + BATCH_SIZE)
-        const batchPromises = batch.map((imgData) => 
-          new Promise<KonvaImageData | null>((resolve) => {
-            if (abortController.signal.aborted) {
-              resolve(null)
-              return
-            }
-
-            const img = new window.Image()
-            img.crossOrigin = 'anonymous'
-
-            // Track this image load
-            pendingImages.add(img)
-            activeLoadsRef.current.add(img)
-
-            const cleanup = () => {
-              pendingImages.delete(img)
-              activeLoadsRef.current.delete(img)
-              img.onload = null
-              img.onerror = null
-            }
-
-            img.onload = () => {
-              if (!mountedRef.current || abortController.signal.aborted) {
-                cleanup()
+        const batchPromises = batch.map(
+          (imgData) =>
+            new Promise<KonvaImageData | null>((resolve) => {
+              if (abortController.signal.aborted) {
                 resolve(null)
                 return
               }
 
-              if (img.complete && img.naturalHeight !== 0) {
-                // Cache the image
-                imageCache.current.set(imgData.id, img)
-                resolve({
-                  id: imgData.id,
-                  src: imgData.src,
-                  x: imgData.x,
-                  y: imgData.y,
-                  scaleX: imgData.scaleX,
-                  scaleY: imgData.scaleY,
-                  rotation: imgData.rotation,
-                  image: img,
-                })
-              } else {
-                console.error(`Image ${imgData.id} not fully loaded`)
+              const img = new window.Image()
+              img.crossOrigin = 'anonymous'
+
+              // Track this image load
+              pendingImages.add(img)
+              activeLoadsRef.current.add(img)
+
+              const cleanup = () => {
+                pendingImages.delete(img)
+                activeLoadsRef.current.delete(img)
+                img.onload = null
+                img.onerror = null
+              }
+
+              img.onload = () => {
+                if (!mountedRef.current || abortController.signal.aborted) {
+                  cleanup()
+                  resolve(null)
+                  return
+                }
+
+                if (img.complete && img.naturalHeight !== 0) {
+                  // Cache the image
+                  imageCache.current.set(imgData.id, img)
+                  resolve({
+                    id: imgData.id,
+                    src: imgData.src,
+                    x: imgData.x,
+                    y: imgData.y,
+                    scaleX: imgData.scaleX,
+                    scaleY: imgData.scaleY,
+                    rotation: imgData.rotation,
+                    image: img,
+                  })
+                } else {
+                  console.error(`Image ${imgData.id} not fully loaded`)
+                  resolve(null)
+                }
+                cleanup()
+              }
+
+              img.onerror = () => {
+                console.error(`Failed to load image ${imgData.id}`)
+                cleanup()
                 resolve(null)
               }
-              cleanup()
-            }
 
-            img.onerror = () => {
-              console.error(`Failed to load image ${imgData.id}`)
-              cleanup()
-              resolve(null)
-            }
-
-            img.src = imgData.src
-          })
+              img.src = imgData.src
+            })
         )
 
         const batchResults = await Promise.all(batchPromises)
         const validImages = batchResults.filter((img): img is KonvaImageData => img !== null)
-        
+
         if (validImages.length > 0 && mountedRef.current && !abortController.signal.aborted) {
-          setKonvaImages(prev => {
-            const existingIds = new Set(prev.map(img => img.id))
-            const toAdd = validImages.filter(img => !existingIds.has(img.id))
+          setKonvaImages((prev) => {
+            const existingIds = new Set(prev.map((img) => img.id))
+            const toAdd = validImages.filter((img) => !existingIds.has(img.id))
             return [...prev, ...toAdd]
           })
         }
 
         // Delay before next batch to prevent blocking
         if (i + BATCH_SIZE < imagesToLoad.length) {
-          await new Promise(resolve => setTimeout(resolve, BATCH_DELAY))
+          await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY))
         }
       }
 
@@ -368,22 +373,22 @@ export function useImageManagement({ currentTool, scale: _scale, onSnapGuidesCha
   const handleImageDragStart = useCallback(
     (imageId: string) => {
       setDraggingImageId(imageId)
-      
+
       // Set current object for snapping manager
       snappingManager.setCurrentObject(imageId)
-      
+
       // Update snap targets (all other images)
       const snapTargets = konvaImages
-        .filter(img => img.id !== imageId)
-        .map(img => ({
+        .filter((img) => img.id !== imageId)
+        .map((img) => ({
           id: img.id,
           x: img.x,
           y: img.y,
           width: img.image.naturalWidth * (img.scaleX || 1),
           height: img.image.naturalHeight * (img.scaleY || 1),
-          rotation: img.rotation || 0
+          rotation: img.rotation || 0,
         }))
-      
+
       snappingManager.setObjects(snapTargets)
     },
     [konvaImages]
@@ -392,39 +397,42 @@ export function useImageManagement({ currentTool, scale: _scale, onSnapGuidesCha
   /**
    * Schedule snap guide update with minimal throttling
    */
-  const scheduleSnapGuideUpdate = useCallback((guides: SnapGuide[]) => {
-    pendingSnapGuidesRef.current = guides
-    
-    // Update immediately for responsiveness
-    if (onSnapGuidesChange) {
-      onSnapGuidesChange(guides)
-    }
-    
-    // Cancel previous RAF to prevent buildup
-    if (rafRef.current !== null) {
-      cancelAnimationFrame(rafRef.current)
-      rafRef.current = null
-    }
-  }, [onSnapGuidesChange])
+  const scheduleSnapGuideUpdate = useCallback(
+    (guides: SnapGuide[]) => {
+      pendingSnapGuidesRef.current = guides
+
+      // Update immediately for responsiveness
+      if (onSnapGuidesChange) {
+        onSnapGuidesChange(guides)
+      }
+
+      // Cancel previous RAF to prevent buildup
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current)
+        rafRef.current = null
+      }
+    },
+    [onSnapGuidesChange]
+  )
 
   /**
    * Handle image drag move with snapping
    */
   const handleImageDragMove = useCallback(
     (imageId: string, x: number, y: number) => {
-      const image = konvaImages.find(img => img.id === imageId)
+      const image = konvaImages.find((img) => img.id === imageId)
       if (!image) return { x, y }
-      
+
       // Calculate dimensions
       const width = image.image.naturalWidth * (image.scaleX || 1)
       const height = image.image.naturalHeight * (image.scaleY || 1)
-      
+
       // Get snapped position
       const snapResult = snappingManager.snap(x, y, width, height)
-      
+
       // Use throttled update instead of direct call
       scheduleSnapGuideUpdate(snapResult.guides)
-      
+
       return { x: snapResult.x, y: snapResult.y }
     },
     [konvaImages, scheduleSnapGuideUpdate]
@@ -437,7 +445,7 @@ export function useImageManagement({ currentTool, scale: _scale, onSnapGuidesCha
     (imageId: string, newX: number, newY: number) => {
       setDraggingImageId(null)
       snappingManager.setCurrentObject(null)
-      
+
       // Cancel any pending RAF and clear guides
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current)
@@ -445,7 +453,7 @@ export function useImageManagement({ currentTool, scale: _scale, onSnapGuidesCha
       }
       pendingSnapGuidesRef.current = null
       onSnapGuidesChange?.([])
-      
+
       updateImagePosition(imageId, newX, newY)
 
       // Update local state

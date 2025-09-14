@@ -13,7 +13,7 @@ interface SnapGuideLayerProps {
  */
 function areGuidesEqual(prev: SnapGuide[], next: SnapGuide[]): boolean {
   if (prev.length !== next.length) return false
-  
+
   return prev.every((guide, index) => {
     const nextGuide = next[index]
     return (
@@ -56,8 +56,5 @@ function SnapGuideLayerComponent({ guides, scale }: SnapGuideLayerProps) {
 
 // Memoize with custom comparison to only re-render when guides actually change
 export const SnapGuideLayer = React.memo(SnapGuideLayerComponent, (prevProps, nextProps) => {
-  return (
-    prevProps.scale === nextProps.scale &&
-    areGuidesEqual(prevProps.guides, nextProps.guides)
-  )
+  return prevProps.scale === nextProps.scale && areGuidesEqual(prevProps.guides, nextProps.guides)
 })
