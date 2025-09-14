@@ -83,6 +83,7 @@ export function useCanvasEvents({
   
   // Track if we're dragging a selection box
   const [isSelectionBoxDragging, setIsSelectionBoxDragging] = useState(false)
+  const justFinishedSelectionBox = useRef(false)
   
   // Throttling for selection box updates
   const lastUpdateTime = useRef(0)
@@ -135,6 +136,12 @@ export function useCanvasEvents({
               onFrameSelect(frameId)
             }
           } else if (target === stage || targetClassName === 'Layer') {
+            // Check if we just finished a selection box
+            if (justFinishedSelectionBox.current) {
+              justFinishedSelectionBox.current = false
+              return
+            }
+            
             // Clicked on empty stage/layer - start selection box
             const canvasPos = screenToCanvas(pointer)
             startSelectionBox(canvasPos.x, canvasPos.y)
@@ -252,6 +259,17 @@ export function useCanvasEvents({
         
         endSelectionBox()
         setIsSelectionBoxDragging(false)
+        justFinishedSelectionBox.current = true
+        
+        // Clear flag after a brief delay
+        setTimeout(() => {
+          justFinishedSelectionBox.current = false
+        }, 100)
+        
+        // Stop event propagation to prevent deselect
+        if (e) {
+          e.cancelBubble = true
+        }
         return
       }
       

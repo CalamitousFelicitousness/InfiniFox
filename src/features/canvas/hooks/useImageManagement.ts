@@ -96,17 +96,23 @@ export function useImageManagement({
         const cachedImg = imageCache.current.get(imgData.id)
 
         if (cachedImg && cachedImg.src === imgData.src) {
-          // Use cached image immediately
-          newKonvaImages.push({
-          id: imgData.id,
-          src: imgData.src,
-          x: imgData.x,
-          y: imgData.y,
-          scaleX: imgData.scaleX,
-          scaleY: imgData.scaleY,
-          rotation: imgData.rotation,
-          image: cachedImg,
-          })
+        // Use cached image immediately
+        newKonvaImages.push({
+        id: imgData.id,
+        src: imgData.src,
+        x: imgData.x,
+        y: imgData.y,
+        scaleX: imgData.scaleX,
+        scaleY: imgData.scaleY,
+        rotation: imgData.rotation,
+        image: cachedImg,
+        })
+          
+        // Update dimensions in store if not set
+          if (!imgData.width || !imgData.height) {
+            const updateImageDimensions = useStore.getState().updateImageDimensions
+            updateImageDimensions(imgData.id, cachedImg.naturalWidth, cachedImg.naturalHeight)
+          }
         } else {
           imagesToLoad.push(imgData)
         }
@@ -159,6 +165,13 @@ export function useImageManagement({
                 if (img.complete && img.naturalHeight !== 0) {
                   // Cache the image
                   imageCache.current.set(imgData.id, img)
+                  
+                  // Update dimensions in store if not set
+                  if (!imgData.width || !imgData.height) {
+                    const updateImageDimensions = useStore.getState().updateImageDimensions
+                    updateImageDimensions(imgData.id, img.naturalWidth, img.naturalHeight)
+                  }
+                  
                   resolve({
                     id: imgData.id,
                     src: imgData.src,

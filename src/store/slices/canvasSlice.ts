@@ -78,6 +78,7 @@ export interface CanvasSlice {
   duplicateImage: (id: string) => void
   updateImagePosition: (id: string, x: number, y: number) => void
   updateImagePositionDirect: (id: string, x: number, y: number) => void
+  updateImageDimensions: (id: string, width: number, height: number) => void
   updateImageTransform: (
     id: string,
     transform: { x: number; y: number; scaleX: number; scaleY: number; rotation: number }
@@ -242,6 +243,8 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
               src: duplicatedImage.objectUrl,
               x: originalImage.x + 50,
               y: originalImage.y + 50,
+              width: originalImage.width,
+              height: originalImage.height,
               blobId: newId,
             }
 
@@ -306,6 +309,14 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
         })
       }
     }
+  },
+
+  updateImageDimensions: (id: string, width: number, height: number) => {
+    set((state) => ({
+      images: state.images.map((img) => 
+        img.id === id ? { ...img, width, height } : img
+      ),
+    }))
   },
 
   setImageRole: (imageId: string, role: 'img2img_init' | 'inpaint_image' | 'controlnet' | null) => {
@@ -460,7 +471,7 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
         const tempUrl = URL.createObjectURL(file)
         img.onload = () => {
           URL.revokeObjectURL(tempUrl) // Clean up temp URL
-          resolve({ width: img.width, height: img.height })
+          resolve({ width: img.naturalWidth, height: img.naturalHeight })
         }
         img.src = tempUrl
       })
@@ -473,7 +484,7 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
         usedIn: new Set(),
       })
 
-      // Add to canvas
+      // Add to canvas with dimensions
       const newImage: ImageData = {
         id: imageId,
         src: storedImage.objectUrl,

@@ -254,13 +254,20 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
     const selectedIds: string[] = []
 
     images.forEach((image) => {
+      const imgWidth = image.width || 512
+      const imgHeight = image.height || 512
+      const imgScaleX = image.scaleX || 1
+      const imgScaleY = image.scaleY || 1
+      
       const imgLeft = image.x
-      const imgRight = image.x + (image.width || 100) * (image.scaleX || 1)
+      const imgRight = image.x + imgWidth * imgScaleX
       const imgTop = image.y
-      const imgBottom = image.y + (image.height || 100) * (image.scaleY || 1)
+      const imgBottom = image.y + imgHeight * imgScaleY
 
-      // Check if image intersects with selection box
-      if (!(imgRight < minX || imgLeft > maxX || imgBottom < minY || imgTop > maxY)) {
+      // Check if selection box completely contains the image
+      const isContained = imgLeft >= minX && imgRight <= maxX && imgTop >= minY && imgBottom <= maxY
+      
+      if (isContained) {
         selectedIds.push(image.id)
       }
     })

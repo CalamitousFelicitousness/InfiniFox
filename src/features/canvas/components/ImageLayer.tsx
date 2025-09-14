@@ -52,11 +52,15 @@ function ImageLayerComponent({
 }: ImageLayerProps) {
   const layerRef = useRef<Konva.Layer>(null)
 
+  // Add ref to track if selection box just completed
+  const selectionBoxJustCompleted = useRef(false)
+  
   // Get multi-selection state from store
   const selectedIds = useStore((state) => state.selectedIds)
   const selectItem = useStore((state) => state.selectItem)
   const deselectAll = useStore((state) => state.deselectAll)
   const isSelected = useStore((state) => state.isSelected)
+  const selectionBox = useStore((state) => state.selectionBox)
 
   /**
    * Handle image selection with modifier keys
@@ -237,6 +241,17 @@ function ImageLayerComponent({
     return {}
   }
 
+  // Track when selection box changes
+  useEffect(() => {
+    if (selectionBox === null) {
+      // Selection box just completed
+      selectionBoxJustCompleted.current = true
+      setTimeout(() => {
+        selectionBoxJustCompleted.current = false
+      }, 100)
+    }
+  }, [selectionBox])
+
   // Handle clicks on empty stage area
   useEffect(() => {
     const layer = layerRef.current
@@ -246,6 +261,12 @@ function ImageLayerComponent({
     if (!stage) return
 
     const handleStageClick = (e: Konva.KonvaEventObject<PointerEvent>) => {
+      // Don't deselect if event was cancelled (e.g., from selection box)
+      if (e.cancelBubble) return
+      
+      // Don't deselect if selection box just completed
+      if (selectionBoxJustCompleted.current) return
+      
       // Check if we clicked on empty area
       if (e.target === stage || e.target === layer) {
         deselectAll()
@@ -295,7 +316,7 @@ function ImageLayerComponent({
       ))}
 
       {/* Multi-selection transformer */}
-      {currentTool === CanvasTool.SELECT && selectedIds.size > 0 && (
+      {currentTool === CanvasTool.SELECT && selectedIds && selectedIds.size > 0 && (
         <MultiTransformer 
           selectedIds={Array.from(selectedIds)}
           onTransformEnd={handleMultiTransformEnd}
