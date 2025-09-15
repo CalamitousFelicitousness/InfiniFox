@@ -69,6 +69,20 @@ function ImageLayerComponent({
     if (currentTool !== CanvasTool.SELECT) return
 
     const evt = e.evt
+    
+    // Check if this is a right-click (button 2)
+    if (evt.button === 2) {
+      // If the image is already selected, don't change selection
+      if (isSelected(imageId)) {
+        e.cancelBubble = true
+        return
+      }
+      // If right-clicking an unselected image, select only that image
+      selectItem(imageId, 'none')
+      e.cancelBubble = true
+      return
+    }
+    
     let modifier: 'none' | 'shift' | 'ctrl' | 'ctrl-shift' = 'none'
 
     if (evt.ctrlKey || evt.metaKey) {
@@ -311,7 +325,14 @@ function ImageLayerComponent({
           {...getShadowProps(img.id)}
           // Events
           listening={true}
-          onContextMenu={(e) => onContextMenu(e, img.id)}
+          onContextMenu={(e) => {
+            // Ensure image is selected before showing context menu
+            if (!isSelected(img.id)) {
+              // If not selected, select only this image
+              selectItem(img.id, 'none')
+            }
+            onContextMenu(e, img.id)
+          }}
         />
       ))}
 

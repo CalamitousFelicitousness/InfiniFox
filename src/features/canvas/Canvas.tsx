@@ -409,9 +409,22 @@ export function Canvas() {
         y={events.contextMenu.y}
         imageId={events.contextMenu.imageId}
         frameId={events.contextMenu.frameId}
+        selectedIds={selectedIds}
         onClose={events.hideContextMenu}
-        onDelete={() => handleContextMenuAction('delete')}
-        onDuplicate={() => handleContextMenuAction('duplicate')}
+        onDelete={() => {
+          if (selectedIds.size > 1) {
+            deleteSelectedImages()
+          } else {
+            handleContextMenuAction('delete')
+          }
+        }}
+        onDuplicate={() => {
+          if (selectedIds.size > 1) {
+            duplicateSelectedImages()
+          } else {
+            handleContextMenuAction('duplicate')
+          }
+        }}
         onSendToImg2Img={() => handleContextMenuAction('sendToImg2Img')}
         onInpaint={() => {
           // Role is set in CanvasContextMenu component

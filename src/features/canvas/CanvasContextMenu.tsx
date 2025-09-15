@@ -129,7 +129,7 @@ export function CanvasContextMenu({
   const currentRole = imageId ? getImageRole(imageId) : null
   const roleIndicator = currentRole ? ` (Active: ${currentRole})` : ''
   const currentFrame = frameId ? generationFrames.find((f) => f.id === frameId) : null
-  const isMultiSelection = selectedIds && selectedIds.size > 1
+  const isMultiSelection = selectedIds && selectedIds.size > 1 && imageId && selectedIds.has(imageId)
 
   if (frameId && currentFrame) {
     return (
