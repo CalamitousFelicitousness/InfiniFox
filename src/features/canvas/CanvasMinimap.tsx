@@ -25,22 +25,46 @@ export function CanvasMinimap({
   images,
   onViewportChange,
 }: MinimapProps) {
-  // State declarations
-  const [isMinimized, setIsMinimized] = useState(false) // Default to open, not minimized
-  const [minimapPos, setMinimapPos] = useState({
-    x: window.innerWidth - 220,
-    y: window.innerHeight - 170,
-  })
-  const [minimapSize, setMinimapSize] = useState({ width: 200, height: 150 })
+  // Initialize with saved state or defaults
+  const getInitialState = () => {
+    const savedState = localStorage.getItem('minimapState')
+    if (savedState) {
+      try {
+        const parsed = JSON.parse(savedState)
+        const canvasWidth = window.innerWidth - 400
+        const maxX = 400 + canvasWidth - (parsed.width || 200) - 20
+        const maxY = window.innerHeight - (parsed.height || 150) - 20
+        return {
+          x: Math.min(Math.max(420, parsed.x), maxX),
+          y: Math.min(Math.max(20, parsed.y), maxY),
+          width: Math.min(Math.max(150, parsed.width || 200), 400),
+          height: Math.min(Math.max(100, parsed.height || 150), 300),
+          minimized: false, // Always start expanded
+        }
+      } catch {
+        // Invalid saved state
+      }
+    }
+    return {
+      x: 420,
+      y: 400,
+      width: 200,
+      height: 150,
+      minimized: false,
+    }
+  }
+
+  const initialState = getInitialState()
+  const [isMinimized, setIsMinimized] = useState(initialState.minimized)
+  const [minimapPos, setMinimapPos] = useState({ x: initialState.x, y: initialState.y })
+  const [minimapSize, setMinimapSize] = useState({ width: initialState.width, height: initialState.height })
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
   const [isPanning, setIsPanning] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
-  // Removed unused panStart state
 
   // Memoize images to prevent unnecessary updates when minimized
   const memoizedImages = useMemo(() => {
-    // Return empty array when minimized to prevent processing
     return isMinimized ? [] : images
   }, [images, isMinimized])
 
@@ -49,41 +73,9 @@ export function CanvasMinimap({
   const animationFrameRef = useRef<number>()
 
   // Constants for performance
-  const MINIMAP_ZOOM = 0.3 // Zoom out factor (0.3 provides good balance)
-  const UPDATE_THROTTLE = 32 // ms between updates (roughly 30fps)
+  const MINIMAP_ZOOM = 0.3
+  const UPDATE_THROTTLE = 32
   const lastUpdateTime = useRef(0)
-
-  // Load saved position and size from localStorage
-  useEffect(() => {
-    const savedState = localStorage.getItem('minimapState')
-    if (savedState) {
-      try {
-        const parsed = JSON.parse(savedState)
-        const maxX = window.innerWidth - parsed.width - 20
-        const maxY = window.innerHeight - parsed.height - 20
-        setMinimapPos({
-          x: Math.min(Math.max(20, parsed.x), maxX),
-          y: Math.min(Math.max(20, parsed.y), maxY),
-        })
-        setMinimapSize({
-          width: Math.min(Math.max(150, parsed.width), 400),
-          height: Math.min(Math.max(100, parsed.height), 300),
-        })
-        // Don't restore minimized state - always start open
-        // if (parsed.minimized !== undefined) {
-        //   setIsMinimized(parsed.minimized)
-        // }
-      } catch {
-        // Invalid saved state, use defaults
-      }
-    } else {
-      // Default to bottom-right corner
-      setMinimapPos({
-        x: window.innerWidth - 220,
-        y: window.innerHeight - 170,
-      })
-    }
-  }, [])
 
   // Save state to localStorage
   useEffect(() => {
@@ -102,8 +94,10 @@ export function CanvasMinimap({
   // Handle window resize
   useEffect(() => {
     const handleResize = () => {
+      const canvasWidth = window.innerWidth - 400
+      const maxX = 400 + canvasWidth - minimapSize.width - 20
       setMinimapPos((prev) => ({
-        x: Math.min(prev.x, window.innerWidth - minimapSize.width - 20),
+        x: Math.min(prev.x, maxX),
         y: Math.min(prev.y, window.innerHeight - minimapSize.height - 20),
       }))
     }
@@ -445,11 +439,12 @@ export function CanvasMinimap({
         const newX = e.clientX - dragOffset.x
         const newY = e.clientY - dragOffset.y
 
-        const maxX = window.innerWidth - minimapSize.width - 20
+        const canvasWidth = window.innerWidth - 400
+        const maxX = 400 + canvasWidth - minimapSize.width - 20
         const maxY = window.innerHeight - minimapSize.height - 20
 
         setMinimapPos({
-          x: Math.max(20, Math.min(maxX, newX)),
+          x: Math.max(420, Math.min(maxX, newX)), // Min 420 for sidebar
           y: Math.max(20, Math.min(maxY, newY)),
         })
       } else if (isResizing && panelRef.current) {

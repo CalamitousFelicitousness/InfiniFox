@@ -2,6 +2,7 @@ import type { StateCreator } from 'zustand';
 import { produce } from 'immer';
 import type { CanvasSlice } from './canvasSlice';
 import type { SelectionSlice } from './selectionSlice';
+import type { ImageData } from '../types';
 
 export interface Group {
   id: string;
@@ -75,28 +76,13 @@ export const createGroupingSlice: StateCreator<
 
     set(produce((state: SliceTypes) => {
       state.groups.set(groupId, newGroup);
-      
-      // Record in history
-      if (state.addToHistory) {
-        state.addToHistory({
-          type: 'CREATE_GROUP',
-          execute: () => {
-            const currentState = get();
-            currentState.groups.set(groupId, newGroup);
-          },
-          undo: () => {
-            const currentState = get();
-            currentState.groups.delete(groupId);
-          },
-          timestamp: Date.now()
-        });
-      }
     }));
 
-    // Update selection to the group
-    get().selectItems([groupId]);
+    // Keep the items selected (don't select the group ID itself)
+    // Groups are logical, not visual entities
     get().saveGroupsToStorage();
     
+    console.log(`Created group ${groupId} with ${ids.length} items`);
     return groupId;
   },
 
@@ -113,22 +99,6 @@ export const createGroupingSlice: StateCreator<
       if (state.selectedIds.has(groupId)) {
         state.selectedIds.delete(groupId);
         itemIds.forEach(id => state.selectedIds.add(id));
-      }
-
-      // Record in history
-      if (state.addToHistory) {
-        state.addToHistory({
-          type: 'DISSOLVE_GROUP',
-          execute: () => {
-            const currentState = get();
-            currentState.groups.delete(groupId);
-          },
-          undo: () => {
-            const currentState = get();
-            currentState.groups.set(groupId, group);
-          },
-          timestamp: Date.now()
-        });
       }
     }));
 
@@ -184,7 +154,8 @@ export const createGroupingSlice: StateCreator<
     }).filter(Boolean) as Array<{ id: string; x: number; y: number }>;
 
     if (updates.length > 0) {
-      get().batchUpdatePositionsWithHistory(updates);
+      // Update positions using canvas slice method
+      get().batchUpdatePositions(updates);
     }
   },
 
@@ -259,7 +230,17 @@ export const createGroupingSlice: StateCreator<
     }).filter(Boolean);
 
     if (updates.length > 0) {
-      get().batchUpdateTransformsWithHistory(updates as any);
+      // Update transforms using canvas slice method
+      get().batchUpdateTransforms(updates.map(u => ({
+        id: u!.id,
+        transform: {
+          x: u!.x,
+          y: u!.y,
+          scaleX: u!.scaleX || 1,
+          scaleY: u!.scaleY || 1,
+          rotation: u!.rotation || 0
+        }
+      })));
     }
   },
 
@@ -275,8 +256,17 @@ export const createGroupingSlice: StateCreator<
     itemIds.forEach(id => {
       const item = get().images.find(img => img.id === id);
       if (item) {
-        const newId = get().duplicateImage(id, offset, offset);
-        if (newId) newItemIds.push(newId);
+        // Duplicate the image with offset
+        const newId = `img-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+        const newImage: ImageData = {
+          ...item,
+          id: newId,
+          x: item.x + offset,
+          y: item.y + offset,
+          selected: false
+        };
+        get().addImage(newImage);
+        newItemIds.push(newId);
       }
     });
 

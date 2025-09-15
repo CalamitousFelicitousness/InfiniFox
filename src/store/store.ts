@@ -1,5 +1,9 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import { enableMapSet } from 'immer'
+
+// Enable Immer MapSet plugin for Map/Set support
+enableMapSet()
 
 // Import all slices and setStoreRef from index
 import {

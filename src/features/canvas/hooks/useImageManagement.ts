@@ -45,6 +45,8 @@ export function useImageManagement({
     updateImagePosition,
     updateImageTransform,
     exportImageAsBase64,
+    groups,
+    batchUpdatePositions,
   } = useStore()
 
   // Local state
@@ -55,6 +57,9 @@ export function useImageManagement({
   const imageCache = useRef<Map<string, HTMLImageElement>>(new Map())
   const activeLoadsRef = useRef<Set<HTMLImageElement>>(new Set())
   const mountedRef = useRef(true)
+  
+  // Group dragging state
+  const dragStartPositionsRef = useRef<Map<string, {x: number, y: number}>>(new Map())
 
   // RAF throttling for snap guide updates
   const rafRef = useRef<number | null>(null)
@@ -390,6 +395,25 @@ export function useImageManagement({
       // Set current object for snapping manager
       snappingManager.setCurrentObject(imageId)
 
+      // Check if image is part of a group
+      let imageGroup: any = null
+      groups.forEach((group) => {
+        if (group.itemIds.has(imageId)) {
+          imageGroup = group
+        }
+      })
+
+      // Store initial positions if grouped
+      if (imageGroup) {
+        dragStartPositionsRef.current.clear()
+        imageGroup.itemIds.forEach((itemId: string) => {
+          const item = konvaImages.find((img) => img.id === itemId)
+          if (item) {
+            dragStartPositionsRef.current.set(itemId, { x: item.x, y: item.y })
+          }
+        })
+      }
+
       // Update snap targets (all other images)
       const snapTargets = konvaImages
         .filter((img) => img.id !== imageId)
@@ -404,7 +428,7 @@ export function useImageManagement({
 
       snappingManager.setObjects(snapTargets)
     },
-    [konvaImages]
+    [konvaImages, groups]
   )
 
   /**
@@ -446,9 +470,37 @@ export function useImageManagement({
       // Use throttled update instead of direct call
       scheduleSnapGuideUpdate(snapResult.guides)
 
+      // Check if image is part of a group
+      let imageGroup: any = null
+      groups.forEach((group) => {
+        if (group.itemIds.has(imageId)) {
+          imageGroup = group
+        }
+      })
+
+      if (imageGroup) {
+        // Calculate delta from initial position stored at drag start
+        const initialPos = dragStartPositionsRef.current.get(imageId)
+        if (initialPos) {
+          const deltaX = snapResult.x - initialPos.x
+          const deltaY = snapResult.y - initialPos.y
+
+          // Update all group members based on their initial positions
+          setKonvaImages((prev) => prev.map((img) => {
+            if (imageGroup.itemIds.has(img.id) && img.id !== imageId) {
+              const imgInitialPos = dragStartPositionsRef.current.get(img.id)
+              if (imgInitialPos) {
+                return { ...img, x: imgInitialPos.x + deltaX, y: imgInitialPos.y + deltaY }
+              }
+            }
+            return img
+          }))
+        }
+      }
+
       return { x: snapResult.x, y: snapResult.y }
     },
-    [konvaImages, scheduleSnapGuideUpdate]
+    [konvaImages, scheduleSnapGuideUpdate, groups]
   )
 
   /**
@@ -467,12 +519,54 @@ export function useImageManagement({
       pendingSnapGuidesRef.current = null
       onSnapGuidesChange?.([])
 
-      updateImagePosition(imageId, newX, newY)
+      // Check if image is part of a group
+      let imageGroup: any = null
+      groups.forEach((group) => {
+        if (group.itemIds.has(imageId)) {
+          imageGroup = group
+        }
+      })
 
-      // Update local state
-      setKonvaImages((prev) => prev.map((i) => (i.id === imageId ? { ...i, x: newX, y: newY } : i)))
+      if (imageGroup) {
+        // Calculate delta from initial position stored at drag start
+        const initialPos = dragStartPositionsRef.current.get(imageId)
+        if (initialPos) {
+          const deltaX = newX - initialPos.x
+          const deltaY = newY - initialPos.y
+
+          const updates: Array<{id: string, x: number, y: number}> = []
+          imageGroup.itemIds.forEach((itemId: string) => {
+            const itemInitialPos = dragStartPositionsRef.current.get(itemId)
+            if (itemInitialPos) {
+              updates.push({
+                id: itemId,
+                x: itemInitialPos.x + deltaX,
+                y: itemInitialPos.y + deltaY
+              })
+            }
+          })
+
+          // Batch update all grouped items
+          batchUpdatePositions(updates)
+
+          // Update local state for all grouped items
+          setKonvaImages((prev) => prev.map((img) => {
+            const update = updates.find(u => u.id === img.id)
+            return update ? { ...img, x: update.x, y: update.y } : img
+          }))
+        }
+        
+        // Clear drag start positions after use
+        dragStartPositionsRef.current.clear()
+      } else {
+        // Single image update
+        updateImagePosition(imageId, newX, newY)
+
+        // Update local state
+        setKonvaImages((prev) => prev.map((i) => (i.id === imageId ? { ...i, x: newX, y: newY } : i)))
+      }
     },
-    [updateImagePosition, onSnapGuidesChange]
+    [updateImagePosition, onSnapGuidesChange, groups, batchUpdatePositions]
   )
 
   /**

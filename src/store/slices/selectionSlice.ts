@@ -39,6 +39,10 @@ export interface SelectionSlice {
   getSelectedCount: () => number
   getSelectionBounds: () => SelectionBounds | null
   getSelectedIds: () => string[]
+  
+  // Batch Operations
+  batchUpdatePositions: (updates: Array<{ id: string; x: number; y: number }>) => void
+  batchUpdateTransforms: (updates: Array<{ id: string; transform: { x: number; y: number; scaleX: number; scaleY: number; rotation: number } }>) => void
 }
 
 export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => ({
@@ -349,5 +353,41 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
 
   getSelectedIds: () => {
     return Array.from(get().selectedIds)
+  },
+
+  // Batch Operations
+  batchUpdatePositions: (updates: Array<{ id: string; x: number; y: number }>) => {
+    set((state) => {
+      const images = (state as any).images as ImageData[]
+      const updatedImages = images.map((img) => {
+        const update = updates.find((u) => u.id === img.id)
+        if (update) {
+          return { ...img, x: update.x, y: update.y }
+        }
+        return img
+      })
+      return { images: updatedImages }
+    })
+  },
+
+  batchUpdateTransforms: (updates: Array<{ id: string; transform: { x: number; y: number; scaleX: number; scaleY: number; rotation: number } }>) => {
+    set((state) => {
+      const images = (state as any).images as ImageData[]
+      const updatedImages = images.map((img) => {
+        const update = updates.find((u) => u.id === img.id)
+        if (update) {
+          return {
+            ...img,
+            x: update.transform.x,
+            y: update.transform.y,
+            scaleX: update.transform.scaleX,
+            scaleY: update.transform.scaleY,
+            rotation: update.transform.rotation,
+          }
+        }
+        return img
+      })
+      return { images: updatedImages }
+    })
   },
 })

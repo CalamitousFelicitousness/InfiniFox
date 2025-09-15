@@ -16,34 +16,30 @@ export function DraggableZoomControls({
   onZoomOut,
   onReset,
 }: DraggableZoomControlsProps) {
-  const [position, setPosition] = useState({ x: window.innerWidth - 220, y: 20 })
-  const [isDragging, setIsDragging] = useState(false)
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
-  const panelRef = useRef<HTMLDivElement>(null)
-
-  // Load saved position from localStorage
-  useEffect(() => {
+  // Initialize with saved position or default
+  const getInitialPosition = () => {
     const savedPos = localStorage.getItem('zoomControlsPosition')
     if (savedPos) {
       try {
         const parsed = JSON.parse(savedPos)
-        const maxX = window.innerWidth - 200
+        const canvasWidth = window.innerWidth - 400
+        const maxX = 400 + canvasWidth - 220
         const maxY = window.innerHeight - 100
-        setPosition({
-          x: Math.min(Math.max(20, parsed.x), maxX),
+        return {
+          x: Math.min(Math.max(420, parsed.x), maxX),
           y: Math.min(Math.max(20, parsed.y), maxY),
-        })
+        }
       } catch {
-        // Invalid saved position, use default
+        // Invalid saved position
       }
-    } else {
-      // Default to top-right corner
-      setPosition({
-        x: window.innerWidth - 220,
-        y: 20,
-      })
     }
-  }, [])
+    return { x: 600, y: 80 }
+  }
+
+  const [position, setPosition] = useState(getInitialPosition)
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+  const panelRef = useRef<HTMLDivElement>(null)
 
   // Save position to localStorage when it changes
   useEffect(() => {
@@ -53,8 +49,10 @@ export function DraggableZoomControls({
   // Handle window resize to keep controls in bounds
   useEffect(() => {
     const handleResize = () => {
+      const canvasWidth = window.innerWidth - 400
+      const maxX = 400 + canvasWidth - 220
       setPosition((prev) => ({
-        x: Math.min(prev.x, window.innerWidth - 220),
+        x: Math.min(prev.x, maxX),
         y: Math.min(prev.y, window.innerHeight - 100),
       }))
     }
@@ -64,7 +62,7 @@ export function DraggableZoomControls({
   }, [])
 
   // Handle dragging
-  const handlePointerDown = (e: PointerEvent) => {
+  const handlePointerDown = (e: React.PointerEvent) => {
     const target = e.target as HTMLElement
     if (!target.closest('.toolbar-grip')) return
 
@@ -85,11 +83,12 @@ export function DraggableZoomControls({
       const newX = e.clientX - dragOffset.x
       const newY = e.clientY - dragOffset.y
 
-      const maxX = window.innerWidth - (panelRef.current?.offsetWidth || 200)
+      const canvasWidth = window.innerWidth - 400
+      const maxX = 400 + canvasWidth - (panelRef.current?.offsetWidth || 200)
       const maxY = window.innerHeight - (panelRef.current?.offsetHeight || 60)
 
       setPosition({
-        x: Math.max(0, Math.min(maxX, newX)),
+        x: Math.max(420, Math.min(maxX, newX)), // Min 420 for sidebar
         y: Math.max(0, Math.min(maxY, newY)),
       })
     }

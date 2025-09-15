@@ -4,10 +4,8 @@
  * Minimal custom styles only for zoom-specific needs
  */
 
-/* No additional styles needed - all styling comes from toolbars.css patterns:
-   - .zoom-controls (defined in toolbars.css)
-   - .zoom-value (defined in toolbars.css)
-   - .toolbar patterns (defined in toolbars.css)
-   - .toolbar-item patterns (defined in toolbars.css)
-   - .toolbar-draggable patterns (defined in toolbars.css)
-*/
+/* Ensure zoom controls are visible */
+.zoom-controls {
+  position: fixed !important;
+  z-index: var(--layer-toolbar, 100) !important;
+}

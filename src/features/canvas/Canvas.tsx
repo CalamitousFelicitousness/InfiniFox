@@ -20,7 +20,7 @@ import { ImageLayer } from './components/ImageLayer'
 import { SelectionBox } from './components/SelectionBox'
 import { SelectionCounter } from './components/SelectionCounter'
 import { SnapGuideLayer } from './components/SnapGuideLayer'
-import { FloatingSnapControls } from './FloatingSnapControls'
+import { CanvasToolbar } from './CanvasToolbar'
 import { useCanvasEvents } from './hooks/useCanvasEvents'
 import { useCanvasTools, CanvasTool } from './hooks/useCanvasTools'
 import { useDrawingSystem } from './hooks/useDrawingSystem'
@@ -59,7 +59,13 @@ export function Canvas() {
     deleteSelectedImages,
     duplicateSelectedImages,
     selectedIds,
+    loadGroupsFromStorage,
   } = useStore()
+
+  // Load groups from storage on mount
+  useEffect(() => {
+    loadGroupsFromStorage()
+  }, [loadGroupsFromStorage])
 
   // Initialize all hooks
   const tools = useCanvasTools()
@@ -245,8 +251,8 @@ export function Canvas() {
 
   return (
     <div className={containerClasses} ref={containerRef}>
-      {/* FloatingSnapControls */}
-      <FloatingSnapControls
+      {/* Canvas Toolbar */}
+      <CanvasToolbar
         onSnapConfigChange={(config) => {
           setGridEnabled(config.gridEnabled)
         }}
