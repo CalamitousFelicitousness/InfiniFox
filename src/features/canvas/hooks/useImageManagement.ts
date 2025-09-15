@@ -84,6 +84,37 @@ export function useImageManagement({
   }, [onSnapGuidesChange])
 
   /**
+   * Synchronize positions/transforms for already-loaded images
+   */
+  useEffect(() => {
+    setKonvaImages((prev) => {
+      let changed = false
+      const updated = prev.map((konvaImg) => {
+        const storeImg = images.find((img) => img.id === konvaImg.id)
+        if (storeImg && (
+          konvaImg.x !== storeImg.x ||
+          konvaImg.y !== storeImg.y ||
+          konvaImg.scaleX !== storeImg.scaleX ||
+          konvaImg.scaleY !== storeImg.scaleY ||
+          konvaImg.rotation !== storeImg.rotation
+        )) {
+          changed = true
+          return {
+            ...konvaImg,
+            x: storeImg.x,
+            y: storeImg.y,
+            scaleX: storeImg.scaleX,
+            scaleY: storeImg.scaleY,
+            rotation: storeImg.rotation,
+          }
+        }
+        return konvaImg
+      })
+      return changed ? updated : prev
+    })
+  }, [images])
+
+  /**
    * Load images as Konva-compatible format with batching
    */
   useEffect(() => {
@@ -101,19 +132,19 @@ export function useImageManagement({
         const cachedImg = imageCache.current.get(imgData.id)
 
         if (cachedImg && cachedImg.src === imgData.src) {
-        // Use cached image immediately
-        newKonvaImages.push({
-        id: imgData.id,
-        src: imgData.src,
-        x: imgData.x,
-        y: imgData.y,
-        scaleX: imgData.scaleX,
-        scaleY: imgData.scaleY,
-        rotation: imgData.rotation,
-        image: cachedImg,
-        })
+          // Use cached image immediately with current position/transform from store
+          newKonvaImages.push({
+            id: imgData.id,
+            src: imgData.src,
+            x: imgData.x,
+            y: imgData.y,
+            scaleX: imgData.scaleX,
+            scaleY: imgData.scaleY,
+            rotation: imgData.rotation,
+            image: cachedImg,
+          })
           
-        // Update dimensions in store if not set
+          // Update dimensions in store if not set
           if (!imgData.width || !imgData.height) {
             const updateImageDimensions = useStore.getState().updateImageDimensions
             updateImageDimensions(imgData.id, cachedImg.naturalWidth, cachedImg.naturalHeight)
@@ -123,13 +154,30 @@ export function useImageManagement({
         }
       })
 
-      // Set cached images immediately
-      if (newKonvaImages.length > 0) {
-        setKonvaImages((prev) => {
-          const existingIds = new Set(prev.map((img) => img.id))
-          const filtered = prev.filter((img) => images.some((i) => i.id === img.id))
-          const toAdd = newKonvaImages.filter((img) => !existingIds.has(img.id))
-          return [...filtered, ...toAdd]
+      // Set all images (cached + existing) immediately, replacing the entire state
+      // This ensures position updates from store are reflected
+      if (newKonvaImages.length > 0 || images.length === 0) {
+        setKonvaImages(() => {
+          // Start with cached images that are still in store
+          const result = [...newKonvaImages]
+          
+          // Add any existing konva images that need loading
+          imagesToLoad.forEach((imgData) => {
+            const existing = konvaImages.find(k => k.id === imgData.id)
+            if (existing) {
+              // Update position/transform from store while keeping loaded image
+              result.push({
+                ...existing,
+                x: imgData.x,
+                y: imgData.y,
+                scaleX: imgData.scaleX,
+                scaleY: imgData.scaleY,
+                rotation: imgData.rotation,
+              })
+            }
+          })
+          
+          return result
         })
       }
 
@@ -209,9 +257,21 @@ export function useImageManagement({
 
         if (validImages.length > 0 && mountedRef.current && !abortController.signal.aborted) {
           setKonvaImages((prev) => {
-            const existingIds = new Set(prev.map((img) => img.id))
-            const toAdd = validImages.filter((img) => !existingIds.has(img.id))
-            return [...prev, ...toAdd]
+            // Build new state including both existing and new images
+            const newState = [...prev]
+            
+            validImages.forEach((validImage) => {
+              const existingIndex = newState.findIndex(img => img.id === validImage.id)
+              if (existingIndex >= 0) {
+                // Replace existing with new loaded image
+                newState[existingIndex] = validImage
+              } else {
+                // Add new image
+                newState.push(validImage)
+              }
+            })
+            
+            return newState
           })
         }
 

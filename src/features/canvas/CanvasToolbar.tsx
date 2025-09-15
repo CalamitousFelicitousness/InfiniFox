@@ -48,7 +48,7 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
   const {
     selectedIds,
     images,
-    updateImagePosition,
+    batchUpdatePositions,
     createGroup,
     dissolveGroup,
     groups,
@@ -163,12 +163,23 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
 
   const alignLeft = () => {
     const selected = getSelectedImages()
+    console.log('alignLeft - selected images:', selected)
     if (selected.length < 2) return
 
     const leftMost = Math.min(...selected.map((img) => img.x))
-    selected.forEach((img) => {
-      updateImagePosition(img.id, leftMost, img.y)
-    })
+    const updates = selected.map((img) => ({
+      id: img.id,
+      x: leftMost,
+      y: img.y
+    }))
+    console.log('alignLeft - updates:', updates)
+    console.log('batchUpdatePositions function:', batchUpdatePositions)
+    console.log('typeof batchUpdatePositions:', typeof batchUpdatePositions)
+    if (batchUpdatePositions) {
+      batchUpdatePositions(updates)
+    } else {
+      console.error('batchUpdatePositions is not defined!')
+    }
   }
 
   const alignRight = () => {
@@ -178,10 +189,15 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
     const rightMost = Math.max(
       ...selected.map((img) => img.x + (img.width || 512) * (img.scaleX || 1))
     )
-    selected.forEach((img) => {
+    const updates = selected.map((img) => {
       const width = (img.width || 512) * (img.scaleX || 1)
-      updateImagePosition(img.id, rightMost - width, img.y)
+      return {
+        id: img.id,
+        x: rightMost - width,
+        y: img.y
+      }
     })
+    batchUpdatePositions(updates)
   }
 
   const alignTop = () => {
@@ -189,9 +205,12 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
     if (selected.length < 2) return
 
     const topMost = Math.min(...selected.map((img) => img.y))
-    selected.forEach((img) => {
-      updateImagePosition(img.id, img.x, topMost)
-    })
+    const updates = selected.map((img) => ({
+      id: img.id,
+      x: img.x,
+      y: topMost
+    }))
+    batchUpdatePositions(updates)
   }
 
   const alignBottom = () => {
@@ -201,42 +220,61 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
     const bottomMost = Math.max(
       ...selected.map((img) => img.y + (img.height || 512) * (img.scaleY || 1))
     )
-    selected.forEach((img) => {
+    const updates = selected.map((img) => {
       const height = (img.height || 512) * (img.scaleY || 1)
-      updateImagePosition(img.id, img.x, bottomMost - height)
+      return {
+        id: img.id,
+        x: img.x,
+        y: bottomMost - height
+      }
     })
+    batchUpdatePositions(updates)
   }
 
   const alignCenterHorizontal = () => {
     const selected = getSelectedImages()
     if (selected.length < 2) return
 
-    const centerX =
-      selected.reduce((sum, img) => {
-        const width = (img.width || 512) * (img.scaleX || 1)
-        return sum + img.x + width / 2
-      }, 0) / selected.length
+    // Find the center Y position (horizontal line)
+    const minY = Math.min(...selected.map(img => img.y))
+    const maxY = Math.max(...selected.map(img => {
+      const height = (img.height || 512) * (img.scaleY || 1)
+      return img.y + height
+    }))
+    const centerY = (minY + maxY) / 2
 
-    selected.forEach((img) => {
-      const width = (img.width || 512) * (img.scaleX || 1)
-      updateImagePosition(img.id, centerX - width / 2, img.y)
+    const updates = selected.map((img) => {
+      const height = (img.height || 512) * (img.scaleY || 1)
+      return {
+        id: img.id,
+        x: img.x,
+        y: centerY - height / 2
+      }
     })
+    batchUpdatePositions(updates)
   }
 
   const alignCenterVertical = () => {
     const selected = getSelectedImages()
     if (selected.length < 2) return
 
-    const centerY =
-      selected.reduce((sum, img) => {
-        const height = (img.height || 512) * (img.scaleY || 1)
-        return sum + img.y + height / 2
-      }, 0) / selected.length
+    // Find the center X position (vertical line)
+    const minX = Math.min(...selected.map(img => img.x))
+    const maxX = Math.max(...selected.map(img => {
+      const width = (img.width || 512) * (img.scaleX || 1)
+      return img.x + width
+    }))
+    const centerX = (minX + maxX) / 2
 
-    selected.forEach((img) => {
-      const height = (img.height || 512) * (img.scaleY || 1)
-      updateImagePosition(img.id, img.x, centerY - height / 2)
+    const updates = selected.map((img) => {
+      const width = (img.width || 512) * (img.scaleX || 1)
+      return {
+        id: img.id,
+        x: centerX - width / 2,
+        y: img.y
+      }
     })
+    batchUpdatePositions(updates)
   }
 
   const distributeHorizontal = () => {
@@ -252,11 +290,20 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
 
     const spacing = totalWidth / (sorted.length - 1)
 
-    sorted.forEach((img, index) => {
+    const updates = sorted.map((img, index) => {
       if (index > 0 && index < sorted.length - 1) {
-        updateImagePosition(img.id, firstX + spacing * index, img.y)
+        return {
+          id: img.id,
+          x: firstX + spacing * index,
+          y: img.y
+        }
       }
-    })
+      return null
+    }).filter(Boolean) as Array<{id: string, x: number, y: number}>
+    
+    if (updates.length > 0) {
+      batchUpdatePositions(updates)
+    }
   }
 
   const distributeVertical = () => {
@@ -272,11 +319,20 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
 
     const spacing = totalHeight / (sorted.length - 1)
 
-    sorted.forEach((img, index) => {
+    const updates = sorted.map((img, index) => {
       if (index > 0 && index < sorted.length - 1) {
-        updateImagePosition(img.id, img.x, firstY + spacing * index)
+        return {
+          id: img.id,
+          x: img.x,
+          y: firstY + spacing * index
+        }
       }
-    })
+      return null
+    }).filter(Boolean) as Array<{id: string, x: number, y: number}>
+    
+    if (updates.length > 0) {
+      batchUpdatePositions(updates)
+    }
   }
 
   const toggleGridSnap = () => {

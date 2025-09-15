@@ -7,5 +7,5 @@ export { createGenerationActionsSlice, type GenerationActionsSlice } from './gen
 export { createDrawingSlice, type DrawingSlice } from './drawingSlice'
 export { createAuthSlice, type AuthSlice } from './authSlice'
 export { createSelectionSlice, type SelectionSlice } from './selectionSlice'
-export { createAlignmentSlice, type AlignmentSlice } from './alignmentSlice'
+
 export { createGroupingSlice, type GroupingSlice } from './groupingSlice'

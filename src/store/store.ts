@@ -15,7 +15,6 @@ import {
   createDrawingSlice,
   createAuthSlice,
   createSelectionSlice,
-  createAlignmentSlice,
   createGroupingSlice,
   setStoreRef,
   type GenerationSlice,
@@ -26,7 +25,6 @@ import {
   type DrawingSlice,
   type AuthSlice,
   type SelectionSlice,
-  type AlignmentSlice,
   type GroupingSlice,
 } from './slices'
 
@@ -42,7 +40,6 @@ export type AppState = GenerationSlice &
   DrawingSlice &
   AuthSlice &
   SelectionSlice &
-  AlignmentSlice &
   GroupingSlice
 
 // Create the store by combining all slices
@@ -57,7 +54,6 @@ export const useStore = create<AppState>()(
       ...createDrawingSlice(...a),
       ...createAuthSlice(...a),
       ...createSelectionSlice(...a),
-      ...createAlignmentSlice(...a),
       ...createGroupingSlice(...a),
     }),
     {

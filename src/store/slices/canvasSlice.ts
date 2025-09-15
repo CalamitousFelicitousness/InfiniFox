@@ -86,6 +86,7 @@ export interface CanvasSlice {
   
   // Multi-selection batch operations
   batchUpdatePositions: (updates: Array<{id: string, x: number, y: number}>) => void
+  batchUpdatePositionsWithHistory: (updates: Array<{id: string, x: number, y: number}>) => void
   batchUpdateTransforms: (updates: Array<{id: string, transform: Transform}>) => void
   batchRemoveImages: (ids: string[]) => void
   batchDuplicateImages: (ids: string[]) => void
@@ -516,6 +517,7 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
 
   // Multi-selection batch operations
   batchUpdatePositions: (updates: Array<{id: string, x: number, y: number}>) => {
+    console.log('canvasSlice.batchUpdatePositions called with:', updates)
     set((state) => ({
       images: state.images.map((img) => {
         const update = updates.find(u => u.id === img.id)
@@ -526,11 +528,38 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
               console.error('Failed to persist batch position update:', error)
             })
           }
+          console.log(`Updating image ${img.id} from (${img.x}, ${img.y}) to (${update.x}, ${update.y})`)
           return { ...img, x: update.x, y: update.y }
         }
         return img
       }),
     }))
+  },
+
+  batchUpdatePositionsWithHistory: (updates: Array<{id: string, x: number, y: number}>) => {
+    if (updates.length === 0 || !storeRef) return
+    
+    const state = get()
+    const moveData = updates.map(update => {
+      const img = state.images.find(i => i.id === update.id)
+      if (img) {
+        return {
+          id: update.id,
+          oldPosition: { x: img.x, y: img.y },
+          newPosition: { x: update.x, y: update.y }
+        }
+      }
+      return null
+    }).filter(Boolean) as Array<{
+      id: string
+      oldPosition: {x: number, y: number}
+      newPosition: {x: number, y: number}
+    }>
+    
+    if (moveData.length > 0) {
+      const command = new BatchMoveCommand(moveData, storeRef)
+      useHistoryStore.getState().executeCommand(command)
+    }
   },
 
   batchUpdateTransforms: (updates: Array<{id: string, transform: Transform}>) => {
