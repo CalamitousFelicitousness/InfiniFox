@@ -25,7 +25,7 @@ export function useViewport(stageRef: React.RefObject<Konva.Stage>) {
   const [scale, setScale] = useState(canvasViewport.scale)
   const [position, setPosition] = useState(canvasViewport.position)
   const [isPanning, setIsPanning] = useState(false)
-  
+
   // Temp position during drag (not in state to avoid re-renders)
   const dragPositionRef = useRef(position)
 
@@ -51,7 +51,8 @@ export function useViewport(stageRef: React.RefObject<Konva.Stage>) {
       stageRef.current.position(canvasViewport.position)
       stageRef.current.scale({ x: canvasViewport.scale, y: canvasViewport.scale })
     }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Intentionally only run on mount to set initial values
 
   /**
    * Convert screen coordinates to canvas coordinates

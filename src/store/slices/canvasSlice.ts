@@ -5,6 +5,13 @@ import {
   MoveImageCommand,
   useHistoryStore,
 } from '../historyStore'
+import {
+  BatchMoveCommand,
+  BatchTransformCommand,
+  BatchDeleteCommand,
+  BatchDuplicateCommand,
+  BatchZIndexCommand,
+} from '../commands/BatchCommands'
 import type { ImageData, ImageRole, CanvasSelectionMode, SliceCreator } from '../types'
 
 // Store reference will be set after store creation to avoid circular dependency
@@ -46,6 +53,14 @@ export interface CanvasViewport {
   position: { x: number; y: number }
 }
 
+export interface Transform {
+  x?: number
+  y?: number
+  scaleX?: number
+  scaleY?: number
+  rotation?: number
+}
+
 export interface CanvasSlice {
   // State
   images: ImageData[]
@@ -63,10 +78,34 @@ export interface CanvasSlice {
   duplicateImage: (id: string) => void
   updateImagePosition: (id: string, x: number, y: number) => void
   updateImagePositionDirect: (id: string, x: number, y: number) => void
+  updateImageDimensions: (id: string, width: number, height: number) => void
   updateImageTransform: (
     id: string,
     transform: { x: number; y: number; scaleX: number; scaleY: number; rotation: number }
   ) => void
+  
+  // Multi-selection batch operations
+  batchUpdatePositions: (updates: Array<{id: string, x: number, y: number}>) => void
+  batchUpdatePositionsWithHistory: (updates: Array<{id: string, x: number, y: number}>) => void
+  batchUpdateTransforms: (updates: Array<{id: string, transform: Transform}>) => void
+  batchRemoveImages: (ids: string[]) => void
+  batchDuplicateImages: (ids: string[]) => void
+  
+  // Selection-aware operations with history
+  moveSelectedImages: (deltaX: number, deltaY: number) => void
+  moveSelectedImagesWithHistory: (deltaX: number, deltaY: number) => void
+  transformSelectedImages: (transform: Transform) => void
+  transformSelectedImagesWithHistory: (transform: Transform) => void
+  deleteSelectedImages: () => void
+  deleteSelectedImagesWithHistory: () => void
+  duplicateSelectedImages: () => void
+  duplicateSelectedImagesWithHistory: () => void
+  
+  // Z-index management
+  bringToFront: (ids: string[]) => void
+  sendToBack: (ids: string[]) => void
+  bringForward: (ids: string[]) => void
+  sendBackward: (ids: string[]) => void
   setImageRole: (
     imageId: string,
     role: 'img2img_init' | 'inpaint_image' | 'controlnet' | null
@@ -205,6 +244,8 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
               src: duplicatedImage.objectUrl,
               x: originalImage.x + 50,
               y: originalImage.y + 50,
+              width: originalImage.width,
+              height: originalImage.height,
               blobId: newId,
             }
 
@@ -269,6 +310,14 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
         })
       }
     }
+  },
+
+  updateImageDimensions: (id: string, width: number, height: number) => {
+    set((state) => ({
+      images: state.images.map((img) => 
+        img.id === id ? { ...img, width, height } : img
+      ),
+    }))
   },
 
   setImageRole: (imageId: string, role: 'img2img_init' | 'inpaint_image' | 'controlnet' | null) => {
@@ -423,7 +472,7 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
         const tempUrl = URL.createObjectURL(file)
         img.onload = () => {
           URL.revokeObjectURL(tempUrl) // Clean up temp URL
-          resolve({ width: img.width, height: img.height })
+          resolve({ width: img.naturalWidth, height: img.naturalHeight })
         }
         img.src = tempUrl
       })
@@ -436,7 +485,7 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
         usedIn: new Set(),
       })
 
-      // Add to canvas
+      // Add to canvas with dimensions
       const newImage: ImageData = {
         id: imageId,
         src: storedImage.objectUrl,
@@ -464,6 +513,316 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
     set({
       canvasViewport: { scale, position },
     })
+  },
+
+  // Multi-selection batch operations
+  batchUpdatePositions: (updates: Array<{id: string, x: number, y: number}>) => {
+    console.log('canvasSlice.batchUpdatePositions called with:', updates)
+    set((state) => ({
+      images: state.images.map((img) => {
+        const update = updates.find(u => u.id === img.id)
+        if (update) {
+          // Save position to IndexedDB if image has a blobId
+          if (img.blobId) {
+            imageStorage.updateImagePosition(img.blobId, update.x, update.y).catch((error) => {
+              console.error('Failed to persist batch position update:', error)
+            })
+          }
+          console.log(`Updating image ${img.id} from (${img.x}, ${img.y}) to (${update.x}, ${update.y})`)
+          return { ...img, x: update.x, y: update.y }
+        }
+        return img
+      }),
+    }))
+  },
+
+  batchUpdatePositionsWithHistory: (updates: Array<{id: string, x: number, y: number}>) => {
+    if (updates.length === 0 || !storeRef) return
+    
+    const state = get()
+    const moveData = updates.map(update => {
+      const img = state.images.find(i => i.id === update.id)
+      if (img) {
+        return {
+          id: update.id,
+          oldPosition: { x: img.x, y: img.y },
+          newPosition: { x: update.x, y: update.y }
+        }
+      }
+      return null
+    }).filter(Boolean) as Array<{
+      id: string
+      oldPosition: {x: number, y: number}
+      newPosition: {x: number, y: number}
+    }>
+    
+    if (moveData.length > 0) {
+      const command = new BatchMoveCommand(moveData, storeRef)
+      useHistoryStore.getState().executeCommand(command)
+    }
+  },
+
+  batchUpdateTransforms: (updates: Array<{id: string, transform: Transform}>) => {
+    set((state) => ({
+      images: state.images.map((img) => {
+        const update = updates.find(u => u.id === img.id)
+        if (update) {
+          // Save transform to IndexedDB if image has a blobId
+          if (img.blobId && update.transform.x !== undefined && update.transform.y !== undefined) {
+            imageStorage.updateImagePosition(img.blobId, update.transform.x, update.transform.y).catch((error) => {
+              console.error('Failed to persist batch transform:', error)
+            })
+          }
+          return { ...img, ...update.transform }
+        }
+        return img
+      }),
+    }))
+  },
+
+  batchRemoveImages: async (ids: string[]) => {
+    const { images } = get()
+    const imagesToRemove = images.filter((img) => ids.includes(img.id))
+    
+    // Clean up blob URLs and storage
+    for (const image of imagesToRemove) {
+      if (image.src.startsWith('blob:')) {
+        URL.revokeObjectURL(image.src)
+        console.log(`Revoked blob URL for image ${image.id}`)
+      }
+      if (image.blobId) {
+        await imageStorage.deleteImage(image.blobId).catch(console.error)
+      }
+    }
+    
+    set((state) => ({
+      images: state.images.filter((img) => !ids.includes(img.id)),
+    }))
+    
+    storeRef?.getState().updateStorageStats?.()
+  },
+
+  batchDuplicateImages: async (ids: string[]) => {
+    const { images } = get()
+    const newImages: ImageData[] = []
+    
+    for (const id of ids) {
+      const originalImage = images.find((img) => img.id === id)
+      if (originalImage) {
+        const newId = `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        
+        if (originalImage.blobId) {
+          try {
+            const storedImage = await imageStorage.loadFromIndexedDB(originalImage.blobId)
+            if (storedImage) {
+              const duplicatedImage = await imageStorage.createFromBase64(
+                newId,
+                await imageStorage.exportAsBase64(originalImage.blobId),
+                { ...storedImage.metadata }
+              )
+              
+              newImages.push({
+                ...originalImage,
+                id: newId,
+                src: duplicatedImage.objectUrl,
+                x: originalImage.x + 50,
+                y: originalImage.y + 50,
+                blobId: newId,
+                selected: false,
+              })
+            }
+          } catch (error) {
+            console.error('Failed to duplicate image:', error)
+          }
+        } else {
+          newImages.push({
+            ...originalImage,
+            id: newId,
+            x: originalImage.x + 50,
+            y: originalImage.y + 50,
+            selected: false,
+          })
+        }
+      }
+    }
+    
+    set((state) => ({
+      images: [...state.images, ...newImages],
+    }))
+    
+    storeRef?.getState().updateStorageStats?.()
+  },
+
+  // Selection-aware operations with direct updates (for real-time dragging)
+  moveSelectedImages: (deltaX: number, deltaY: number) => {
+    const state = get() as any
+    const selectedIds = state.selectedIds || new Set<string>()
+    const updates = Array.from(selectedIds).map((id) => {
+      const img = state.images.find((i: ImageData) => i.id === id)
+      if (img) {
+        return { id, x: img.x + deltaX, y: img.y + deltaY }
+      }
+      return null
+    }).filter(Boolean) as Array<{id: string, x: number, y: number}>
+    
+    if (updates.length > 0) {
+      get().batchUpdatePositions(updates)
+    }
+  },
+
+  // Selection-aware operations with history support
+  moveSelectedImagesWithHistory: (deltaX: number, deltaY: number) => {
+    const state = get() as any
+    const selectedIds = state.selectedIds || new Set<string>()
+    const updates = Array.from(selectedIds).map((id) => {
+      const img = state.images.find((i: ImageData) => i.id === id)
+      if (img) {
+        return { 
+          id, 
+          oldPosition: { x: img.x, y: img.y },
+          newPosition: { x: img.x + deltaX, y: img.y + deltaY }
+        }
+      }
+      return null
+    }).filter(Boolean) as Array<{id: string, oldPosition: {x: number, y: number}, newPosition: {x: number, y: number}}>
+    
+    if (updates.length > 0 && storeRef) {
+      const command = new BatchMoveCommand(updates, storeRef)
+      useHistoryStore.getState().executeCommand(command)
+    }
+  },
+
+  transformSelectedImages: (transform: Transform) => {
+    const state = get() as any
+    const selectedIds = state.selectedIds || new Set<string>()
+    const updates = Array.from(selectedIds).map((id) => ({
+      id,
+      transform,
+    }))
+    
+    if (updates.length > 0) {
+      get().batchUpdateTransforms(updates)
+    }
+  },
+
+  transformSelectedImagesWithHistory: (transform: Transform) => {
+    const state = get() as any
+    const selectedIds = state.selectedIds || new Set<string>()
+    const updates = Array.from(selectedIds).map((id) => {
+      const img = state.images.find((i: ImageData) => i.id === id)
+      if (img) {
+        return {
+          id,
+          oldTransform: {
+            x: img.x,
+            y: img.y,
+            scaleX: img.scaleX || 1,
+            scaleY: img.scaleY || 1,
+            rotation: img.rotation || 0,
+          },
+          newTransform: transform
+        }
+      }
+      return null
+    }).filter(Boolean) as Array<{id: string, oldTransform: Transform, newTransform: Transform}>
+    
+    if (updates.length > 0 && storeRef) {
+      const command = new BatchTransformCommand(updates, storeRef)
+      useHistoryStore.getState().executeCommand(command)
+    }
+  },
+
+  deleteSelectedImages: () => {
+    const state = get() as any
+    const selectedIds = state.selectedIds || new Set<string>()
+    if (selectedIds.size > 0) {
+      get().batchRemoveImages(Array.from(selectedIds))
+      // Clear selection after deletion
+      if (state.deselectAll) {
+        state.deselectAll()
+      }
+    }
+  },
+
+  deleteSelectedImagesWithHistory: () => {
+    const state = get() as any
+    const selectedIds = state.selectedIds || new Set<string>()
+    if (selectedIds.size > 0 && storeRef) {
+      const command = new BatchDeleteCommand(Array.from(selectedIds), storeRef)
+      useHistoryStore.getState().executeCommand(command)
+      // Clear selection after deletion
+      if (state.deselectAll) {
+        state.deselectAll()
+      }
+    }
+  },
+
+  duplicateSelectedImages: () => {
+    const state = get() as any
+    const selectedIds = state.selectedIds || new Set<string>()
+    if (selectedIds.size > 0) {
+      get().batchDuplicateImages(Array.from(selectedIds))
+    }
+  },
+
+  duplicateSelectedImagesWithHistory: () => {
+    const state = get() as any
+    const selectedIds = state.selectedIds || new Set<string>()
+    if (selectedIds.size > 0 && storeRef) {
+      const command = new BatchDuplicateCommand(Array.from(selectedIds), storeRef)
+      useHistoryStore.getState().executeCommand(command)
+    }
+  },
+
+  // Z-index management
+  bringToFront: (ids: string[]) => {
+    set((state) => {
+      const maxZIndex = Math.max(...state.images.map((img) => img.zIndex || 0), 0)
+      return {
+        images: state.images.map((img) => {
+          if (ids.includes(img.id)) {
+            return { ...img, zIndex: maxZIndex + 1 }
+          }
+          return img
+        }),
+      }
+    })
+  },
+
+  sendToBack: (ids: string[]) => {
+    set((state) => {
+      const minZIndex = Math.min(...state.images.map((img) => img.zIndex || 0), 0)
+      return {
+        images: state.images.map((img) => {
+          if (ids.includes(img.id)) {
+            return { ...img, zIndex: minZIndex - 1 }
+          }
+          return img
+        }),
+      }
+    })
+  },
+
+  bringForward: (ids: string[]) => {
+    set((state) => ({
+      images: state.images.map((img) => {
+        if (ids.includes(img.id)) {
+          return { ...img, zIndex: (img.zIndex || 0) + 1 }
+        }
+        return img
+      }),
+    }))
+  },
+
+  sendBackward: (ids: string[]) => {
+    set((state) => ({
+      images: state.images.map((img) => {
+        if (ids.includes(img.id)) {
+          return { ...img, zIndex: (img.zIndex || 0) - 1 }
+        }
+        return img
+      }),
+    }))
   },
 
   // Generation frame actions

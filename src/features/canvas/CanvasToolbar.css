@@ -1,0 +1,378 @@
+/**
+ * Canvas Toolbar Styles
+ * Extends shared floating-panel patterns
+ */
+
+/* Canvas Toolbar Base Styles */
+.canvas-toolbar-container {
+  z-index: var(--layer-toolbar, 100);
+  box-shadow: var(--shadow-lg);
+  touch-action: none;
+  transition: var(--transition-base);
+}
+
+.canvas-toolbar-container.dragging {
+  cursor: grabbing;
+  opacity: 0.9;
+}
+
+.canvas-toolbar-container.expanded .toolbar-panel {
+  display: flex;
+}
+
+/* Toolbar Panel */
+.toolbar-panel {
+  display: none;
+  position: absolute;
+  top: calc(100% + var(--spacing-2));
+  left: 0;
+  background: var(--color-surface-primary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-3);
+  min-width: 280px;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(10px);
+}
+
+.toolbar-panel-separator {
+  height: 1px;
+  background: var(--color-border-secondary);
+  margin: var(--spacing-1) 0;
+}
+
+.toolbar-chevron {
+  width: 12px;
+  height: 12px;
+  margin-left: var(--spacing-1);
+  opacity: 0.6;
+  transition: var(--transition-base);
+}
+
+.toolbar-section-label {
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  margin-bottom: var(--spacing-1);
+  display: block;
+}
+
+.toolbar-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-1);
+  display: block;
+}
+
+.toolbar-select {
+  width: 100%;
+  padding: var(--spacing-1) var(--spacing-2);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-secondary);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-xs);
+  transition: var(--transition-input);
+}
+
+.toolbar-select:hover {
+  border-color: var(--color-border-hover);
+  background: var(--color-surface-hover);
+}
+
+.toolbar-select:focus {
+  outline: none;
+  border-color: var(--color-primary-500);
+  box-shadow: var(--ring-sm);
+}
+
+.toolbar-item-label {
+  font-size: var(--font-size-2xs);
+  margin-left: var(--spacing-1);
+  color: var(--color-text-secondary);
+}
+
+.toolbar-settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.toolbar-setting {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+/* Preset Styles - matching FloatingDrawingPanel */
+.toolbar-presets {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  padding-bottom: var(--spacing-3);
+  border-bottom: 1px solid var(--color-border-secondary);
+}
+
+.toolbar-presets-label {
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.toolbar-preset-buttons {
+  display: flex;
+  gap: var(--spacing-1);
+  justify-content: space-between;
+}
+
+.toolbar-preset {
+  flex: 1;
+  font-size: var(--font-size-2xs);
+  padding: var(--spacing-1-5) var(--spacing-2);
+  background-color: var(--color-surface-disabled);
+  border: 1px solid var(--color-border-primary);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: var(--transition-button);
+}
+
+.toolbar-preset:hover:not(.active) {
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-border-hover);
+  color: var(--color-text-primary);
+  transform: translateY(-1px);
+}
+
+.toolbar-preset.active {
+  background-color: var(--color-surface-selected);
+  border-color: var(--color-primary-500);
+  color: var(--color-primary-400);
+  box-shadow: var(--shadow-glow-sm);
+}
+
+.toolbar-preset.active:hover {
+  background-color: var(--color-surface-selected);
+  border-color: var(--color-primary-400);
+  transform: none;
+}
+
+.toolbar-preset:active:not(.active) {
+  transform: translateY(0);
+}
+
+.toolbar-preset:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-sm);
+}
+
+/* Snap Panel Specific */
+.snap-panel .snap-features {
+  display: flex;
+  gap: var(--spacing-1);
+}
+
+.snap-panel .snap-features .toolbar-item {
+  flex: 1;
+  flex-direction: column;
+  gap: var(--spacing-0-5);
+  padding: var(--spacing-2) var(--spacing-1);
+  min-width: 0;
+  background-color: var(--color-surface-secondary);
+  border: 1px solid var(--color-border-primary);
+  transition: var(--transition-button);
+}
+
+.snap-panel .snap-features .toolbar-item:hover {
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-border-hover);
+}
+
+.snap-panel .snap-features .toolbar-item.active {
+  background-color: var(--color-surface-selected);
+  border-color: var(--color-primary-500);
+  color: var(--color-primary-400);
+}
+
+/* Groups List */
+.groups-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.group-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--color-surface-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition-button);
+  font-size: var(--font-size-xs);
+  min-height: 36px;
+}
+
+.group-item:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border-hover);
+  transform: translateY(-1px);
+}
+
+.group-item.selected {
+  background: var(--color-surface-selected);
+  border-color: var(--color-primary-500);
+  color: var(--color-primary-400);
+}
+
+.group-item.selected:hover {
+  background: var(--color-surface-selected);
+  border-color: var(--color-primary-400);
+  transform: none;
+}
+
+.group-name {
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.group-item.selected .group-name {
+  color: var(--color-primary-400);
+}
+
+.group-count {
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
+/* Align Panel Specific */
+.align-panel {
+  min-width: 320px;
+}
+
+.align-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  padding-bottom: var(--spacing-2);
+}
+
+.align-section:not(:last-child) {
+  border-bottom: 1px solid var(--color-border-secondary);
+}
+
+.align-buttons {
+  display: flex;
+  gap: var(--spacing-1);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.align-button {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-surface-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  transition: var(--transition-button);
+  cursor: pointer;
+}
+
+.align-button:hover:not(:disabled) {
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-border-hover);
+  color: var(--color-text-primary);
+  transform: translateY(-1px);
+}
+
+.align-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.align-button:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-sm);
+}
+
+.align-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.align-button.disabled,
+.align-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background-color: var(--color-surface-disabled);
+}
+
+.align-separator {
+  width: 1px;
+  height: 24px;
+  background: var(--color-border-secondary);
+  margin: 0 var(--spacing-1);
+}
+
+.align-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2);
+  background: var(--color-surface-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-secondary);
+}
+
+.align-info-text {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+
+/* Group buttons with labels */
+.align-buttons .toolbar-item-label {
+  margin-left: var(--spacing-1-5);
+}
+
+/* Stats section for toolbar panels */
+.toolbar-stats {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--spacing-2);
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-tertiary);
+  border-top: 1px solid var(--color-border-secondary);
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .toolbar-panel {
+    min-width: 260px;
+  }
+  
+  .align-panel {
+    min-width: 260px;
+  }
+  
+  .align-button {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .align-button svg {
+    width: 16px;
+    height: 16px;
+  }
+}

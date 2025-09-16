@@ -1,14 +1,14 @@
 import Konva from 'konva'
 import React, { useEffect, useRef } from 'react'
-import { Layer, Image as KonvaImage, Transformer } from 'react-konva'
-
+import { Layer, Image as KonvaImage } from 'react-konva'
+import { useStore } from '../../../store/store'
+import { MultiTransformer } from './MultiTransformer'
 import { CanvasTool } from '../hooks/useCanvasTools'
 import type { KonvaImageData } from '../hooks/useImageManagement'
 
 interface ImageLayerProps {
   // Image data
   images: KonvaImageData[]
-  selectedId: string | null
   activeImageRoles: Array<{ imageId: string; role: string }>
   canvasSelectionMode: {
     active: boolean
@@ -19,7 +19,6 @@ interface ImageLayerProps {
   currentTool: CanvasTool
 
   // Callbacks
-  onImageSelect: (imageId: string | null) => void
   onImageDragStart: (imageId: string) => void
   onImageDragMove: (imageId: string, x: number, y: number) => { x: number; y: number }
   onImageDragEnd: (imageId: string, newX: number, newY: number) => void
@@ -39,11 +38,9 @@ interface ImageLayerProps {
  */
 function ImageLayerComponent({
   images,
-  selectedId,
   activeImageRoles,
-  _canvasSelectionMode,
+  canvasSelectionMode: _canvasSelectionMode,
   currentTool,
-  onImageSelect,
   onImageDragStart,
   onImageDragMove,
   onImageDragEnd,
@@ -52,64 +49,65 @@ function ImageLayerComponent({
   isImageDraggable,
   getImageBorderColor,
   getImageOpacity,
-  getTransformerConfig,
 }: ImageLayerProps) {
-  const transformerRef = useRef<Konva.Transformer>(null)
   const layerRef = useRef<Konva.Layer>(null)
 
+  // Add ref to track if selection box just completed
+  const selectionBoxJustCompleted = useRef(false)
+  
+  // Get multi-selection state from store
+  const selectedIds = useStore((state) => state.selectedIds)
+  const selectItem = useStore((state) => state.selectItem)
+  const deselectAll = useStore((state) => state.deselectAll)
+  const isSelected = useStore((state) => state.isSelected)
+  const selectionBox = useStore((state) => state.selectionBox)
+
   /**
-   * Update transformer when selection changes
+   * Handle image selection with modifier keys
    */
-  useEffect(() => {
-    if (!transformerRef.current || !layerRef.current) {
+  const handleImageSelect = (imageId: string, e: Konva.KonvaEventObject<PointerEvent>) => {
+    if (currentTool !== CanvasTool.SELECT) return
+
+    const evt = e.evt
+    
+    // Check if this is a right-click (button 2)
+    if (evt.button === 2) {
+      // If the image is already selected, don't change selection
+      if (isSelected(imageId)) {
+        e.cancelBubble = true
+        return
+      }
+      // If right-clicking an unselected image, select only that image
+      selectItem(imageId, 'none')
+      e.cancelBubble = true
       return
     }
+    
+    let modifier: 'none' | 'shift' | 'ctrl' | 'ctrl-shift' = 'none'
 
-    const transformer = transformerRef.current
-    const layer = layerRef.current
-
-    if (selectedId && currentTool === CanvasTool.SELECT) {
-      // Find the selected node
-      const selectedNode = layer.findOne(`#${selectedId}`)
-
-      if (selectedNode) {
-        // Attach transformer to the selected node
-        transformer.nodes([selectedNode])
-        layer.batchDraw()
-      }
-    } else {
-      // Clear transformer
-      transformer.nodes([])
-      layer.batchDraw()
+    if (evt.ctrlKey || evt.metaKey) {
+      modifier = evt.shiftKey ? 'ctrl-shift' : 'ctrl'
+    } else if (evt.shiftKey) {
+      modifier = 'shift'
     }
-  }, [selectedId, currentTool])
 
-  /**
-   * Cleanup transformer on unmount only
-   */
-  useEffect(() => {
-    return () => {
-      if (transformerRef.current) {
-        transformerRef.current.nodes([])
-        transformerRef.current.destroy()
-      }
-    }
-  }, [])
+    selectItem(imageId, modifier)
+    e.cancelBubble = true // Stop event from bubbling to stage
+  }
 
   /**
    * Handle drag start
    */
   const handleDragStart = (e: Konva.KonvaEventObject<DragEvent>, imageId: string) => {
-    // Select on drag start if not already selected
-    if (currentTool === CanvasTool.SELECT && selectedId !== imageId) {
-      onImageSelect(imageId)
+    // If dragging an unselected image, select only that image
+    if (!isSelected(imageId)) {
+      selectItem(imageId, 'none')
     }
 
     // Notify snapping system
     onImageDragStart(imageId)
 
-    // Don't cache layers - causes more issues than it solves
-    // Just ensure smooth dragging through Konva's internal optimizations
+    // Cache for performance
     e.target.cache()
     e.target.getLayer()?.batchDraw()
   }
@@ -119,12 +117,32 @@ function ImageLayerComponent({
    */
   const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>, imageId: string) => {
     const node = e.target
-    
+
     // Apply snapping
     const snappedPos = onImageDragMove(imageId, node.x(), node.y())
     node.x(snappedPos.x)
     node.y(snappedPos.y)
-    
+
+    // If multiple items selected, move them all together
+    if (selectedIds.size > 1) {
+      const deltaX = snappedPos.x - images.find(img => img.id === imageId)!.x
+      const deltaY = snappedPos.y - images.find(img => img.id === imageId)!.y
+      
+      // Move other selected items
+      selectedIds.forEach((id) => {
+        if (id !== imageId) {
+          const otherNode = layerRef.current?.findOne(`#${id}`)
+          if (otherNode) {
+            const img = images.find(i => i.id === id)
+            if (img) {
+              otherNode.x(img.x + deltaX)
+              otherNode.y(img.y + deltaY)
+            }
+          }
+        }
+      })
+    }
+
     // Keep image on screen
     if (!node.isClientRectOnScreen()) {
       const stage = node.getStage()
@@ -165,19 +183,51 @@ function ImageLayerComponent({
     // Update position
     onImageDragEnd(imageId, node.x(), node.y())
 
+    // If multiple items selected, update all their positions
+    if (selectedIds.size > 1) {
+      const batchUpdatePositions = useStore.getState().batchUpdatePositions
+      const updates = Array.from(selectedIds).map((id) => {
+        const imgNode = layerRef.current?.findOne(`#${id}`)
+        if (imgNode) {
+          return { id, x: imgNode.x(), y: imgNode.y() }
+        }
+        return null
+      }).filter(Boolean) as Array<{id: string, x: number, y: number}>
+      
+      if (updates.length > 0) {
+        batchUpdatePositions(updates)
+      }
+    }
+
     // Force redraw
     node.getLayer()?.batchDraw()
   }
 
   /**
-   * Handle transform end
+   * Handle transform end for multi-selection
    */
-  const handleTransformEnd = () => {
-    if (selectedId && transformerRef.current) {
-      const nodes = transformerRef.current.nodes()
-      if (nodes.length > 0) {
-        const node = nodes[0]
-        onImageTransformEnd(selectedId, node)
+  const handleMultiTransformEnd = () => {
+    if (selectedIds.size > 0) {
+      const batchUpdateTransforms = useStore.getState().batchUpdateTransforms
+      const updates = Array.from(selectedIds).map((id) => {
+        const node = layerRef.current?.findOne(`#${id}`)
+        if (node) {
+          return {
+            id,
+            transform: {
+              x: node.x(),
+              y: node.y(),
+              scaleX: node.scaleX(),
+              scaleY: node.scaleY(),
+              rotation: node.rotation(),
+            }
+          }
+        }
+        return null
+      }).filter(Boolean) as Array<{id: string, transform: any}>
+      
+      if (updates.length > 0) {
+        batchUpdateTransforms(updates)
       }
     }
   }
@@ -186,16 +236,16 @@ function ImageLayerComponent({
    * Get stroke width based on selection and role
    */
   const getStrokeWidth = (imageId: string) => {
-    const isSelected = selectedId === imageId
+    const selected = isSelected(imageId)
     const hasRole = activeImageRoles.some((r) => r.imageId === imageId)
-    return isSelected || hasRole ? 3 : 0
+    return selected || hasRole ? 3 : 0
   }
 
   /**
    * Get shadow properties for selected images
    */
   const getShadowProps = (imageId: string) => {
-    if (selectedId === imageId) {
+    if (isSelected(imageId)) {
       return {
         shadowBlur: 10,
         shadowColor: getImageBorderColor(imageId),
@@ -205,10 +255,51 @@ function ImageLayerComponent({
     return {}
   }
 
+  // Track when selection box changes
+  useEffect(() => {
+    if (selectionBox === null) {
+      // Selection box just completed
+      selectionBoxJustCompleted.current = true
+      setTimeout(() => {
+        selectionBoxJustCompleted.current = false
+      }, 100)
+    }
+  }, [selectionBox])
+
+  // Handle clicks on empty stage area
+  useEffect(() => {
+    const layer = layerRef.current
+    if (!layer) return
+
+    const stage = layer.getStage()
+    if (!stage) return
+
+    const handleStageClick = (e: Konva.KonvaEventObject<PointerEvent>) => {
+      // Don't deselect if event was cancelled (e.g., from selection box)
+      if (e.cancelBubble) return
+      
+      // Don't deselect if selection box just completed
+      if (selectionBoxJustCompleted.current) return
+      
+      // Check if we clicked on empty area
+      if (e.target === stage || e.target === layer) {
+        deselectAll()
+      }
+    }
+
+    stage.on('click', handleStageClick)
+    return () => {
+      stage.off('click', handleStageClick)
+    }
+  }, [deselectAll])
+
+  // Sort images by z-index for proper rendering order
+  const sortedImages = [...images].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0))
+
   return (
     <Layer ref={layerRef}>
       {/* Render images */}
-      {images.map((img) => (
+      {sortedImages.map((img) => (
         <KonvaImage
           key={img.id}
           id={img.id}
@@ -221,34 +312,37 @@ function ImageLayerComponent({
           draggable={isImageDraggable(img.id)}
           dragDistance={1} // Small threshold to prevent accidental drags
           // Selection
-          onPointerDown={(e) => {
-            if (currentTool === CanvasTool.SELECT) {
-              onImageSelect(img.id)
-              e.cancelBubble = true // Stop event from bubbling to stage
-            }
-          }}
+          onPointerDown={(e) => handleImageSelect(img.id, e)}
           // Dragging
           onDragStart={(e) => handleDragStart(e, img.id)}
           onDragMove={(e) => handleDragMove(e, img.id)}
           onDragEnd={(e) => handleDragEnd(e, img.id)}
           // Styling
-          stroke={getImageBorderColor(img.id)}
+          stroke={isSelected(img.id) ? 'rgb(59, 130, 246)' : getImageBorderColor(img.id)}
           strokeWidth={getStrokeWidth(img.id)}
           hitStrokeWidth={0} // Prevent stroke from interfering with events
           opacity={getImageOpacity(img.id)}
           {...getShadowProps(img.id)}
           // Events
           listening={true}
-          onContextMenu={(e) => onContextMenu(e, img.id)}
+          onContextMenu={(e) => {
+            // Ensure image is selected before showing context menu
+            if (!isSelected(img.id)) {
+              // If not selected, select only this image
+              selectItem(img.id, 'none')
+            }
+            onContextMenu(e, img.id)
+          }}
         />
       ))}
 
-      {/* Transformer for selected image */}
-      <Transformer
-        ref={transformerRef}
-        {...getTransformerConfig()}
-        onTransformEnd={handleTransformEnd}
-      />
+      {/* Multi-selection transformer */}
+      {currentTool === CanvasTool.SELECT && selectedIds && selectedIds.size > 0 && (
+        <MultiTransformer 
+          selectedIds={Array.from(selectedIds)}
+          onTransformEnd={handleMultiTransformEnd}
+        />
+      )}
     </Layer>
   )
 }

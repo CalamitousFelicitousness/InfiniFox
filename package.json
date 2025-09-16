@@ -23,12 +23,13 @@
     "python:typecheck": "mypy ."
   },
   "dependencies": {
+    "immer": "^10.1.3",
     "konva": "10.0.0",
     "lucide-react": "0.543.0",
     "perfect-freehand": "1.2.2",
     "react": "19.1.1",
     "react-dom": "19.1.1",
-    "react-konva": "19.0.7",
+    "react-konva": "19.0.8",
     "zustand": "^5.0.8"
   },
   "devDependencies": {

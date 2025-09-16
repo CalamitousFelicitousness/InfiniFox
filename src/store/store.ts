@@ -1,5 +1,9 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import { enableMapSet } from 'immer'
+
+// Enable Immer MapSet plugin for Map/Set support
+enableMapSet()
 
 // Import all slices and setStoreRef from index
 import {
@@ -10,6 +14,8 @@ import {
   createGenerationActionsSlice,
   createDrawingSlice,
   createAuthSlice,
+  createSelectionSlice,
+  createGroupingSlice,
   setStoreRef,
   type GenerationSlice,
   type ModelSlice,
@@ -18,6 +24,8 @@ import {
   type GenerationActionsSlice,
   type DrawingSlice,
   type AuthSlice,
+  type SelectionSlice,
+  type GroupingSlice,
 } from './slices'
 
 // Re-export types for convenience
@@ -30,7 +38,9 @@ export type AppState = GenerationSlice &
   CanvasSlice &
   GenerationActionsSlice &
   DrawingSlice &
-  AuthSlice
+  AuthSlice &
+  SelectionSlice &
+  GroupingSlice
 
 // Create the store by combining all slices
 export const useStore = create<AppState>()(
@@ -43,6 +53,8 @@ export const useStore = create<AppState>()(
       ...createGenerationActionsSlice(...a),
       ...createDrawingSlice(...a),
       ...createAuthSlice(...a),
+      ...createSelectionSlice(...a),
+      ...createGroupingSlice(...a),
     }),
     {
       name: 'sdnextnewui-store',

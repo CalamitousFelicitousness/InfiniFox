@@ -12,6 +12,7 @@ interface CanvasContextMenuProps {
   y: number
   imageId: string | null
   frameId?: string | null
+  selectedIds?: Set<string>  // Multi-selection support
   onDelete: () => void
   onDuplicate: () => void
   onSendToImg2Img: () => void
@@ -21,6 +22,19 @@ interface CanvasContextMenuProps {
   onGenerateHere: () => void
   onPlaceEmptyFrame: () => void
   onClose: () => void
+  // Multi-selection operations
+  onGroupSelection?: () => void
+  onUngroupSelection?: () => void
+  onAlignLeft?: () => void
+  onAlignCenter?: () => void
+  onAlignRight?: () => void
+  onAlignTop?: () => void
+  onAlignMiddle?: () => void
+  onAlignBottom?: () => void
+  onDistributeHorizontally?: () => void
+  onDistributeVertically?: () => void
+  onBringToFront?: () => void
+  onSendToBack?: () => void
 }
 
 export function CanvasContextMenu({
@@ -29,6 +43,7 @@ export function CanvasContextMenu({
   y,
   imageId,
   frameId,
+  selectedIds,
   onDelete,
   onDuplicate,
   onSendToImg2Img,
@@ -38,6 +53,18 @@ export function CanvasContextMenu({
   onGenerateHere,
   onPlaceEmptyFrame,
   onClose,
+  onGroupSelection,
+  onUngroupSelection,
+  onAlignLeft,
+  onAlignCenter,
+  onAlignRight,
+  onAlignTop,
+  onAlignMiddle,
+  onAlignBottom,
+  onDistributeHorizontally,
+  onDistributeVertically,
+  onBringToFront,
+  onSendToBack,
 }: CanvasContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -102,6 +129,7 @@ export function CanvasContextMenu({
   const currentRole = imageId ? getImageRole(imageId) : null
   const roleIndicator = currentRole ? ` (Active: ${currentRole})` : ''
   const currentFrame = frameId ? generationFrames.find((f) => f.id === frameId) : null
+  const isMultiSelection = selectedIds && selectedIds.size > 1 && imageId && selectedIds.has(imageId)
 
   if (frameId && currentFrame) {
     return (
@@ -148,6 +176,227 @@ export function CanvasContextMenu({
           }}
         >
           Delete Frame
+        </button>
+      </div>
+    )
+  }
+
+  // Multi-selection context menu
+  if (isMultiSelection) {
+    return (
+      <div
+        ref={menuRef}
+        className="menu canvas-context-menu"
+        style={{
+          position: 'absolute',
+          left: `${x}px`,
+          top: `${y}px`,
+        }}
+      >
+        <div className="menu-header">
+          <span className="menu-header-text">{selectedIds?.size} items selected</span>
+        </div>
+        
+        {/* Grouping Operations */}
+        {onGroupSelection && (
+          <button
+            className="menu-item"
+            onPointerDown={(e) => {
+              e.preventDefault()
+              onGroupSelection()
+              onClose()
+            }}
+          >
+            Group Selection (Ctrl+G)
+          </button>
+        )}
+        {onUngroupSelection && (
+          <button
+            className="menu-item"
+            onPointerDown={(e) => {
+              e.preventDefault()
+              onUngroupSelection()
+              onClose()
+            }}
+          >
+            Ungroup Selection (Ctrl+Shift+G)
+          </button>
+        )}
+        
+        <hr className="menu-divider" />
+        
+        {/* Alignment Operations */}
+        <div className="menu-section">
+          <span className="menu-section-title">Align</span>
+          <div className="menu-grid">
+            {onAlignLeft && (
+              <button
+                className="menu-item-small"
+                onPointerDown={(e) => {
+                  e.preventDefault()
+                  onAlignLeft()
+                  onClose()
+                }}
+                title="Align Left"
+              >
+                ⬅
+              </button>
+            )}
+            {onAlignCenter && (
+              <button
+                className="menu-item-small"
+                onPointerDown={(e) => {
+                  e.preventDefault()
+                  onAlignCenter()
+                  onClose()
+                }}
+                title="Align Center"
+              >
+                ↔
+              </button>
+            )}
+            {onAlignRight && (
+              <button
+                className="menu-item-small"
+                onPointerDown={(e) => {
+                  e.preventDefault()
+                  onAlignRight()
+                  onClose()
+                }}
+                title="Align Right"
+              >
+                ➡
+              </button>
+            )}
+            {onAlignTop && (
+              <button
+                className="menu-item-small"
+                onPointerDown={(e) => {
+                  e.preventDefault()
+                  onAlignTop()
+                  onClose()
+                }}
+                title="Align Top"
+              >
+                ⬆
+              </button>
+            )}
+            {onAlignMiddle && (
+              <button
+                className="menu-item-small"
+                onPointerDown={(e) => {
+                  e.preventDefault()
+                  onAlignMiddle()
+                  onClose()
+                }}
+                title="Align Middle"
+              >
+                ↕
+              </button>
+            )}
+            {onAlignBottom && (
+              <button
+                className="menu-item-small"
+                onPointerDown={(e) => {
+                  e.preventDefault()
+                  onAlignBottom()
+                  onClose()
+                }}
+                title="Align Bottom"
+              >
+                ⬇
+              </button>
+            )}
+          </div>
+        </div>
+        
+        {/* Distribution Operations */}
+        {(onDistributeHorizontally || onDistributeVertically) && (
+          <>
+            <div className="menu-section">
+              <span className="menu-section-title">Distribute</span>
+              <div className="menu-grid">
+                {onDistributeHorizontally && (
+                  <button
+                    className="menu-item-small"
+                    onPointerDown={(e) => {
+                      e.preventDefault()
+                      onDistributeHorizontally()
+                      onClose()
+                    }}
+                    title="Distribute Horizontally"
+                  >
+                    ⬌
+                  </button>
+                )}
+                {onDistributeVertically && (
+                  <button
+                    className="menu-item-small"
+                    onPointerDown={(e) => {
+                      e.preventDefault()
+                      onDistributeVertically()
+                      onClose()
+                    }}
+                    title="Distribute Vertically"
+                  >
+                    ⬍
+                  </button>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+        
+        <hr className="menu-divider" />
+        
+        {/* Arrangement Operations */}
+        {onBringToFront && (
+          <button
+            className="menu-item"
+            onPointerDown={(e) => {
+              e.preventDefault()
+              onBringToFront()
+              onClose()
+            }}
+          >
+            Bring to Front (Ctrl+Shift+])
+          </button>
+        )}
+        {onSendToBack && (
+          <button
+            className="menu-item"
+            onPointerDown={(e) => {
+              e.preventDefault()
+              onSendToBack()
+              onClose()
+            }}
+          >
+            Send to Back (Ctrl+Shift+[)
+          </button>
+        )}
+        
+        <hr className="menu-divider" />
+        
+        {/* Basic Operations */}
+        <button
+          className="menu-item"
+          onPointerDown={(e) => {
+            e.preventDefault()
+            onDuplicate()
+            onClose()
+          }}
+        >
+          Duplicate All (Ctrl+D)
+        </button>
+        <button
+          className="menu-item menu-item-danger"
+          onPointerDown={(e) => {
+            e.preventDefault()
+            onDelete()
+            onClose()
+          }}
+        >
+          Delete All (Delete)
         </button>
       </div>
     )

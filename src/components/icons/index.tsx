@@ -116,6 +116,19 @@ export {
   PanelRight as PanelRightIcon,
   Magnet,
   Ruler,
+  
+  // Alignment
+  AlignHorizontalDistributeCenter as AlignHorizontalSpaceAroundIcon,
+  AlignVerticalDistributeCenter as AlignVerticalSpaceAroundIcon,
+  AlignStartVertical as AlignStartVerticalIcon,
+  AlignEndVertical as AlignEndVerticalIcon,
+  AlignStartHorizontal as AlignStartHorizontalIcon,
+  AlignEndHorizontal as AlignEndHorizontalIcon,
+  AlignCenterHorizontal as AlignCenterHorizontalIcon,
+  AlignCenterVertical as AlignCenterVerticalIcon,
+  Group as GroupIcon,
+  Ungroup as UngroupIcon,
+  Layers2 as Layers2Icon,
 
   // Media controls
   Volume2 as VolumeIcon,

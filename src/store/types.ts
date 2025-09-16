@@ -3,6 +3,30 @@ import type { StateCreator } from 'zustand'
 import type { ProgressMethod } from '../services/progress/ProgressService'
 import type { Sampler, SdModel } from '../types/sdnext'
 
+// Multi-selection state types
+export interface SelectionBox {
+  active: boolean
+  startX: number
+  startY: number
+  endX: number
+  endY: number
+}
+
+export interface SelectionBounds {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+export interface SelectionGroup {
+  id: string
+  bounds: SelectionBounds
+}
+
+export type SelectionModifier = 'none' | 'shift' | 'ctrl' | 'ctrl-shift'
+export type SelectionMode = 'single' | 'multi'
+
 // Updated Image type to use Object URLs
 export interface ImageData {
   id: string
@@ -14,6 +38,8 @@ export interface ImageData {
   scaleX?: number
   scaleY?: number
   rotation?: number
+  selected?: boolean // Quick lookup for selection state
+  zIndex?: number // Layer ordering
   metadata?: {
     type: 'generated' | 'uploaded' | 'reference'
     prompt?: string

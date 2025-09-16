@@ -10,10 +10,25 @@ interface ShortcutHandlers {
   onUndo?: () => void
   onRedo?: () => void
   onClearCanvas?: () => void
+  onSelectAll?: () => void
+  onDeselectAll?: () => void
+  onMoveSelected?: (direction: 'up' | 'down' | 'left' | 'right') => void
 }
 
 export function useKeyboardShortcuts(handlers: ShortcutHandlers = {}) {
-  const { clearCanvas } = useStore()
+  const { 
+    clearCanvas, 
+    selectAll, 
+    deselectAll, 
+    moveSelectedImagesWithHistory,
+    deleteSelectedImagesWithHistory,
+    duplicateSelectedImagesWithHistory,
+    selectedIds,
+    bringToFront,
+    sendToBack,
+    bringForward,
+    sendBackward,
+  } = useStore()
   const { undo, redo, canUndo, canRedo } = useHistoryStore()
 
   useEffect(() => {
@@ -37,16 +52,95 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers = {}) {
         handlers.onGenerate?.()
       }
 
+      // Select All (Ctrl/Cmd + A)
+      if (ctrlOrCmd && e.key === 'a') {
+        e.preventDefault()
+        selectAll()
+        handlers.onSelectAll?.()
+      }
+
+      // Deselect All (Escape)
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        deselectAll()
+        handlers.onDeselectAll?.()
+      }
+
       // Delete (Delete or Backspace)
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault()
-        handlers.onDelete?.()
+        if (selectedIds.size > 0) {
+          deleteSelectedImagesWithHistory()
+        } else {
+          handlers.onDelete?.()
+        }
       }
 
       // Duplicate (Ctrl/Cmd + D)
       if (ctrlOrCmd && e.key === 'd') {
         e.preventDefault()
-        handlers.onDuplicate?.()
+        if (selectedIds.size > 0) {
+          duplicateSelectedImagesWithHistory()
+        } else {
+          handlers.onDuplicate?.()
+        }
+      }
+
+      // Move Selection (Arrow Keys)
+      if (!ctrlOrCmd && !e.shiftKey && !e.altKey) {
+        const moveDistance = e.shiftKey ? 50 : 10 // Shift for larger moves
+        
+        if (e.key === 'ArrowUp') {
+          e.preventDefault()
+          if (selectedIds.size > 0) {
+            moveSelectedImagesWithHistory(0, -moveDistance)
+            handlers.onMoveSelected?.('up')
+          }
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault()
+          if (selectedIds.size > 0) {
+            moveSelectedImagesWithHistory(0, moveDistance)
+            handlers.onMoveSelected?.('down')
+          }
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault()
+          if (selectedIds.size > 0) {
+            moveSelectedImagesWithHistory(-moveDistance, 0)
+            handlers.onMoveSelected?.('left')
+          }
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault()
+          if (selectedIds.size > 0) {
+            moveSelectedImagesWithHistory(moveDistance, 0)
+            handlers.onMoveSelected?.('right')
+          }
+        }
+      }
+
+      // Z-Index Management
+      if (ctrlOrCmd && selectedIds.size > 0) {
+        const selectedIdsArray = Array.from(selectedIds)
+        
+        // Bring to Front (Ctrl/Cmd + ])
+        if (e.key === ']' && e.shiftKey) {
+          e.preventDefault()
+          bringToFront(selectedIdsArray)
+        }
+        // Send to Back (Ctrl/Cmd + [)
+        else if (e.key === '[' && e.shiftKey) {
+          e.preventDefault()
+          sendToBack(selectedIdsArray)
+        }
+        // Bring Forward (Ctrl/Cmd + ])
+        else if (e.key === ']' && !e.shiftKey) {
+          e.preventDefault()
+          bringForward(selectedIdsArray)
+        }
+        // Send Backward (Ctrl/Cmd + [)
+        else if (e.key === '[' && !e.shiftKey) {
+          e.preventDefault()
+          sendBackward(selectedIdsArray)
+        }
       }
 
       // Undo (Ctrl/Cmd + Z)
@@ -80,5 +174,22 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers = {}) {
     return () => {
       document.removeEventListener('keydown', handleKeyDown, { capture: true })
     }
-  }, [handlers, clearCanvas, undo, redo, canUndo, canRedo])
+  }, [
+    handlers, 
+    clearCanvas, 
+    selectAll,
+    deselectAll,
+    moveSelectedImagesWithHistory,
+    deleteSelectedImagesWithHistory,
+    duplicateSelectedImagesWithHistory,
+    selectedIds,
+    bringToFront,
+    sendToBack,
+    bringForward,
+    sendBackward,
+    undo, 
+    redo, 
+    canUndo, 
+    canRedo
+  ])
 }
