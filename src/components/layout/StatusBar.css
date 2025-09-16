@@ -1,0 +1,560 @@
+/* StatusBar.css - Static status bar styles for InfiniFox */
+
+.status-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  background-color: var(--color-background-secondary);
+  border-top: 1px solid var(--color-border-primary);
+  z-index: 100; /* Above canvas but below modals */
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Layout wrapper for left/right sections */
+.status-bar__layout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  padding: 0 12px;
+  position: relative;
+}
+
+/* Section containers with smart layout */
+.status-bar__section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 100%;
+}
+
+.status-bar__section--left {
+  /* Left section grows but has max width */
+  flex: 1 1 auto;
+  justify-content: flex-start;
+  max-width: 40%;
+  min-width: 0;
+}
+
+.status-bar__section--center {
+  /* Center section is absolutely positioned to stay centered */
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Prevent overlap with sides */
+  max-width: calc(100% - 480px);
+  padding: 0 20px;
+  /* Higher z-index to appear above left/right when needed */
+  z-index: 1;
+  /* Add backdrop for better readability when overlapping */
+  pointer-events: none;
+}
+
+.status-bar__section--center > * {
+  pointer-events: auto;
+}
+
+.status-bar__section--right {
+  /* Right section grows but has max width */
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  max-width: 40%;
+  min-width: 0;
+}
+
+/* Responsive width adjustments */
+@media (max-width: 1200px) {
+  .status-bar__section--center {
+    max-width: calc(100% - 440px);
+  }
+}
+
+@media (max-width: 1024px) {
+  .status-bar__section--center {
+    max-width: calc(100% - 400px);
+  }
+}
+
+@media (max-width: 900px) {
+  .status-bar__section--center {
+    max-width: calc(100% - 360px);
+    padding: 0 15px;
+  }
+}
+
+@media (max-width: 768px) {
+  .status-bar__layout {
+    padding: 0 8px;
+  }
+  
+  .status-bar__section {
+    gap: 8px;
+  }
+  
+  .status-bar__section--center {
+    max-width: calc(100% - 300px);
+    padding: 0 10px;
+  }
+  
+  /* Hide less important items on mobile */
+  .status-bar__item--hide-mobile {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  /* On very small screens, hide center completely */
+  .status-bar__section--center {
+    display: none;
+  }
+  
+  .status-bar__section--left,
+  .status-bar__section--right {
+    max-width: 50%;
+  }
+}
+
+/* Status bar items */
+.status-bar__item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+/* Add ellipsis for long content */
+.status-bar__item--truncate {
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.status-bar__item--truncate .status-bar__value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-bar__label {
+  color: var(--color-text-tertiary);
+  font-weight: var(--font-weight-medium);
+  flex-shrink: 0;
+}
+
+.status-bar__value {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-normal);
+}
+
+/* Tool indicator */
+.status-bar__tool {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  background-color: var(--color-background-tertiary);
+  border-radius: 3px;
+  border: 1px solid var(--color-border-secondary);
+  flex-shrink: 0;
+}
+
+.status-bar__tool svg {
+  color: var(--color-text-primary);
+}
+
+/* Icon styling */
+.status-bar__icon {
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+/* Divider */
+.status-bar__divider {
+  width: 1px;
+  height: 16px;
+  background-color: var(--color-border-primary);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+/* Zoom controls */
+.status-bar__zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 24px;
+  background-color: var(--color-background-tertiary);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 4px;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+
+/* Buttons */
+.status-bar__button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 20px;
+  padding: 0;
+  background-color: transparent;
+  border: none;
+  border-radius: 3px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--duration-base) var(--easing-ease);
+}
+
+.status-bar__button:hover {
+  background-color: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+.status-bar__button:active {
+  background-color: var(--color-surface-active);
+  transform: scale(0.95);
+}
+
+.status-bar__button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.status-bar__button:disabled:hover {
+  background-color: transparent;
+  color: var(--color-text-secondary);
+}
+
+/* Zoom level button */
+.status-bar__zoom-level {
+  min-width: 48px;
+  height: 20px;
+  padding: 0 6px;
+  background-color: transparent;
+  border: none;
+  border-radius: 3px;
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all var(--duration-base) var(--easing-ease);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-bar__zoom-level:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.status-bar__zoom-level:active {
+  background-color: var(--color-surface-active);
+}
+
+/* Selection info styling */
+.status-bar__selection {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 8px;
+  background-color: var(--color-background-tertiary);
+  border-radius: 4px;
+  border: 1px solid var(--color-border-secondary);
+  white-space: nowrap;
+  /* Ensure selection info has backdrop */
+  position: relative;
+  z-index: 1;
+}
+
+/* Add subtle backdrop blur for center section when it might overlap */
+@supports (backdrop-filter: blur(10px)) {
+  .status-bar__selection {
+    backdrop-filter: blur(10px);
+    background-color: rgba(var(--color-background-tertiary-rgb, 42, 42, 42), 0.9);
+  }
+}
+
+/* Empty state */
+.status-bar__empty-state {
+  color: var(--color-text-tertiary);
+  font-style: italic;
+  white-space: nowrap;
+}
+
+/* Badge for special states */
+.status-bar__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 6px;
+  margin-left: 4px;
+  background-color: var(--color-primary-500);
+  color: var(--color-text-on-primary);
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+/* Selection button */
+.status-bar__selection-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 6px;
+  background-color: transparent;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--easing-ease);
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  white-space: nowrap;
+}
+
+.status-bar__selection-button:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.status-bar__selection-button:active {
+  background-color: var(--color-surface-active);
+}
+
+.status-bar__selection-button--subtle {
+  opacity: 0.7;
+}
+
+.status-bar__selection-button--subtle:hover {
+  opacity: 1;
+}
+
+/* Keyboard state display */
+.status-bar__keyboard-state {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.status-bar__key {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 6px;
+  background-color: var(--color-background-tertiary);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.status-bar__key--active {
+  background-color: var(--color-primary-500);
+  border-color: var(--color-primary-600);
+  color: var(--color-text-on-primary);
+}
+
+.status-bar__key svg {
+  flex-shrink: 0;
+}
+
+/* Animation for value changes */
+@keyframes statusbar-value-update {
+  0% {
+    opacity: 0.5;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.status-bar__value--updating {
+  animation: statusbar-value-update 0.3s ease;
+}
+
+/* Selection highlight */
+.status-bar__value--highlight {
+  color: var(--color-primary-400);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Light theme adjustments */
+@media (prefers-color-scheme: light) {
+  .status-bar {
+    background-color: var(--color-gray-950);
+    border-top-color: var(--color-gray-800);
+    color: var(--color-gray-600);
+  }
+
+  .status-bar__label {
+    color: var(--color-gray-600);
+  }
+
+  .status-bar__value {
+    color: var(--color-gray-200);
+  }
+
+  .status-bar__tool {
+    background-color: var(--color-gray-1000);
+    border-color: var(--color-gray-800);
+  }
+
+  .status-bar__tool svg {
+    color: var(--color-gray-200);
+  }
+
+  .status-bar__divider {
+    background-color: var(--color-gray-800);
+  }
+
+  .status-bar__zoom-controls {
+    background-color: var(--color-gray-1000);
+    border-color: var(--color-gray-800);
+  }
+
+  .status-bar__button {
+    color: var(--color-gray-600);
+  }
+
+  .status-bar__button:hover {
+    background-color: var(--color-gray-900);
+    color: var(--color-gray-200);
+  }
+
+  .status-bar__button:active {
+    background-color: var(--color-gray-800);
+  }
+
+  .status-bar__zoom-level {
+    color: var(--color-gray-200);
+  }
+
+  .status-bar__zoom-level:hover {
+    background-color: var(--color-gray-900);
+  }
+
+  .status-bar__zoom-level:active {
+    background-color: var(--color-gray-800);
+  }
+
+  .status-bar__selection {
+    background-color: var(--color-gray-1000);
+    border-color: var(--color-gray-800);
+  }
+  
+  @supports (backdrop-filter: blur(10px)) {
+    .status-bar__selection {
+      background-color: rgba(255, 255, 255, 0.9);
+    }
+  }
+
+  .status-bar__value--highlight {
+    color: var(--color-primary-500);
+  }
+
+  .status-bar__icon {
+    color: var(--color-gray-600);
+  }
+
+  .status-bar__badge {
+    background-color: var(--color-primary-500);
+    color: white;
+  }
+
+  .status-bar__selection-button:hover {
+    background-color: var(--color-gray-900);
+  }
+
+  .status-bar__selection-button:active {
+    background-color: var(--color-gray-850);
+  }
+
+  .status-bar__key {
+    background-color: var(--color-gray-1000);
+    border-color: var(--color-gray-800);
+    color: var(--color-gray-600);
+  }
+
+  .status-bar__key--active {
+    background-color: var(--color-primary-500);
+    border-color: var(--color-primary-600);
+    color: white;
+  }
+}
+
+/* Responsive adjustments for small content */
+@media (max-width: 768px) {
+  .status-bar__selection {
+    padding: 2px 6px;
+    font-size: 11px;
+  }
+
+  .status-bar__empty-state {
+    font-size: 11px;
+  }
+
+  .status-bar__badge {
+    padding: 0 4px;
+    font-size: 9px;
+  }
+
+  .status-bar__keyboard-state {
+    gap: 3px;
+  }
+
+  .status-bar__key {
+    padding: 1px 4px;
+    font-size: 9px;
+  }
+
+  .status-bar__zoom-level {
+    min-width: 40px;
+    font-size: 10px;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .status-bar {
+    border-top-width: 2px;
+  }
+
+  .status-bar__tool,
+  .status-bar__zoom-controls {
+    border-width: 2px;
+  }
+
+  .status-bar__button:focus {
+    outline: 2px solid currentColor;
+    outline-offset: -2px;
+  }
+}
+
+/* Account for status bar height in canvas container */
+.canvas-container {
+  padding-bottom: 32px; /* Height of status bar */
+}

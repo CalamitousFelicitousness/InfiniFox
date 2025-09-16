@@ -2,26 +2,15 @@ import type Konva from 'konva'
 import React from 'react'
 
 import { CanvasMinimap } from '../CanvasMinimap'
-import { CanvasModeIndicator } from '../CanvasModeIndicator'
 import { DraggableCanvasToolbar } from '../DraggableCanvasToolbar'
-import { DraggableZoomControls } from '../DraggableZoomControls'
 import { FloatingDrawingPanel } from '../FloatingDrawingPanel'
 import { CanvasTool } from '../hooks/useCanvasTools'
 import { SizeIndicator } from '../SizeIndicator'
 
 interface CanvasOverlaysProps {
-  // Mode indicator
-  keyboardMode: string | null
-
   // Toolbar
   currentTool: CanvasTool
   onToolChange: (tool: CanvasTool) => void
-
-  // Zoom controls
-  scale: number
-  onZoomIn: () => void
-  onZoomOut: () => void
-  onResetViewport: () => void
 
   // Drawing panel
   isDrawingTool: boolean
@@ -29,6 +18,7 @@ interface CanvasOverlaysProps {
 
   // Size indicator
   selectedId: string | null
+  scale: number
   elements?: Array<{
     id: string
     x: number
@@ -56,16 +46,12 @@ interface CanvasOverlaysProps {
  * Centralizes overlay management and reduces clutter in the main Canvas component
  */
 export function CanvasOverlays({
-  keyboardMode,
   currentTool,
   onToolChange,
-  scale,
-  onZoomIn,
-  onZoomOut,
-  onResetViewport,
   isDrawingTool,
   drawingTool,
   selectedId,
+  scale,
   elements,
   position,
   canvasSelectionMode,
@@ -89,19 +75,8 @@ export function CanvasOverlays({
         </div>
       )}
 
-      {/* Keyboard mode indicator */}
-      <CanvasModeIndicator mode={keyboardMode} position="bottom-center" />
-
       {/* Tool toolbar */}
       <DraggableCanvasToolbar currentTool={currentTool} onToolChange={onToolChange} />
-
-      {/* Zoom controls */}
-      <DraggableZoomControls
-        scale={scale}
-        onZoomIn={onZoomIn}
-        onZoomOut={onZoomOut}
-        onReset={onResetViewport}
-      />
 
       {/* Floating drawing panel */}
       <FloatingDrawingPanel

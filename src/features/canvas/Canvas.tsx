@@ -2,6 +2,7 @@ import Konva from 'konva'
 import React, { useRef, useEffect, useMemo } from 'react'
 
 // Store and utilities
+import { StatusBar } from '../../components/layout/StatusBar'
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
 import { snappingManager } from '../../services/canvas/SnappingManager'
 import type { SnapGuide } from '../../services/canvas/SnappingManager'
@@ -18,7 +19,6 @@ import { FrameLayer } from './components/FrameLayer'
 import { GridLayer } from './components/GridLayer'
 import { ImageLayer } from './components/ImageLayer'
 import { SelectionBox } from './components/SelectionBox'
-import { SelectionCounter } from './components/SelectionCounter'
 import { SnapGuideLayer } from './components/SnapGuideLayer'
 import { CanvasToolbar } from './CanvasToolbar'
 import { useCanvasEvents } from './hooks/useCanvasEvents'
@@ -258,21 +258,14 @@ export function Canvas() {
         }}
       />
 
-      {/* Selection Counter */}
-      <SelectionCounter />
-
       {/* Canvas Overlays */}
       <CanvasOverlays
-        keyboardMode={tools.getKeyboardMode()}
         currentTool={tools.currentTool}
         onToolChange={tools.setCurrentTool}
-        scale={viewport.scale}
-        onZoomIn={viewport.zoomIn}
-        onZoomOut={viewport.zoomOut}
-        onResetViewport={viewport.resetViewport}
         isDrawingTool={tools.isDrawingTool}
         drawingTool={tools.currentTool === CanvasTool.ERASER ? 'eraser' : 'brush'}
         selectedId={images_.selectedId}
+        scale={viewport.scale}
         elements={images_.sizeIndicatorElements}
         position={viewport.position}
         canvasSelectionMode={canvasSelectionMode}
@@ -435,6 +428,16 @@ export function Canvas() {
         onUploadImage={() => handleContextMenuAction('uploadImage')}
         onGenerateHere={() => handleContextMenuAction('generateHere')}
         onPlaceEmptyFrame={() => handleContextMenuAction('placeEmptyFrame')}
+      />
+
+      {/* Status Bar */}
+      <StatusBar
+        zoom={viewport.scale}
+        onZoomIn={viewport.zoomIn}
+        onZoomOut={viewport.zoomOut}
+        onZoomReset={viewport.resetViewport}
+        currentTool={tools.currentTool}
+        isSpacePanning={tools.isSpacePressed}
       />
     </div>
   )
