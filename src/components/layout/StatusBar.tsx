@@ -19,6 +19,12 @@ interface StatusBarProps {
   isSpacePanning: boolean
 }
 
+type KeyboardModifierState = {
+  ctrl: boolean
+  shift: boolean
+  alt: boolean
+}
+
 export function StatusBar({
   zoom,
   onZoomIn,
@@ -80,45 +86,95 @@ export function StatusBar({
   const toolInfo = getToolInfo()
   
   // Track keyboard modifiers for shortcuts display
-  const [keyboardState, setKeyboardState] = React.useState({
+  const [keyboardState, setKeyboardState] = React.useState<KeyboardModifierState>({
     ctrl: false,
     shift: false,
     alt: false,
   })
-  
+  const keyboardStateRef = React.useRef<KeyboardModifierState>(keyboardState)
+
   React.useEffect(() => {
+    const updateKeyboardState = (nextState: KeyboardModifierState) => {
+      const currentState = keyboardStateRef.current
+
+      if (
+        nextState.ctrl === currentState.ctrl &&
+        nextState.shift === currentState.shift &&
+        nextState.alt === currentState.alt
+      ) {
+        return
+      }
+
+      keyboardStateRef.current = nextState
+      setKeyboardState(nextState)
+    }
+
+    const computeKeyboardState = (event: KeyboardEvent): KeyboardModifierState => ({
+      ctrl: event.ctrlKey || event.metaKey,
+      shift: event.shiftKey,
+      alt: event.altKey,
+    })
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      setKeyboardState(prev => ({
-        ...prev,
-        ctrl: e.ctrlKey || e.metaKey,
-        shift: e.shiftKey,
-        alt: e.altKey,
-      }))
+      updateKeyboardState(computeKeyboardState(e))
     }
-    
+
     const handleKeyUp = (e: KeyboardEvent) => {
-      setKeyboardState(prev => ({
-        ...prev,
-        ctrl: e.ctrlKey || e.metaKey,
-        shift: e.shiftKey,
-        alt: e.altKey,
-      }))
+      updateKeyboardState(computeKeyboardState(e))
     }
-    
+
     const handleBlur = () => {
-      setKeyboardState({ ctrl: false, shift: false, alt: false })
+      updateKeyboardState({ ctrl: false, shift: false, alt: false })
     }
-    
+
     window.addEventListener('keydown', handleKeyDown)
     window.addEventListener('keyup', handleKeyUp)
     window.addEventListener('blur', handleBlur)
-    
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
       window.removeEventListener('blur', handleBlur)
     }
   }, [])
+
+  const modifierDescriptors = [
+    {
+      id: 'ctrl',
+      isActive: keyboardState.ctrl,
+      title: 'Multi-select mode',
+      className: 'status-bar__key',
+      content: (
+        <>
+          <Command size={12} />
+          <span>Ctrl</span>
+        </>
+      ),
+    },
+    {
+      id: 'shift',
+      isActive: keyboardState.shift,
+      title: 'Range select mode',
+      className: 'status-bar__key',
+      content: <span>Shift</span>,
+    },
+    {
+      id: 'alt',
+      isActive: keyboardState.alt,
+      title: 'Alt key held',
+      className: 'status-bar__key',
+      content: <span>Alt</span>,
+    },
+    {
+      id: 'space',
+      isActive: isSpacePanning,
+      title: 'Pan mode active',
+      className: 'status-bar__key status-bar__key--active',
+      content: <span>Space</span>,
+    },
+  ]
+
+  const activeModifiers = modifierDescriptors.filter((descriptor) => descriptor.isActive)
   
   return (
     <div className="status-bar">
@@ -135,34 +191,24 @@ export function StatusBar({
           </div>
           
           {/* Show active keyboard modifiers */}
-          {(keyboardState.ctrl || keyboardState.shift || keyboardState.alt || isSpacePanning) && (
-            <>
-              <div className="status-bar__divider" />
-              <div className="status-bar__item status-bar__keyboard-state">
-                {keyboardState.ctrl && (
-                  <span className="status-bar__key" title="Multi-select mode">
-                    <Command size={12} />
-                    <span>Ctrl</span>
-                  </span>
-                )}
-                {keyboardState.shift && (
-                  <span className="status-bar__key" title="Range select mode">
-                    <span>Shift</span>
-                  </span>
-                )}
-                {keyboardState.alt && (
-                  <span className="status-bar__key" title="Alt key held">
-                    <span>Alt</span>
-                  </span>
-                )}
-                {isSpacePanning && (
-                  <span className="status-bar__key status-bar__key--active" title="Pan mode active">
-                    <span>Space</span>
-                  </span>
-                )}
-              </div>
-            </>
-          )}
+          <div
+            className="status-bar__divider"
+            style={{ display: activeModifiers.length > 0 ? 'block' : 'none' }}
+          />
+          <div
+            className="status-bar__item status-bar__keyboard-state"
+            style={{ display: activeModifiers.length > 0 ? 'flex' : 'none' }}
+          >
+            {activeModifiers.map((descriptor) => (
+              <span
+                key={descriptor.id}
+                className={descriptor.className}
+                title={descriptor.title}
+              >
+                {descriptor.content}
+              </span>
+            ))}
+          </div>
         </div>
         
         {/* Right section - Zoom controls (placed before center for layout) */}
