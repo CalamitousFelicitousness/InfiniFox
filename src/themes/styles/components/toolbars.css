@@ -50,14 +50,14 @@
 /* Draggable Toolbar */
 .toolbar-draggable {
   cursor: move;
-  
+
   &.dragging {
     opacity: 0.8;
     cursor: grabbing;
     box-shadow: var(--shadow-panel-floating);
     transform: scale(1.02);
   }
-  
+
   .toolbar-grip {
     display: flex;
     align-items: center;
@@ -66,16 +66,16 @@
     color: var(--color-text-tertiary);
     cursor: grab;
     transition: var(--transition-colors);
-    
+
     &:hover {
       color: var(--color-text-secondary);
     }
-    
+
     &:active {
       cursor: grabbing;
       color: var(--color-text-primary);
     }
-    
+
     .lucide-icon {
       width: 16px;
       height: 16px;
@@ -91,17 +91,17 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-1);
-  
+
   &:not(:last-child) {
     padding-right: var(--spacing-toolbar-group-gap);
     border-right: 1px solid var(--color-border-secondary);
     margin-right: var(--spacing-toolbar-group-gap);
   }
-  
+
   /* Vertical toolbar groups */
   .toolbar-vertical & {
     flex-direction: column;
-    
+
     &:not(:last-child) {
       padding-right: 0;
       padding-bottom: var(--spacing-toolbar-group-gap);
@@ -130,28 +130,28 @@
   color: var(--color-text-secondary);
   cursor: pointer;
   transition: var(--transition-button);
-  
+
   &:hover {
     background-color: var(--color-surface-hover);
     color: var(--color-text-primary);
   }
-  
+
   &:active {
     background-color: var(--color-surface-active);
   }
-  
+
   &.active {
     background-color: var(--color-surface-selected);
     color: var(--color-primary-400);
     border-color: var(--color-primary-500);
   }
-  
+
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     pointer-events: none;
   }
-  
+
   &:focus-visible {
     outline: none;
     box-shadow: var(--ring-sm);
@@ -178,20 +178,20 @@
   border-radius: var(--radius-toolbar-lg);
   box-shadow: var(--shadow-toolbar-floating);
   z-index: var(--z-sticky);
-  
+
   /* Collapsed state */
   &.collapsed {
     .toolbar-group:not(.toolbar-primary) {
       display: none;
     }
   }
-  
+
   /* Minimized state */
   &.minimized {
     transform: translateX(-50%) scale(0.9);
     opacity: 0.3;
     pointer-events: none;
-    
+
     &:hover {
       transform: translateX(-50%) scale(1);
       opacity: 1;
@@ -215,12 +215,12 @@
   border: 1px solid var(--custom-glass-border);
   border-radius: var(--radius-toolbar-lg);
   box-shadow: var(--shadow-toolbar-floating);
-  
+
   .tool-section {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-1);
-    
+
     .tool-label {
       font-size: var(--font-size-xs);
       font-weight: var(--font-weight-semibold);
@@ -229,24 +229,24 @@
       letter-spacing: var(--letter-spacing-wide);
       margin-bottom: var(--spacing-1);
     }
-    
+
     .tool-options {
       display: flex;
       gap: var(--spacing-1);
       flex-wrap: wrap;
     }
   }
-  
+
   .brush-size-slider {
     width: 100%;
     margin-top: var(--spacing-2);
   }
-  
+
   .color-palette {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
     gap: var(--spacing-1);
-    
+
     .color-swatch {
       width: 24px;
       height: 24px;
@@ -254,11 +254,11 @@
       border: 2px solid transparent;
       cursor: pointer;
       transition: var(--transition-transform);
-      
+
       &:hover {
         transform: scale(1.1);
       }
-      
+
       &.active {
         border-color: white;
         box-shadow: var(--shadow-glow-sm);
@@ -282,7 +282,7 @@
   border: 1px solid var(--custom-glass-border);
   border-radius: var(--radius-toolbar-base);
   box-shadow: var(--shadow-toolbar-default);
-  
+
   .zoom-value {
     min-width: 60px;
     text-align: center;
@@ -291,18 +291,18 @@
     color: var(--color-text-primary);
     user-select: none;
   }
-  
+
   .zoom-slider {
     width: 120px;
   }
-  
+
   .zoom-presets {
     display: flex;
     gap: var(--spacing-1);
     margin-left: var(--spacing-2);
     padding-left: var(--spacing-2);
     border-left: 1px solid var(--color-border-secondary);
-    
+
     button {
       padding: var(--spacing-1) var(--spacing-2);
       font-size: var(--font-size-xs);
@@ -317,7 +317,7 @@
 
 .toolbar-item[data-tooltip] {
   position: relative;
-  
+
   &::after {
     content: attr(data-tooltip);
     position: absolute;
@@ -335,7 +335,7 @@
     transition: var(--transition-opacity);
     z-index: var(--z-tooltip);
   }
-  
+
   &::before {
     content: '';
     position: absolute;
@@ -351,14 +351,14 @@
     opacity: 0;
     transition: var(--transition-opacity);
   }
-  
+
   &:hover {
     &::after,
     &::before {
       opacity: 1;
     }
   }
-  
+
   /* Vertical toolbar tooltips */
   .toolbar-vertical & {
     &::after {
@@ -367,7 +367,7 @@
       top: 50%;
       transform: translateY(-50%);
     }
-    
+
     &::before {
       bottom: auto;
       left: calc(100% + 4px);
@@ -388,7 +388,7 @@
   height: 20px;
   background-color: var(--color-border-secondary);
   margin: 0 var(--spacing-2);
-  
+
   .toolbar-vertical & {
     width: 20px;
     height: 1px;
@@ -415,18 +415,18 @@
   border-radius: var(--radius-full);
   cursor: pointer;
   transition: var(--transition-all);
-  
+
   &:hover {
     background-color: var(--color-surface-hover);
     border-color: var(--color-primary-400);
   }
-  
+
   .lucide-icon {
     width: 12px;
     height: 12px;
     transition: var(--transition-transform);
   }
-  
+
   &.collapsed .lucide-icon {
     transform: rotate(180deg);
   }
@@ -442,12 +442,12 @@
     gap: var(--spacing-1);
     padding: var(--spacing-1-5);
   }
-  
+
   .toolbar-item {
     min-width: 40px;
     min-height: 40px;
   }
-  
+
   .canvas-toolbar {
     width: calc(100% - var(--spacing-4));
     max-width: none;
@@ -455,7 +455,7 @@
     right: var(--spacing-2);
     transform: none;
   }
-  
+
   .zoom-controls {
     .zoom-slider {
       display: none;
@@ -469,7 +469,7 @@
     min-width: 44px;
     min-height: 44px;
   }
-  
+
   .toolbar {
     gap: var(--spacing-2);
     padding: var(--spacing-2);

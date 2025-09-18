@@ -1,7 +1,7 @@
 // Test file for verifying pointer events implementation
 // Run these tests manually on different devices
 
-import { describe, it } from '@jest/globals'
+import { describe, it } from 'vitest'
 
 describe('Pointer Events Implementation Tests', () => {
   describe('Canvas Component', () => {

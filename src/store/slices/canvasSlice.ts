@@ -1,17 +1,17 @@
-import { imageStorage } from '../../services/storage'
+import { imageStorage } from '../../services/storage/UnifiedImageStorageService'
+import {
+  BatchMoveCommand,
+  BatchTransformCommand,
+  BatchDeleteCommand,
+  BatchDuplicateCommand,
+  // BatchZIndexCommand,
+} from '../commands/BatchCommands'
 import {
   AddImageCommand,
   RemoveImageCommand,
   MoveImageCommand,
   useHistoryStore,
 } from '../historyStore'
-import {
-  BatchMoveCommand,
-  BatchTransformCommand,
-  BatchDeleteCommand,
-  BatchDuplicateCommand,
-  BatchZIndexCommand,
-} from '../commands/BatchCommands'
 import type { ImageData, ImageRole, CanvasSelectionMode, SliceCreator } from '../types'
 
 // Store reference will be set after store creation to avoid circular dependency
@@ -83,14 +83,14 @@ export interface CanvasSlice {
     id: string,
     transform: { x: number; y: number; scaleX: number; scaleY: number; rotation: number }
   ) => void
-  
+
   // Multi-selection batch operations
-  batchUpdatePositions: (updates: Array<{id: string, x: number, y: number}>) => void
-  batchUpdatePositionsWithHistory: (updates: Array<{id: string, x: number, y: number}>) => void
-  batchUpdateTransforms: (updates: Array<{id: string, transform: Transform}>) => void
+  batchUpdatePositions: (updates: Array<{ id: string; x: number; y: number }>) => void
+  batchUpdatePositionsWithHistory: (updates: Array<{ id: string; x: number; y: number }>) => void
+  batchUpdateTransforms: (updates: Array<{ id: string; transform: Transform }>) => void
   batchRemoveImages: (ids: string[]) => void
   batchDuplicateImages: (ids: string[]) => void
-  
+
   // Selection-aware operations with history
   moveSelectedImages: (deltaX: number, deltaY: number) => void
   moveSelectedImagesWithHistory: (deltaX: number, deltaY: number) => void
@@ -100,7 +100,7 @@ export interface CanvasSlice {
   deleteSelectedImagesWithHistory: () => void
   duplicateSelectedImages: () => void
   duplicateSelectedImagesWithHistory: () => void
-  
+
   // Z-index management
   bringToFront: (ids: string[]) => void
   sendToBack: (ids: string[]) => void
@@ -164,18 +164,78 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
       console.error('Store reference not set in canvasSlice')
       return
     }
-    const command = new AddImageCommand(image, storeRef)
-    useHistoryStore.getState().executeCommand(command)
+
+    // Check if layer system is enabled
+    const layerSystemEnabled = storeRef.getState().layers !== undefined
+
+    if (layerSystemEnabled && storeRef.getState().addLayer) {
+      // Add as layer when layer system is enabled
+      storeRef.getState().addLayer({
+        type: 'image',
+        name: image.metadata?.prompt
+          ? `Generated: ${image.metadata.prompt.slice(0, 20)}...`
+          : 'Image',
+        x: image.x,
+        y: image.y,
+        scaleX: image.scaleX || 1,
+        scaleY: image.scaleY || 1,
+        rotation: image.rotation || 0,
+        imageProps: {
+          imageId: image.blobId || image.id,
+          width: image.width || 512,
+          height: image.height || 512,
+          naturalWidth: image.width || 512,
+          naturalHeight: image.height || 512,
+        },
+      })
+    } else {
+      // Fallback to flat image system
+      const command = new AddImageCommand(image, storeRef)
+      useHistoryStore.getState().executeCommand(command)
+    }
   },
 
   addImageDirect: (image: ImageData) => {
-    set((state) => ({ images: [...state.images, image] }))
+    // Check if layer system is enabled
+    const layerSystemEnabled = storeRef?.getState().layers !== undefined
 
-    // Save initial position to IndexedDB if image has a blobId
-    if (image.blobId) {
-      imageStorage.updateImagePosition(image.blobId, image.x, image.y).catch((error) => {
-        console.error('Failed to persist initial image position:', error)
+    if (layerSystemEnabled && storeRef?.getState().addLayerDirect) {
+      // Add as layer when layer system is enabled
+      const layerId = `layer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      storeRef.getState().addLayerDirect({
+        id: layerId,
+        type: 'image',
+        name: image.metadata?.prompt
+          ? `Generated: ${image.metadata.prompt.slice(0, 20)}...`
+          : 'Image',
+        visible: true,
+        locked: false,
+        opacity: 1,
+        x: image.x,
+        y: image.y,
+        scaleX: image.scaleX || 1,
+        scaleY: image.scaleY || 1,
+        rotation: image.rotation || 0,
+        imageProps: {
+          imageId: image.blobId || image.id,
+          width: image.width || 512,
+          height: image.height || 512,
+          naturalWidth: image.width || 512,
+          naturalHeight: image.height || 512,
+        },
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
       })
+    } else {
+      // Fallback to flat image system
+      set((state) => ({ images: [...state.images, image] }))
+
+      // Save initial position to IndexedDB if image has a blobId
+      if (image.blobId) {
+        imageStorage.updateImagePosition(image.blobId, image.x, image.y).catch((error) => {
+          console.error('Failed to persist initial image position:', error)
+        })
+      }
     }
   },
 
@@ -204,14 +264,9 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
   removeImageDirect: (id: string) => {
     const image = get().images.find((img) => img.id === id)
 
-    // Revoke blob URL immediately if it's a blob URL
-    if (image?.src.startsWith('blob:')) {
-      URL.revokeObjectURL(image.src)
-      console.log(`Revoked blob URL for image ${id}`)
-    }
-
     // Clean up storage
     if (image?.blobId) {
+      // Note: Since this is canvasSlice (not layer system), we delete the image directly
       imageStorage.deleteImage(image.blobId).catch(console.error)
     }
 
@@ -232,26 +287,29 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
           const storedImage = await imageStorage.loadFromIndexedDB(originalImage.blobId)
           if (storedImage) {
             // Create a new stored image with the same blob
-            const duplicatedImage = await imageStorage.createFromBase64(
-              newId,
-              await imageStorage.exportAsBase64(originalImage.blobId),
-              { ...storedImage.metadata }
-            )
+            await imageStorage.createFromBlob(newId, storedImage.blob, {
+              ...storedImage.metadata,
+            })
 
-            const newImage: ImageData = {
-              ...originalImage,
-              id: newId,
-              src: duplicatedImage.objectUrl,
-              x: originalImage.x + 50,
-              y: originalImage.y + 50,
-              width: originalImage.width,
-              height: originalImage.height,
-              blobId: newId,
+            // Get object URL for the new image
+            const objectUrl = await imageStorage.getOrCreateObjectUrl(newId)
+
+            if (objectUrl) {
+              const newImage: ImageData = {
+                ...originalImage,
+                id: newId,
+                src: objectUrl,
+                x: originalImage.x + 50,
+                y: originalImage.y + 50,
+                width: originalImage.width,
+                height: originalImage.height,
+                blobId: newId,
+              }
+
+              get().addImage(newImage)
+              // Position will be saved by addImageDirect
+              storeRef?.getState().updateStorageStats?.()
             }
-
-            get().addImage(newImage)
-            // Position will be saved by addImageDirect
-            storeRef?.getState().updateStorageStats?.()
           }
         } catch (error) {
           console.error('Failed to duplicate image:', error)
@@ -314,9 +372,7 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
 
   updateImageDimensions: (id: string, width: number, height: number) => {
     set((state) => ({
-      images: state.images.map((img) => 
-        img.id === id ? { ...img, width, height } : img
-      ),
+      images: state.images.map((img) => (img.id === id ? { ...img, width, height } : img)),
     }))
   },
 
@@ -478,27 +534,62 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
       })
 
       // Store the image
-      const storedImage = await imageStorage.createFromFile(imageId, file, {
+      await imageStorage.createFromBlob(imageId, file, {
         type: 'uploaded',
         width: dimensions.width,
         height: dimensions.height,
         usedIn: new Set(),
       })
 
-      // Add to canvas with dimensions
-      const newImage: ImageData = {
-        id: imageId,
-        src: storedImage.objectUrl,
-        x: x ?? Math.random() * (window.innerWidth - 400),
-        y: y ?? Math.random() * (window.innerHeight - 200),
-        width: dimensions.width,
-        height: dimensions.height,
-        metadata: storedImage.metadata,
-        blobId: imageId,
-        isTemporary: false,
+      // Get object URL for display
+      const objectUrl = await imageStorage.getOrCreateObjectUrl(imageId)
+      if (!objectUrl) {
+        throw new Error('Failed to create object URL')
       }
 
-      get().addImage(newImage)
+      // Check if layer system is enabled (imported from store)
+      const layerSystemEnabled = storeRef?.getState().layers !== undefined
+
+      if (layerSystemEnabled && storeRef?.getState().addLayer) {
+        // Add as layer when layer system is enabled
+        const posX = x ?? Math.random() * (window.innerWidth - 400)
+        const posY = y ?? Math.random() * (window.innerHeight - 200)
+
+        storeRef.getState().addLayer({
+          type: 'image',
+          name: 'Uploaded Image',
+          x: posX,
+          y: posY,
+          imageProps: {
+            imageId,
+            width: dimensions.width,
+            height: dimensions.height,
+            naturalWidth: dimensions.width,
+            naturalHeight: dimensions.height,
+          },
+        })
+      } else {
+        // Fallback to flat image system
+        const newImage: ImageData = {
+          id: imageId,
+          src: objectUrl,
+          x: x ?? Math.random() * (window.innerWidth - 400),
+          y: y ?? Math.random() * (window.innerHeight - 200),
+          width: dimensions.width,
+          height: dimensions.height,
+          metadata: {
+            type: 'uploaded',
+            width: dimensions.width,
+            height: dimensions.height,
+            usedIn: new Set(),
+          },
+          blobId: imageId,
+          isTemporary: false,
+        }
+
+        get().addImage(newImage)
+      }
+
       storeRef?.getState().updateStorageStats?.()
     } catch (error) {
       console.error('Failed to upload image:', error)
@@ -516,11 +607,11 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
   },
 
   // Multi-selection batch operations
-  batchUpdatePositions: (updates: Array<{id: string, x: number, y: number}>) => {
+  batchUpdatePositions: (updates: Array<{ id: string; x: number; y: number }>) => {
     console.log('canvasSlice.batchUpdatePositions called with:', updates)
     set((state) => ({
       images: state.images.map((img) => {
-        const update = updates.find(u => u.id === img.id)
+        const update = updates.find((u) => u.id === img.id)
         if (update) {
           // Save position to IndexedDB if image has a blobId
           if (img.blobId) {
@@ -528,7 +619,9 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
               console.error('Failed to persist batch position update:', error)
             })
           }
-          console.log(`Updating image ${img.id} from (${img.x}, ${img.y}) to (${update.x}, ${update.y})`)
+          console.log(
+            `Updating image ${img.id} from (${img.x}, ${img.y}) to (${update.x}, ${update.y})`
+          )
           return { ...img, x: update.x, y: update.y }
         }
         return img
@@ -536,42 +629,46 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
     }))
   },
 
-  batchUpdatePositionsWithHistory: (updates: Array<{id: string, x: number, y: number}>) => {
+  batchUpdatePositionsWithHistory: (updates: Array<{ id: string; x: number; y: number }>) => {
     if (updates.length === 0 || !storeRef) return
-    
+
     const state = get()
-    const moveData = updates.map(update => {
-      const img = state.images.find(i => i.id === update.id)
-      if (img) {
-        return {
-          id: update.id,
-          oldPosition: { x: img.x, y: img.y },
-          newPosition: { x: update.x, y: update.y }
+    const moveData = updates
+      .map((update) => {
+        const img = state.images.find((i) => i.id === update.id)
+        if (img) {
+          return {
+            id: update.id,
+            oldPosition: { x: img.x, y: img.y },
+            newPosition: { x: update.x, y: update.y },
+          }
         }
-      }
-      return null
-    }).filter(Boolean) as Array<{
+        return null
+      })
+      .filter(Boolean) as Array<{
       id: string
-      oldPosition: {x: number, y: number}
-      newPosition: {x: number, y: number}
+      oldPosition: { x: number; y: number }
+      newPosition: { x: number; y: number }
     }>
-    
+
     if (moveData.length > 0) {
       const command = new BatchMoveCommand(moveData, storeRef)
       useHistoryStore.getState().executeCommand(command)
     }
   },
 
-  batchUpdateTransforms: (updates: Array<{id: string, transform: Transform}>) => {
+  batchUpdateTransforms: (updates: Array<{ id: string; transform: Transform }>) => {
     set((state) => ({
       images: state.images.map((img) => {
-        const update = updates.find(u => u.id === img.id)
+        const update = updates.find((u) => u.id === img.id)
         if (update) {
           // Save transform to IndexedDB if image has a blobId
           if (img.blobId && update.transform.x !== undefined && update.transform.y !== undefined) {
-            imageStorage.updateImagePosition(img.blobId, update.transform.x, update.transform.y).catch((error) => {
-              console.error('Failed to persist batch transform:', error)
-            })
+            imageStorage
+              .updateImagePosition(img.blobId, update.transform.x, update.transform.y)
+              .catch((error) => {
+                console.error('Failed to persist batch transform:', error)
+              })
           }
           return { ...img, ...update.transform }
         }
@@ -583,7 +680,7 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
   batchRemoveImages: async (ids: string[]) => {
     const { images } = get()
     const imagesToRemove = images.filter((img) => ids.includes(img.id))
-    
+
     // Clean up blob URLs and storage
     for (const image of imagesToRemove) {
       if (image.src.startsWith('blob:')) {
@@ -594,42 +691,45 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
         await imageStorage.deleteImage(image.blobId).catch(console.error)
       }
     }
-    
+
     set((state) => ({
       images: state.images.filter((img) => !ids.includes(img.id)),
     }))
-    
+
     storeRef?.getState().updateStorageStats?.()
   },
 
   batchDuplicateImages: async (ids: string[]) => {
     const { images } = get()
     const newImages: ImageData[] = []
-    
+
     for (const id of ids) {
       const originalImage = images.find((img) => img.id === id)
       if (originalImage) {
         const newId = `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-        
+
         if (originalImage.blobId) {
           try {
             const storedImage = await imageStorage.loadFromIndexedDB(originalImage.blobId)
             if (storedImage) {
-              const duplicatedImage = await imageStorage.createFromBase64(
+              await imageStorage.createFromBase64(
                 newId,
                 await imageStorage.exportAsBase64(originalImage.blobId),
                 { ...storedImage.metadata }
               )
-              
-              newImages.push({
-                ...originalImage,
-                id: newId,
-                src: duplicatedImage.objectUrl,
-                x: originalImage.x + 50,
-                y: originalImage.y + 50,
-                blobId: newId,
-                selected: false,
-              })
+
+              const objectUrl = await imageStorage.getOrCreateObjectUrl(newId)
+              if (objectUrl) {
+                newImages.push({
+                  ...originalImage,
+                  id: newId,
+                  src: objectUrl,
+                  x: originalImage.x + 50,
+                  y: originalImage.y + 50,
+                  blobId: newId,
+                  selected: false,
+                })
+              }
             }
           } catch (error) {
             console.error('Failed to duplicate image:', error)
@@ -645,26 +745,28 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
         }
       }
     }
-    
+
     set((state) => ({
       images: [...state.images, ...newImages],
     }))
-    
+
     storeRef?.getState().updateStorageStats?.()
   },
 
   // Selection-aware operations with direct updates (for real-time dragging)
   moveSelectedImages: (deltaX: number, deltaY: number) => {
-    const state = get() as any
+    const state = get() as { selectedIds?: Set<string>; images: ImageData[] }
     const selectedIds = state.selectedIds || new Set<string>()
-    const updates = Array.from(selectedIds).map((id) => {
-      const img = state.images.find((i: ImageData) => i.id === id)
-      if (img) {
-        return { id, x: img.x + deltaX, y: img.y + deltaY }
-      }
-      return null
-    }).filter(Boolean) as Array<{id: string, x: number, y: number}>
-    
+    const updates = Array.from(selectedIds)
+      .map((id) => {
+        const img = state.images.find((i: ImageData) => i.id === id)
+        if (img) {
+          return { id, x: img.x + deltaX, y: img.y + deltaY }
+        }
+        return null
+      })
+      .filter(Boolean) as Array<{ id: string; x: number; y: number }>
+
     if (updates.length > 0) {
       get().batchUpdatePositions(updates)
     }
@@ -672,20 +774,26 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
 
   // Selection-aware operations with history support
   moveSelectedImagesWithHistory: (deltaX: number, deltaY: number) => {
-    const state = get() as any
+    const state = get() as { selectedIds?: Set<string>; images: ImageData[] }
     const selectedIds = state.selectedIds || new Set<string>()
-    const updates = Array.from(selectedIds).map((id) => {
-      const img = state.images.find((i: ImageData) => i.id === id)
-      if (img) {
-        return { 
-          id, 
-          oldPosition: { x: img.x, y: img.y },
-          newPosition: { x: img.x + deltaX, y: img.y + deltaY }
+    const updates = Array.from(selectedIds)
+      .map((id) => {
+        const img = state.images.find((i: ImageData) => i.id === id)
+        if (img) {
+          return {
+            id,
+            oldPosition: { x: img.x, y: img.y },
+            newPosition: { x: img.x + deltaX, y: img.y + deltaY },
+          }
         }
-      }
-      return null
-    }).filter(Boolean) as Array<{id: string, oldPosition: {x: number, y: number}, newPosition: {x: number, y: number}}>
-    
+        return null
+      })
+      .filter(Boolean) as Array<{
+      id: string
+      oldPosition: { x: number; y: number }
+      newPosition: { x: number; y: number }
+    }>
+
     if (updates.length > 0 && storeRef) {
       const command = new BatchMoveCommand(updates, storeRef)
       useHistoryStore.getState().executeCommand(command)
@@ -693,39 +801,41 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
   },
 
   transformSelectedImages: (transform: Transform) => {
-    const state = get() as any
+    const state = get() as { selectedIds?: Set<string>; images: ImageData[] }
     const selectedIds = state.selectedIds || new Set<string>()
     const updates = Array.from(selectedIds).map((id) => ({
       id,
       transform,
     }))
-    
+
     if (updates.length > 0) {
       get().batchUpdateTransforms(updates)
     }
   },
 
   transformSelectedImagesWithHistory: (transform: Transform) => {
-    const state = get() as any
+    const state = get() as { selectedIds?: Set<string>; images: ImageData[] }
     const selectedIds = state.selectedIds || new Set<string>()
-    const updates = Array.from(selectedIds).map((id) => {
-      const img = state.images.find((i: ImageData) => i.id === id)
-      if (img) {
-        return {
-          id,
-          oldTransform: {
-            x: img.x,
-            y: img.y,
-            scaleX: img.scaleX || 1,
-            scaleY: img.scaleY || 1,
-            rotation: img.rotation || 0,
-          },
-          newTransform: transform
+    const updates = Array.from(selectedIds)
+      .map((id) => {
+        const img = state.images.find((i: ImageData) => i.id === id)
+        if (img) {
+          return {
+            id,
+            oldTransform: {
+              x: img.x,
+              y: img.y,
+              scaleX: img.scaleX || 1,
+              scaleY: img.scaleY || 1,
+              rotation: img.rotation || 0,
+            },
+            newTransform: transform,
+          }
         }
-      }
-      return null
-    }).filter(Boolean) as Array<{id: string, oldTransform: Transform, newTransform: Transform}>
-    
+        return null
+      })
+      .filter(Boolean) as Array<{ id: string; oldTransform: Transform; newTransform: Transform }>
+
     if (updates.length > 0 && storeRef) {
       const command = new BatchTransformCommand(updates, storeRef)
       useHistoryStore.getState().executeCommand(command)
@@ -733,7 +843,7 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
   },
 
   deleteSelectedImages: () => {
-    const state = get() as any
+    const state = get() as { selectedIds?: Set<string>; deselectAll?: () => void }
     const selectedIds = state.selectedIds || new Set<string>()
     if (selectedIds.size > 0) {
       get().batchRemoveImages(Array.from(selectedIds))
@@ -745,7 +855,7 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
   },
 
   deleteSelectedImagesWithHistory: () => {
-    const state = get() as any
+    const state = get() as { selectedIds?: Set<string>; deselectAll?: () => void }
     const selectedIds = state.selectedIds || new Set<string>()
     if (selectedIds.size > 0 && storeRef) {
       const command = new BatchDeleteCommand(Array.from(selectedIds), storeRef)
@@ -758,7 +868,7 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
   },
 
   duplicateSelectedImages: () => {
-    const state = get() as any
+    const state = get() as { selectedIds?: Set<string> }
     const selectedIds = state.selectedIds || new Set<string>()
     if (selectedIds.size > 0) {
       get().batchDuplicateImages(Array.from(selectedIds))
@@ -766,7 +876,7 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
   },
 
   duplicateSelectedImagesWithHistory: () => {
-    const state = get() as any
+    const state = get() as { selectedIds?: Set<string> }
     const selectedIds = state.selectedIds || new Set<string>()
     if (selectedIds.size > 0 && storeRef) {
       const command = new BatchDuplicateCommand(Array.from(selectedIds), storeRef)

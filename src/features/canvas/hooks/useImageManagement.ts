@@ -57,9 +57,9 @@ export function useImageManagement({
   const imageCache = useRef<Map<string, HTMLImageElement>>(new Map())
   const activeLoadsRef = useRef<Set<HTMLImageElement>>(new Set())
   const mountedRef = useRef(true)
-  
+
   // Group dragging state
-  const dragStartPositionsRef = useRef<Map<string, {x: number, y: number}>>(new Map())
+  const dragStartPositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map())
 
   // RAF throttling for snap guide updates
   const rafRef = useRef<number | null>(null)
@@ -91,13 +91,14 @@ export function useImageManagement({
       let changed = false
       const updated = prev.map((konvaImg) => {
         const storeImg = images.find((img) => img.id === konvaImg.id)
-        if (storeImg && (
-          konvaImg.x !== storeImg.x ||
-          konvaImg.y !== storeImg.y ||
-          konvaImg.scaleX !== storeImg.scaleX ||
-          konvaImg.scaleY !== storeImg.scaleY ||
-          konvaImg.rotation !== storeImg.rotation
-        )) {
+        if (
+          storeImg &&
+          (konvaImg.x !== storeImg.x ||
+            konvaImg.y !== storeImg.y ||
+            konvaImg.scaleX !== storeImg.scaleX ||
+            konvaImg.scaleY !== storeImg.scaleY ||
+            konvaImg.rotation !== storeImg.rotation)
+        ) {
           changed = true
           return {
             ...konvaImg,
@@ -143,7 +144,7 @@ export function useImageManagement({
             rotation: imgData.rotation,
             image: cachedImg,
           })
-          
+
           // Update dimensions in store if not set
           if (!imgData.width || !imgData.height) {
             const updateImageDimensions = useStore.getState().updateImageDimensions
@@ -157,13 +158,13 @@ export function useImageManagement({
       // Set all images (cached + existing) immediately, replacing the entire state
       // This ensures position updates from store are reflected
       if (newKonvaImages.length > 0 || images.length === 0) {
-        setKonvaImages(() => {
+        setKonvaImages((prevKonvaImages) => {
           // Start with cached images that are still in store
           const result = [...newKonvaImages]
-          
+
           // Add any existing konva images that need loading
           imagesToLoad.forEach((imgData) => {
-            const existing = konvaImages.find(k => k.id === imgData.id)
+            const existing = prevKonvaImages.find((k) => k.id === imgData.id)
             if (existing) {
               // Update position/transform from store while keeping loaded image
               result.push({
@@ -176,7 +177,7 @@ export function useImageManagement({
               })
             }
           })
-          
+
           return result
         })
       }
@@ -218,13 +219,13 @@ export function useImageManagement({
                 if (img.complete && img.naturalHeight !== 0) {
                   // Cache the image
                   imageCache.current.set(imgData.id, img)
-                  
+
                   // Update dimensions in store if not set
                   if (!imgData.width || !imgData.height) {
                     const updateImageDimensions = useStore.getState().updateImageDimensions
                     updateImageDimensions(imgData.id, img.naturalWidth, img.naturalHeight)
                   }
-                  
+
                   resolve({
                     id: imgData.id,
                     src: imgData.src,
@@ -259,9 +260,9 @@ export function useImageManagement({
           setKonvaImages((prev) => {
             // Build new state including both existing and new images
             const newState = [...prev]
-            
+
             validImages.forEach((validImage) => {
-              const existingIndex = newState.findIndex(img => img.id === validImage.id)
+              const existingIndex = newState.findIndex((img) => img.id === validImage.id)
               if (existingIndex >= 0) {
                 // Replace existing with new loaded image
                 newState[existingIndex] = validImage
@@ -270,7 +271,7 @@ export function useImageManagement({
                 newState.push(validImage)
               }
             })
-            
+
             return newState
           })
         }
@@ -456,7 +457,7 @@ export function useImageManagement({
       snappingManager.setCurrentObject(imageId)
 
       // Check if image is part of a group
-      let imageGroup: any = null
+      let imageGroup: { id: string; itemIds: Set<string> } | null = null
       groups.forEach((group) => {
         if (group.itemIds.has(imageId)) {
           imageGroup = group
@@ -531,7 +532,7 @@ export function useImageManagement({
       scheduleSnapGuideUpdate(snapResult.guides)
 
       // Check if image is part of a group
-      let imageGroup: any = null
+      let imageGroup: { id: string; itemIds: Set<string> } | null = null
       groups.forEach((group) => {
         if (group.itemIds.has(imageId)) {
           imageGroup = group
@@ -546,15 +547,17 @@ export function useImageManagement({
           const deltaY = snapResult.y - initialPos.y
 
           // Update all group members based on their initial positions
-          setKonvaImages((prev) => prev.map((img) => {
-            if (imageGroup.itemIds.has(img.id) && img.id !== imageId) {
-              const imgInitialPos = dragStartPositionsRef.current.get(img.id)
-              if (imgInitialPos) {
-                return { ...img, x: imgInitialPos.x + deltaX, y: imgInitialPos.y + deltaY }
+          setKonvaImages((prev) =>
+            prev.map((img) => {
+              if (imageGroup.itemIds.has(img.id) && img.id !== imageId) {
+                const imgInitialPos = dragStartPositionsRef.current.get(img.id)
+                if (imgInitialPos) {
+                  return { ...img, x: imgInitialPos.x + deltaX, y: imgInitialPos.y + deltaY }
+                }
               }
-            }
-            return img
-          }))
+              return img
+            })
+          )
         }
       }
 
@@ -580,7 +583,7 @@ export function useImageManagement({
       onSnapGuidesChange?.([])
 
       // Check if image is part of a group
-      let imageGroup: any = null
+      let imageGroup: { id: string; itemIds: Set<string> } | null = null
       groups.forEach((group) => {
         if (group.itemIds.has(imageId)) {
           imageGroup = group
@@ -594,14 +597,14 @@ export function useImageManagement({
           const deltaX = newX - initialPos.x
           const deltaY = newY - initialPos.y
 
-          const updates: Array<{id: string, x: number, y: number}> = []
+          const updates: Array<{ id: string; x: number; y: number }> = []
           imageGroup.itemIds.forEach((itemId: string) => {
             const itemInitialPos = dragStartPositionsRef.current.get(itemId)
             if (itemInitialPos) {
               updates.push({
                 id: itemId,
                 x: itemInitialPos.x + deltaX,
-                y: itemInitialPos.y + deltaY
+                y: itemInitialPos.y + deltaY,
               })
             }
           })
@@ -610,12 +613,14 @@ export function useImageManagement({
           batchUpdatePositions(updates)
 
           // Update local state for all grouped items
-          setKonvaImages((prev) => prev.map((img) => {
-            const update = updates.find(u => u.id === img.id)
-            return update ? { ...img, x: update.x, y: update.y } : img
-          }))
+          setKonvaImages((prev) =>
+            prev.map((img) => {
+              const update = updates.find((u) => u.id === img.id)
+              return update ? { ...img, x: update.x, y: update.y } : img
+            })
+          )
         }
-        
+
         // Clear drag start positions after use
         dragStartPositionsRef.current.clear()
       } else {
@@ -623,7 +628,9 @@ export function useImageManagement({
         updateImagePosition(imageId, newX, newY)
 
         // Update local state
-        setKonvaImages((prev) => prev.map((i) => (i.id === imageId ? { ...i, x: newX, y: newY } : i)))
+        setKonvaImages((prev) =>
+          prev.map((i) => (i.id === imageId ? { ...i, x: newX, y: newY } : i))
+        )
       }
     },
     [updateImagePosition, onSnapGuidesChange, groups, batchUpdatePositions]

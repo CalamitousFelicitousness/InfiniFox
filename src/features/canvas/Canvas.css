@@ -1,3 +1,19 @@
+.canvas-workspace {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.canvas-layer-panel {
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.canvas-container.with-layer-system {
+  /* Adjust for layer panel if needed */
+}
+
 .canvas-container {
   position: relative;
   flex-grow: 1;
@@ -5,13 +21,17 @@
   background-color: var(--color-background-canvas);
   /* Account for fixed status bar at bottom */
   padding-bottom: 32px;
-  background-image: 
+  background-image:
     linear-gradient(45deg, var(--custom-canvas-grid-color) 25%, transparent 25%),
     linear-gradient(-45deg, var(--custom-canvas-grid-color) 25%, transparent 25%),
     linear-gradient(45deg, transparent 75%, var(--custom-canvas-grid-color) 75%),
     linear-gradient(-45deg, transparent 75%, var(--custom-canvas-grid-color) 75%);
   background-size: var(--custom-canvas-grid-size) var(--custom-canvas-grid-size);
-  background-position: 0 0, 0 calc(var(--custom-canvas-grid-size) / 2), calc(var(--custom-canvas-grid-size) / 2) calc(var(--custom-canvas-grid-size) / -2), calc(var(--custom-canvas-grid-size) / -2) 0px;
+  background-position:
+    0 0,
+    0 calc(var(--custom-canvas-grid-size) / 2),
+    calc(var(--custom-canvas-grid-size) / 2) calc(var(--custom-canvas-grid-size) / -2),
+    calc(var(--custom-canvas-grid-size) / -2) 0px;
 }
 
 /* Zoom controls moved to DraggableZoomControls component */
@@ -27,8 +47,6 @@
   pointer-events: none;
   z-index: var(--z-modal);
 }
-
-
 
 /* Selection mode overlay */
 .canvas-container.selection-mode {

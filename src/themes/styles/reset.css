@@ -120,7 +120,7 @@ textarea:not([rows]) {
   html {
     scroll-behavior: auto !important;
   }
-  
+
   *,
   *::before,
   *::after {
@@ -190,25 +190,26 @@ textarea:not([rows]) {
 /* Firefox scrollbar styles */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--custom-scrollbar-thumb, var(--color-gray-500)) var(--custom-scrollbar-track, var(--color-gray-200));
+  scrollbar-color: var(--custom-scrollbar-thumb, var(--color-gray-500))
+    var(--custom-scrollbar-track, var(--color-gray-200));
 }
 
 /* Hide spin buttons on number inputs */
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-input[type="number"] {
+input[type='number'] {
   -moz-appearance: textfield;
 }
 
 /* Search input clear button */
-input[type="search"]::-webkit-search-decoration,
-input[type="search"]::-webkit-search-cancel-button,
-input[type="search"]::-webkit-search-results-button,
-input[type="search"]::-webkit-search-results-decoration {
+input[type='search']::-webkit-search-decoration,
+input[type='search']::-webkit-search-cancel-button,
+input[type='search']::-webkit-search-results-button,
+input[type='search']::-webkit-search-results-decoration {
   -webkit-appearance: none;
 }
 
@@ -270,22 +271,22 @@ meter {
     box-shadow: none !important;
     text-shadow: none !important;
   }
-  
+
   a,
   a:visited {
     text-decoration: underline;
   }
-  
+
   pre,
   blockquote {
     border: 1px solid #999;
     page-break-inside: avoid;
   }
-  
+
   img {
     page-break-inside: avoid;
   }
-  
+
   @page {
     margin: 2cm;
   }

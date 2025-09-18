@@ -1,5 +1,5 @@
 import React from 'react'
-import { Layer, Line } from 'react-konva'
+import { Group, Line } from 'react-konva'
 
 import type { SnapGuide } from '../../../services/canvas/SnappingManager'
 
@@ -34,7 +34,7 @@ function SnapGuideLayerComponent({ guides, scale }: SnapGuideLayerProps) {
   if (guides.length === 0) return null
 
   return (
-    <Layer listening={false}>
+    <Group listening={false}>
       {guides.map((guide, index) => (
         <Line
           key={`guide-${guide.type}-${guide.position}-${index}`}
@@ -50,7 +50,7 @@ function SnapGuideLayerComponent({ guides, scale }: SnapGuideLayerProps) {
           listening={false}
         />
       ))}
-    </Layer>
+    </Group>
   )
 }
 

@@ -1,5 +1,15 @@
+import {
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  MousePointer,
+  Brush,
+  Eraser,
+  Move,
+  Image,
+  Command,
+} from 'lucide-react'
 import React from 'react'
-import { ZoomIn, ZoomOut, Maximize2, MousePointer, Brush, Eraser, Move, Image, Command } from 'lucide-react'
 
 import { CanvasTool } from '../../features/canvas/hooks/useCanvasTools'
 import { useStore } from '../../store/store'
@@ -11,10 +21,10 @@ interface StatusBarProps {
   onZoomIn: () => void
   onZoomOut: () => void
   onZoomReset: () => void
-  
+
   // Tool state
   currentTool: CanvasTool
-  
+
   // Space panning state
   isSpacePanning: boolean
 }
@@ -43,18 +53,18 @@ export function StatusBar({
   const totalImages = images.length
   const totalFrames = generationFrames?.length || 0
   const totalItems = totalImages + totalFrames
-  
+
   // Track previous selection count for animation
   const [prevSelectedCount, setPrevSelectedCount] = React.useState(selectedCount)
   const selectionChanged = selectedCount !== prevSelectedCount
-  
+
   React.useEffect(() => {
     if (selectionChanged) {
       const timer = setTimeout(() => setPrevSelectedCount(selectedCount), 300)
       return () => clearTimeout(timer)
     }
   }, [selectedCount, selectionChanged])
-  
+
   // Handle selection actions
   const handleSelectionClick = () => {
     if (selectedCount > 0) {
@@ -63,10 +73,10 @@ export function StatusBar({
       selectAll()
     }
   }
-  
+
   // Format zoom percentage for display
   const zoomPercentage = Math.round(zoom * 100)
-  
+
   // Get tool icon and label
   const getToolInfo = () => {
     switch (currentTool) {
@@ -82,9 +92,9 @@ export function StatusBar({
         return { icon: null, label: 'Unknown' }
     }
   }
-  
+
   const toolInfo = getToolInfo()
-  
+
   // Track keyboard modifiers for shortcuts display
   const [keyboardState, setKeyboardState] = React.useState<KeyboardModifierState>({
     ctrl: false,
@@ -175,7 +185,7 @@ export function StatusBar({
   ]
 
   const activeModifiers = modifierDescriptors.filter((descriptor) => descriptor.isActive)
-  
+
   return (
     <div className="status-bar">
       {/* Wrapper to ensure proper layout */}
@@ -189,7 +199,7 @@ export function StatusBar({
               <span>{toolInfo.label}</span>
             </div>
           </div>
-          
+
           {/* Show active keyboard modifiers */}
           <div
             className="status-bar__divider"
@@ -200,17 +210,13 @@ export function StatusBar({
             style={{ display: activeModifiers.length > 0 ? 'flex' : 'none' }}
           >
             {activeModifiers.map((descriptor) => (
-              <span
-                key={descriptor.id}
-                className={descriptor.className}
-                title={descriptor.title}
-              >
+              <span key={descriptor.id} className={descriptor.className} title={descriptor.title}>
                 {descriptor.content}
               </span>
             ))}
           </div>
         </div>
-        
+
         {/* Right section - Zoom controls (placed before center for layout) */}
         <div className="status-bar__section status-bar__section--right">
           <div className="status-bar__zoom-controls">
@@ -222,7 +228,7 @@ export function StatusBar({
             >
               <ZoomOut size={14} />
             </button>
-            
+
             <button
               className="status-bar__zoom-level"
               onClick={onZoomReset}
@@ -231,7 +237,7 @@ export function StatusBar({
             >
               {zoomPercentage}%
             </button>
-            
+
             <button
               className="status-bar__button"
               onClick={onZoomIn}
@@ -240,7 +246,7 @@ export function StatusBar({
             >
               <ZoomIn size={14} />
             </button>
-            
+
             <button
               className="status-bar__button"
               onClick={onZoomReset}
@@ -252,7 +258,7 @@ export function StatusBar({
           </div>
         </div>
       </div>
-      
+
       {/* Center section - Selection info and canvas stats (absolutely positioned) */}
       <div className="status-bar__section status-bar__section--center">
         {totalItems > 0 && (
@@ -264,7 +270,7 @@ export function StatusBar({
               {totalImages > 0 && totalFrames > 0 && ', '}
               {totalFrames > 0 && `${totalFrames} ${totalFrames === 1 ? 'frame' : 'frames'}`}
             </span>
-            
+
             {selectedCount > 0 ? (
               <>
                 <div className="status-bar__divider" />
@@ -275,7 +281,7 @@ export function StatusBar({
                   aria-label="Deselect all"
                 >
                   <span className="status-bar__label">Selected:</span>
-                  <span 
+                  <span
                     className={`status-bar__value status-bar__value--highlight ${selectionChanged ? 'status-bar__value--updating' : ''}`}
                   >
                     {selectedCount} {selectedCount === 1 ? 'item' : 'items'}
@@ -300,7 +306,7 @@ export function StatusBar({
             ) : null}
           </div>
         )}
-        
+
         {totalItems === 0 && (
           <div className="status-bar__item status-bar__empty-state">
             <span className="status-bar__label">Empty canvas</span>

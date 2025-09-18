@@ -12,7 +12,8 @@ interface CanvasContextMenuProps {
   y: number
   imageId: string | null
   frameId?: string | null
-  selectedIds?: Set<string>  // Multi-selection support
+  layerId?: string | null // Layer system support
+  selectedIds?: Set<string> // Multi-selection support
   onDelete: () => void
   onDuplicate: () => void
   onSendToImg2Img: () => void
@@ -35,6 +36,24 @@ interface CanvasContextMenuProps {
   onDistributeVertically?: () => void
   onBringToFront?: () => void
   onSendToBack?: () => void
+  // Layer-specific operations
+  onToggleLayerVisibility?: (layerId: string) => void
+  onToggleLayerLock?: (layerId: string) => void
+  onDuplicateLayer?: (layerId: string) => void
+  onDeleteLayer?: (layerId: string) => void
+  onGroupLayers?: (layerIds: string[]) => void
+  onUngroupLayer?: (layerId: string) => void
+  onAddLayerToArtboard?: (layerId: string) => void
+  onConvertToArtboard?: (layerId: string) => void
+  onExportLayer?: (layerId: string) => void
+  // Artboard-specific operations
+  onDuplicateArtboard?: (artboardId: string) => void
+  onRenameArtboard?: (artboardId: string) => void
+  onResizeArtboard?: (artboardId: string) => void
+  onClearArtboard?: (artboardId: string) => void
+  onChangeArtboardBackground?: (artboardId: string) => void
+  onAutoArrangeChildren?: (artboardId: string) => void
+  onFitToContents?: (artboardId: string) => void
 }
 
 export function CanvasContextMenu({
@@ -43,6 +62,7 @@ export function CanvasContextMenu({
   y,
   imageId,
   frameId,
+  layerId,
   selectedIds,
   onDelete,
   onDuplicate,
@@ -65,6 +85,22 @@ export function CanvasContextMenu({
   onDistributeVertically,
   onBringToFront,
   onSendToBack,
+  onToggleLayerVisibility,
+  onToggleLayerLock,
+  onDuplicateLayer,
+  onDeleteLayer,
+  onGroupLayers,
+  onUngroupLayer,
+  // onAddLayerToArtboard,
+  onConvertToArtboard,
+  onExportLayer,
+  onDuplicateArtboard,
+  onRenameArtboard,
+  onResizeArtboard,
+  onClearArtboard,
+  onChangeArtboardBackground,
+  onAutoArrangeChildren,
+  onFitToContents,
 }: CanvasContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -77,6 +113,20 @@ export function CanvasContextMenu({
     removeGenerationFrame,
     lockFrame,
     generateInFrame,
+    // Layer system state
+    getLayer,
+    selectedLayerIds: storeSelectedLayerIds,
+    toggleLayerVisibility: storeToggleLayerVisibility,
+    toggleLayerLock: storeToggleLock,
+    duplicateLayer: storeDuplicateLayer,
+    deleteLayer: storeDeleteLayer,
+    groupLayers: storeGroupLayers,
+    ungroupLayers: storeUngroupLayers,
+    duplicateArtboard: storeDuplicateArtboard,
+    renameArtboard: storeRenameArtboard,
+    resizeArtboard: storeResizeArtboard,
+    clearArtboard: storeClearArtboard,
+    setArtboardBackground: storeSetArtboardBackground,
   } = useStore()
 
   useEffect(() => {
@@ -129,7 +179,349 @@ export function CanvasContextMenu({
   const currentRole = imageId ? getImageRole(imageId) : null
   const roleIndicator = currentRole ? ` (Active: ${currentRole})` : ''
   const currentFrame = frameId ? generationFrames.find((f) => f.id === frameId) : null
-  const isMultiSelection = selectedIds && selectedIds.size > 1 && imageId && selectedIds.has(imageId)
+  const currentLayer = layerId ? getLayer(layerId) : null
+  const isMultiSelection =
+    selectedIds && selectedIds.size > 1 && imageId && selectedIds.has(imageId)
+  const isLayerMultiSelection =
+    layerId && storeSelectedLayerIds.size > 1 && storeSelectedLayerIds.has(layerId)
+
+  // Layer context menu
+  if (layerId && currentLayer) {
+    const isLocked = currentLayer.locked
+    const isVisible = currentLayer.visible
+    const isGroup = currentLayer.type === 'group'
+    const isArtboard = currentLayer.type === 'artboard'
+
+    return (
+      <div
+        ref={menuRef}
+        className="menu canvas-context-menu"
+        style={{
+          position: 'absolute',
+          left: `${x}px`,
+          top: `${y}px`,
+        }}
+      >
+        <div className="menu-header">
+          <span className="menu-header-text">{currentLayer.name}</span>
+        </div>
+
+        {/* Layer visibility and lock controls */}
+        <button
+          className="menu-item"
+          onPointerDown={(e) => {
+            e.preventDefault()
+            if (onToggleLayerVisibility) {
+              onToggleLayerVisibility(layerId)
+            } else {
+              storeToggleLayerVisibility(layerId)
+            }
+            onClose()
+          }}
+        >
+          {isVisible ? 'Hide Layer' : 'Show Layer'}
+        </button>
+
+        <button
+          className="menu-item"
+          onPointerDown={(e) => {
+            e.preventDefault()
+            if (onToggleLayerLock) {
+              onToggleLayerLock(layerId)
+            } else {
+              storeToggleLock(layerId)
+            }
+            onClose()
+          }}
+        >
+          {isLocked ? 'Unlock Layer' : 'Lock Layer'}
+        </button>
+
+        <hr className="menu-divider" />
+
+        {/* Artboard operations */}
+        {isArtboard && (
+          <>
+            <button
+              className="menu-item"
+              onPointerDown={(e) => {
+                e.preventDefault()
+                if (onDuplicateArtboard) {
+                  onDuplicateArtboard(layerId)
+                } else {
+                  storeDuplicateArtboard(layerId)
+                }
+                onClose()
+              }}
+            >
+              Duplicate Artboard
+            </button>
+
+            <button
+              className="menu-item"
+              onPointerDown={(e) => {
+                e.preventDefault()
+                if (onRenameArtboard) {
+                  onRenameArtboard(layerId)
+                } else {
+                  // TODO: Open rename dialog
+                  const newName = prompt('Enter new name:', currentLayer.name)
+                  if (newName) {
+                    storeRenameArtboard(layerId, newName)
+                  }
+                }
+                onClose()
+              }}
+            >
+              Rename
+            </button>
+
+            <button
+              className="menu-item"
+              onPointerDown={(e) => {
+                e.preventDefault()
+                if (onResizeArtboard) {
+                  onResizeArtboard(layerId)
+                } else {
+                  // TODO: Open resize dialog
+                  const width = prompt('Width:', String(currentLayer.artboardProps?.width || 800))
+                  const height = prompt(
+                    'Height:',
+                    String(currentLayer.artboardProps?.height || 600)
+                  )
+                  if (width && height) {
+                    storeResizeArtboard(layerId, parseInt(width), parseInt(height))
+                  }
+                }
+                onClose()
+              }}
+            >
+              Resize...
+            </button>
+
+            <button
+              className="menu-item"
+              onPointerDown={(e) => {
+                e.preventDefault()
+                if (onChangeArtboardBackground) {
+                  onChangeArtboardBackground(layerId)
+                } else {
+                  // TODO: Open color picker dialog
+                  const color = prompt(
+                    'Background color (hex):',
+                    currentLayer.artboardProps?.backgroundColor || '#ffffff'
+                  )
+                  if (color) {
+                    storeSetArtboardBackground(layerId, color)
+                  }
+                }
+                onClose()
+              }}
+            >
+              Change Background
+            </button>
+
+            <hr className="menu-divider" />
+
+            {/* Phase 2: Advanced Artboard Operations */}
+            <button
+              className="menu-item"
+              onPointerDown={(e) => {
+                e.preventDefault()
+                const store = useStore.getState()
+                store.selectArtboardChildren(layerId)
+                onClose()
+              }}
+            >
+              Select All Children
+            </button>
+
+            <button
+              className="menu-item"
+              onPointerDown={(e) => {
+                e.preventDefault()
+                if (onAutoArrangeChildren) {
+                  onAutoArrangeChildren(layerId)
+                }
+                onClose()
+              }}
+            >
+              Auto-arrange Children
+            </button>
+
+            <button
+              className="menu-item"
+              onPointerDown={(e) => {
+                e.preventDefault()
+                if (onFitToContents) {
+                  onFitToContents(layerId)
+                }
+                onClose()
+              }}
+            >
+              Fit to Contents
+            </button>
+
+            <hr className="menu-divider" />
+
+            <button
+              className="menu-item"
+              onPointerDown={(e) => {
+                e.preventDefault()
+                const store = useStore.getState()
+                store.moveArtboardToFront(layerId)
+                onClose()
+              }}
+            >
+              Bring to Front
+            </button>
+
+            <button
+              className="menu-item"
+              onPointerDown={(e) => {
+                e.preventDefault()
+                const store = useStore.getState()
+                store.moveArtboardToBack(layerId)
+                onClose()
+              }}
+            >
+              Send to Back
+            </button>
+
+            <hr className="menu-divider" />
+
+            <button
+              className="menu-item menu-item-danger"
+              onPointerDown={(e) => {
+                e.preventDefault()
+                if (onClearArtboard) {
+                  onClearArtboard(layerId)
+                } else {
+                  if (confirm('Clear all content from this artboard?')) {
+                    storeClearArtboard(layerId)
+                  }
+                }
+                onClose()
+              }}
+            >
+              Clear Artboard
+            </button>
+          </>
+        )}
+
+        {/* Layer operations */}
+        {!isArtboard && (
+          <button
+            className="menu-item"
+            onPointerDown={(e) => {
+              e.preventDefault()
+              if (onDuplicateLayer) {
+                onDuplicateLayer(layerId)
+              } else {
+                storeDuplicateLayer(layerId)
+              }
+              onClose()
+            }}
+          >
+            Duplicate Layer
+          </button>
+        )}
+
+        {/* Group operations */}
+        {isLayerMultiSelection && (
+          <button
+            className="menu-item"
+            onPointerDown={(e) => {
+              e.preventDefault()
+              const selectedIds = Array.from(storeSelectedLayerIds)
+              if (onGroupLayers) {
+                onGroupLayers(selectedIds)
+              } else {
+                storeGroupLayers(selectedIds)
+              }
+              onClose()
+            }}
+          >
+            Group Selected Layers
+          </button>
+        )}
+
+        {isGroup && (
+          <button
+            className="menu-item"
+            onPointerDown={(e) => {
+              e.preventDefault()
+              if (onUngroupLayer) {
+                onUngroupLayer(layerId)
+              } else {
+                storeUngroupLayers(layerId)
+              }
+              onClose()
+            }}
+          >
+            Ungroup
+          </button>
+        )}
+
+        {/* Convert operations */}
+        {!isArtboard && !isGroup && (
+          <>
+            <hr className="menu-divider" />
+            <button
+              className="menu-item"
+              onPointerDown={(e) => {
+                e.preventDefault()
+                if (onConvertToArtboard) {
+                  onConvertToArtboard(layerId)
+                }
+                // TODO: Implement convert to artboard in store
+                onClose()
+              }}
+            >
+              Convert to Artboard
+            </button>
+          </>
+        )}
+
+        {/* Export operations */}
+        {(isArtboard || currentLayer.type === 'image') && (
+          <>
+            <hr className="menu-divider" />
+            <button
+              className="menu-item"
+              onPointerDown={(e) => {
+                e.preventDefault()
+                if (onExportLayer) {
+                  onExportLayer(layerId)
+                }
+                // TODO: Implement export layer
+                onClose()
+              }}
+            >
+              Export {isArtboard ? 'Artboard' : 'Layer'}
+            </button>
+          </>
+        )}
+
+        <hr className="menu-divider" />
+
+        <button
+          className="menu-item menu-item-danger"
+          onPointerDown={(e) => {
+            e.preventDefault()
+            if (onDeleteLayer) {
+              onDeleteLayer(layerId)
+            } else {
+              storeDeleteLayer(layerId)
+            }
+            onClose()
+          }}
+        >
+          Delete {isArtboard ? 'Artboard' : 'Layer'}
+        </button>
+      </div>
+    )
+  }
 
   if (frameId && currentFrame) {
     return (
@@ -196,7 +588,7 @@ export function CanvasContextMenu({
         <div className="menu-header">
           <span className="menu-header-text">{selectedIds?.size} items selected</span>
         </div>
-        
+
         {/* Grouping Operations */}
         {onGroupSelection && (
           <button
@@ -222,9 +614,9 @@ export function CanvasContextMenu({
             Ungroup Selection (Ctrl+Shift+G)
           </button>
         )}
-        
+
         <hr className="menu-divider" />
-        
+
         {/* Alignment Operations */}
         <div className="menu-section">
           <span className="menu-section-title">Align</span>
@@ -309,7 +701,7 @@ export function CanvasContextMenu({
             )}
           </div>
         </div>
-        
+
         {/* Distribution Operations */}
         {(onDistributeHorizontally || onDistributeVertically) && (
           <>
@@ -346,9 +738,9 @@ export function CanvasContextMenu({
             </div>
           </>
         )}
-        
+
         <hr className="menu-divider" />
-        
+
         {/* Arrangement Operations */}
         {onBringToFront && (
           <button
@@ -374,9 +766,9 @@ export function CanvasContextMenu({
             Send to Back (Ctrl+Shift+[)
           </button>
         )}
-        
+
         <hr className="menu-divider" />
-        
+
         {/* Basic Operations */}
         <button
           className="menu-item"

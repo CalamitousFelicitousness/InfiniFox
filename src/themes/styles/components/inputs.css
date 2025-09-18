@@ -375,7 +375,7 @@
   transition: var(--transition-transform);
 }
 
-.dropdown-button[aria-expanded="true"] .dropdown-icon {
+.dropdown-button[aria-expanded='true'] .dropdown-icon {
   transform: translateY(-50%) rotate(180deg);
 }
 

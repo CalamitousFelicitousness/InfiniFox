@@ -1,5 +1,5 @@
 import React from 'react'
-import { Layer, Line, Circle } from 'react-konva'
+import { Group, Line, Circle } from 'react-konva'
 
 import { useKonvaTokens } from '../../../hooks/useKonvaTokens'
 import type { DrawingStroke } from '../../../store/types'
@@ -89,7 +89,7 @@ export function DrawingLayer({
   }
 
   return (
-    <Layer listening={isListening} visible={drawingLayerVisible} opacity={drawingLayerOpacity}>
+    <Group listening={isListening} visible={drawingLayerVisible} opacity={drawingLayerOpacity}>
       {/* Render completed strokes */}
       {drawingStrokes.map(renderStroke)}
 
@@ -109,6 +109,6 @@ export function DrawingLayer({
           listening={false}
         />
       )}
-    </Layer>
+    </Group>
   )
 }

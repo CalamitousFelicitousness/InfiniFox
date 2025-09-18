@@ -34,7 +34,7 @@
   font-size: var(--font-size-sm);
 }
 
-.brush-size-control input[type="range"] {
+.brush-size-control input[type='range'] {
   width: 100%;
   accent-color: var(--color-primary-500);
 }

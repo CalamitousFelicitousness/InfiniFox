@@ -1,0 +1,11 @@
+.fit-to-contents-dialog {
+  min-width: 320px;
+}
+
+.form-hint {
+  display: block;
+  margin-top: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  opacity: 0.8;
+}

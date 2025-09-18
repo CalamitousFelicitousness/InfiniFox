@@ -1,10 +1,12 @@
 import Konva from 'konva'
 import React, { useEffect, useRef } from 'react'
-import { Layer, Image as KonvaImage } from 'react-konva'
+import { Group, Image as KonvaImage } from 'react-konva'
+
 import { useStore } from '../../../store/store'
-import { MultiTransformer } from './MultiTransformer'
 import { CanvasTool } from '../hooks/useCanvasTools'
 import type { KonvaImageData } from '../hooks/useImageManagement'
+
+import { MultiTransformer } from './MultiTransformer'
 
 interface ImageLayerProps {
   // Image data
@@ -39,12 +41,12 @@ interface ImageLayerProps {
 function ImageLayerComponent({
   images,
   activeImageRoles,
-  canvasSelectionMode: _canvasSelectionMode,
+  // canvasSelectionMode: _canvasSelectionMode,
   currentTool,
   onImageDragStart,
   onImageDragMove,
   onImageDragEnd,
-  onImageTransformEnd,
+  // onImageTransformEnd,
   onContextMenu,
   isImageDraggable,
   getImageBorderColor,
@@ -54,7 +56,7 @@ function ImageLayerComponent({
 
   // Add ref to track if selection box just completed
   const selectionBoxJustCompleted = useRef(false)
-  
+
   // Get multi-selection state from store
   const selectedIds = useStore((state) => state.selectedIds)
   const selectItem = useStore((state) => state.selectItem)
@@ -69,7 +71,7 @@ function ImageLayerComponent({
     if (currentTool !== CanvasTool.SELECT) return
 
     const evt = e.evt
-    
+
     // Check if this is a right-click (button 2)
     if (evt.button === 2) {
       // If the image is already selected, don't change selection
@@ -82,7 +84,7 @@ function ImageLayerComponent({
       e.cancelBubble = true
       return
     }
-    
+
     let modifier: 'none' | 'shift' | 'ctrl' | 'ctrl-shift' = 'none'
 
     if (evt.ctrlKey || evt.metaKey) {
@@ -125,15 +127,15 @@ function ImageLayerComponent({
 
     // If multiple items selected, move them all together
     if (selectedIds.size > 1) {
-      const deltaX = snappedPos.x - images.find(img => img.id === imageId)!.x
-      const deltaY = snappedPos.y - images.find(img => img.id === imageId)!.y
-      
+      const deltaX = snappedPos.x - images.find((img) => img.id === imageId)!.x
+      const deltaY = snappedPos.y - images.find((img) => img.id === imageId)!.y
+
       // Move other selected items
       selectedIds.forEach((id) => {
         if (id !== imageId) {
           const otherNode = layerRef.current?.findOne(`#${id}`)
           if (otherNode) {
-            const img = images.find(i => i.id === id)
+            const img = images.find((i) => i.id === id)
             if (img) {
               otherNode.x(img.x + deltaX)
               otherNode.y(img.y + deltaY)
@@ -186,14 +188,16 @@ function ImageLayerComponent({
     // If multiple items selected, update all their positions
     if (selectedIds.size > 1) {
       const batchUpdatePositions = useStore.getState().batchUpdatePositions
-      const updates = Array.from(selectedIds).map((id) => {
-        const imgNode = layerRef.current?.findOne(`#${id}`)
-        if (imgNode) {
-          return { id, x: imgNode.x(), y: imgNode.y() }
-        }
-        return null
-      }).filter(Boolean) as Array<{id: string, x: number, y: number}>
-      
+      const updates = Array.from(selectedIds)
+        .map((id) => {
+          const imgNode = layerRef.current?.findOne(`#${id}`)
+          if (imgNode) {
+            return { id, x: imgNode.x(), y: imgNode.y() }
+          }
+          return null
+        })
+        .filter(Boolean) as Array<{ id: string; x: number; y: number }>
+
       if (updates.length > 0) {
         batchUpdatePositions(updates)
       }
@@ -209,23 +213,34 @@ function ImageLayerComponent({
   const handleMultiTransformEnd = () => {
     if (selectedIds.size > 0) {
       const batchUpdateTransforms = useStore.getState().batchUpdateTransforms
-      const updates = Array.from(selectedIds).map((id) => {
-        const node = layerRef.current?.findOne(`#${id}`)
-        if (node) {
-          return {
-            id,
-            transform: {
-              x: node.x(),
-              y: node.y(),
-              scaleX: node.scaleX(),
-              scaleY: node.scaleY(),
-              rotation: node.rotation(),
+      const updates = Array.from(selectedIds)
+        .map((id) => {
+          const node = layerRef.current?.findOne(`#${id}`)
+          if (node) {
+            return {
+              id,
+              transform: {
+                x: node.x(),
+                y: node.y(),
+                scaleX: node.scaleX(),
+                scaleY: node.scaleY(),
+                rotation: node.rotation(),
+              },
             }
           }
+          return null
+        })
+        .filter(Boolean) as Array<{
+        id: string
+        transform: {
+          x: number
+          y: number
+          scaleX: number
+          scaleY: number
+          rotation: number
         }
-        return null
-      }).filter(Boolean) as Array<{id: string, transform: any}>
-      
+      }>
+
       if (updates.length > 0) {
         batchUpdateTransforms(updates)
       }
@@ -277,10 +292,10 @@ function ImageLayerComponent({
     const handleStageClick = (e: Konva.KonvaEventObject<PointerEvent>) => {
       // Don't deselect if event was cancelled (e.g., from selection box)
       if (e.cancelBubble) return
-      
+
       // Don't deselect if selection box just completed
       if (selectionBoxJustCompleted.current) return
-      
+
       // Check if we clicked on empty area
       if (e.target === stage || e.target === layer) {
         deselectAll()
@@ -297,7 +312,7 @@ function ImageLayerComponent({
   const sortedImages = [...images].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0))
 
   return (
-    <Layer ref={layerRef}>
+    <Group ref={layerRef as React.RefObject<Konva.Layer>}>
       {/* Render images */}
       {sortedImages.map((img) => (
         <KonvaImage
@@ -338,12 +353,12 @@ function ImageLayerComponent({
 
       {/* Multi-selection transformer */}
       {currentTool === CanvasTool.SELECT && selectedIds && selectedIds.size > 0 && (
-        <MultiTransformer 
+        <MultiTransformer
           selectedIds={Array.from(selectedIds)}
           onTransformEnd={handleMultiTransformEnd}
         />
       )}
-    </Layer>
+    </Group>
   )
 }
 

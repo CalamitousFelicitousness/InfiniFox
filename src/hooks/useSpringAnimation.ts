@@ -3,8 +3,8 @@
  * Provides smooth, physics-based animations for selection interactions
  */
 
-import { useRef, useEffect, useCallback } from 'react'
 import Konva from 'konva'
+import { useRef, useEffect, useCallback } from 'react'
 
 /**
  * Spring configuration presets
@@ -45,29 +45,23 @@ function calculateSpring(
   config: SpringConfig,
   deltaTime: number
 ): SpringValue {
-  const {
-    stiffness,
-    damping,
-    mass = 1,
-    clamp = false,
-    precision = 0.01,
-  } = config
+  const { stiffness, damping, mass = 1, clamp = false, precision = 0.01 } = config
 
   // Spring force: F = -k * x
   const springForce = -stiffness * (current.value - target)
-  
+
   // Damping force: F = -c * v
   const dampingForce = -damping * current.velocity
-  
+
   // Total force
   const force = springForce + dampingForce
-  
+
   // Acceleration: a = F / m
   const acceleration = force / mass
-  
+
   // Update velocity: v = v + a * dt
   const velocity = current.velocity + acceleration * deltaTime
-  
+
   // Update position: x = x + v * dt
   const value = current.value + velocity * deltaTime
 
@@ -82,10 +76,7 @@ function calculateSpring(
 /**
  * Spring animation hook for single value
  */
-export function useSpring(
-  initialValue: number,
-  config: SpringConfig | SpringPreset = 'gentle'
-) {
+export function useSpring(initialValue: number, config: SpringConfig | SpringPreset = 'gentle') {
   const springConfig = typeof config === 'string' ? SpringPresets[config] : config
   const currentRef = useRef<SpringValue>({ value: initialValue, velocity: 0 })
   const targetRef = useRef(initialValue)
@@ -97,10 +88,7 @@ export function useSpring(
     const target = targetRef.current
 
     // Check if animation is complete
-    if (
-      Math.abs(current.value - target) < 0.01 &&
-      Math.abs(current.velocity) < 0.01
-    ) {
+    if (Math.abs(current.value - target) < 0.01 && Math.abs(current.velocity) < 0.01) {
       currentRef.current = { value: target, velocity: 0 }
       callbackRef.current?.(target)
       animationRef.current = null
@@ -119,14 +107,17 @@ export function useSpring(
     animationRef.current = requestAnimationFrame(animate)
   }, [springConfig])
 
-  const setValue = useCallback((value: number, onChange?: (value: number) => void) => {
-    targetRef.current = value
-    callbackRef.current = onChange || null
+  const setValue = useCallback(
+    (value: number, onChange?: (value: number) => void) => {
+      targetRef.current = value
+      callbackRef.current = onChange || null
 
-    if (!animationRef.current) {
-      animationRef.current = requestAnimationFrame(animate)
-    }
-  }, [animate])
+      if (!animationRef.current) {
+        animationRef.current = requestAnimationFrame(animate)
+      }
+    },
+    [animate]
+  )
 
   const stop = useCallback(() => {
     if (animationRef.current) {
@@ -135,11 +126,14 @@ export function useSpring(
     }
   }, [])
 
-  const reset = useCallback((value: number) => {
-    stop()
-    currentRef.current = { value, velocity: 0 }
-    targetRef.current = value
-  }, [stop])
+  const reset = useCallback(
+    (value: number) => {
+      stop()
+      currentRef.current = { value, velocity: 0 }
+      targetRef.current = value
+    },
+    [stop]
+  )
 
   useEffect(() => {
     return () => {
@@ -181,19 +175,16 @@ export function useSprings<T extends Record<string, number>>(
     const springs = springsRef.current
     const targets = targetsRef.current
     let isComplete = true
-    const values: any = {}
+    const values: Record<string, number> = {}
 
     for (const key in springs) {
       const current = springs[key]
       const target = targets[key as keyof T]
 
       // Check if this spring is complete
-      if (
-        Math.abs(current.value - target) >= 0.01 ||
-        Math.abs(current.velocity) >= 0.01
-      ) {
+      if (Math.abs(current.value - target) >= 0.01 || Math.abs(current.velocity) >= 0.01) {
         isComplete = false
-        
+
         // Calculate spring physics
         const deltaTime = 1 / 60
         const next = calculateSpring(current, target, springConfig, deltaTime)
@@ -216,16 +207,19 @@ export function useSprings<T extends Record<string, number>>(
     }
   }, [springConfig])
 
-  const setValues = useCallback((values: Partial<T>, onChange?: (values: T) => void) => {
-    for (const key in values) {
-      targetsRef.current[key] = values[key]!
-    }
-    callbackRef.current = onChange || null
+  const setValues = useCallback(
+    (values: Partial<T>, onChange?: (values: T) => void) => {
+      for (const key in values) {
+        targetsRef.current[key] = values[key]!
+      }
+      callbackRef.current = onChange || null
 
-    if (!animationRef.current) {
-      animationRef.current = requestAnimationFrame(animate)
-    }
-  }, [animate])
+      if (!animationRef.current) {
+        animationRef.current = requestAnimationFrame(animate)
+      }
+    },
+    [animate]
+  )
 
   const stop = useCallback(() => {
     if (animationRef.current) {
@@ -234,13 +228,16 @@ export function useSprings<T extends Record<string, number>>(
     }
   }, [])
 
-  const reset = useCallback((values: T) => {
-    stop()
-    for (const key in values) {
-      springsRef.current[key] = { value: values[key], velocity: 0 }
-      targetsRef.current[key] = values[key]
-    }
-  }, [stop])
+  const reset = useCallback(
+    (values: T) => {
+      stop()
+      for (const key in values) {
+        springsRef.current[key] = { value: values[key], velocity: 0 }
+        targetsRef.current[key] = values[key]
+      }
+    },
+    [stop]
+  )
 
   useEffect(() => {
     return () => {
@@ -251,7 +248,7 @@ export function useSprings<T extends Record<string, number>>(
   }, [])
 
   const getCurrentValues = (): T => {
-    const values: any = {}
+    const values: Record<string, number> = {}
     for (const key in springsRef.current) {
       values[key] = springsRef.current[key].value
     }
@@ -288,7 +285,7 @@ export function useKonvaSpring(
   useEffect(() => {
     if (!node) return
 
-    const unsubscribe = springs.setValues(
+    springs.setValues(
       {
         x: node.x(),
         y: node.y(),
@@ -308,21 +305,26 @@ export function useKonvaSpring(
     }
   }, [node, springs])
 
-  const animateTo = useCallback((attrs: Partial<{
-    x: number
-    y: number
-    scaleX: number
-    scaleY: number
-    rotation: number
-    opacity: number
-  }>) => {
-    springs.setValues(attrs, (values) => {
-      if (node) {
-        node.setAttrs(values)
-        node.getLayer()?.batchDraw()
-      }
-    })
-  }, [node, springs])
+  const animateTo = useCallback(
+    (
+      attrs: Partial<{
+        x: number
+        y: number
+        scaleX: number
+        scaleY: number
+        rotation: number
+        opacity: number
+      }>
+    ) => {
+      springs.setValues(attrs, (values) => {
+        if (node) {
+          node.setAttrs(values)
+          node.getLayer()?.batchDraw()
+        }
+      })
+    },
+    [node, springs]
+  )
 
   return {
     animateTo,
@@ -346,20 +348,26 @@ export function useSelectionBoxSpring(config: SpringConfig | SpringPreset = 'qui
     config
   )
 
-  const show = useCallback((bounds: { x: number; y: number; width: number; height: number }) => {
-    springs.setValues({
-      ...bounds,
-      opacity: 1,
-    })
-  }, [springs])
+  const show = useCallback(
+    (bounds: { x: number; y: number; width: number; height: number }) => {
+      springs.setValues({
+        ...bounds,
+        opacity: 1,
+      })
+    },
+    [springs]
+  )
 
   const hide = useCallback(() => {
     springs.setValues({ opacity: 0 })
   }, [springs])
 
-  const update = useCallback((bounds: { x: number; y: number; width: number; height: number }) => {
-    springs.setValues(bounds)
-  }, [springs])
+  const update = useCallback(
+    (bounds: { x: number; y: number; width: number; height: number }) => {
+      springs.setValues(bounds)
+    },
+    [springs]
+  )
 
   return {
     ...springs.values,
@@ -374,14 +382,14 @@ export function useSelectionBoxSpring(config: SpringConfig | SpringPreset = 'qui
  */
 export function useMultiTransformSpring(
   selectedNodes: Konva.Node[],
-  config: SpringConfig | SpringPreset = 'gentle'
+  _config: SpringConfig | SpringPreset = 'gentle'
 ) {
   const initialPositions = useRef<Map<string, { x: number; y: number }>>(new Map())
   const springs = useRef<Map<string, ReturnType<typeof useSprings>>>(new Map())
 
   useEffect(() => {
     // Initialize springs for new nodes
-    selectedNodes.forEach(node => {
+    selectedNodes.forEach((node) => {
       const id = node.id()
       if (!springs.current.has(id)) {
         springs.current.set(id, {
@@ -395,7 +403,7 @@ export function useMultiTransformSpring(
     })
 
     // Clean up springs for removed nodes
-    const currentIds = new Set(selectedNodes.map(n => n.id()))
+    const currentIds = new Set(selectedNodes.map((n) => n.id()))
     springs.current.forEach((_, id) => {
       if (!currentIds.has(id)) {
         springs.current.delete(id)
@@ -404,27 +412,28 @@ export function useMultiTransformSpring(
     })
   }, [selectedNodes])
 
-  const animateToPositions = useCallback((
-    positions: Map<string, { x: number; y: number }>
-  ) => {
-    positions.forEach((pos, id) => {
-      const spring = springs.current.get(id)
-      const node = selectedNodes.find(n => n.id() === id)
-      
-      if (spring && node) {
-        spring.setValues(pos, (values) => {
-          node.setAttrs(values)
-          node.getLayer()?.batchDraw()
-        })
-      }
-    })
-  }, [selectedNodes])
+  const animateToPositions = useCallback(
+    (positions: Map<string, { x: number; y: number }>) => {
+      positions.forEach((pos, id) => {
+        const spring = springs.current.get(id)
+        const node = selectedNodes.find((n) => n.id() === id)
+
+        if (spring && node) {
+          spring.setValues(pos, (values) => {
+            node.setAttrs(values)
+            node.getLayer()?.batchDraw()
+          })
+        }
+      })
+    },
+    [selectedNodes]
+  )
 
   const reset = useCallback(() => {
     initialPositions.current.forEach((pos, id) => {
       const spring = springs.current.get(id)
-      const node = selectedNodes.find(n => n.id() === id)
-      
+      const node = selectedNodes.find((n) => n.id() === id)
+
       if (spring && node) {
         spring.reset(pos)
         node.setAttrs(pos)

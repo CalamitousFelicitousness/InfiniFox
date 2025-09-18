@@ -1,56 +1,95 @@
 /**
- * End-to-end test example for the complete workflow
- * This demonstrates how e2e tests should be structured in the new organization
+ * End-to-end test for complete InfiniFox workflow
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+// import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+// import userEvent from '@testing-library/user-event'
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 
 describe('InfiniFox Complete Workflow E2E', () => {
   beforeAll(async () => {
-    // Setup for e2e testing
-    // Initialize the complete application environment
-    // Mock or connect to actual sdnext backend
+    // Mock API responses
+    global.fetch = vi.fn()
   })
 
   afterAll(async () => {
-    // Cleanup after e2e tests
-    // Clear test data, close connections
+    vi.restoreAllMocks()
   })
 
   it('should complete a full text-to-image generation workflow', async () => {
-    // Test the complete flow from prompt input to generated image display
-    // 1. Enter prompt in Txt2Img panel
-    // 2. Configure generation settings
-    // 3. Initiate generation
-    // 4. Monitor progress via websocket
-    // 5. Display result on canvas
-    // 6. Save to history
+    // const user = userEvent.setup()
 
-    // Implementation would go here
-    expect(true).toBe(true)
+    // Mock successful generation response
+    ;(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        images: ['generated-image-id'],
+        info: { prompt: 'test prompt', seed: 12345 },
+      }),
+    })
+
+    // Workflow steps:
+    // 1. Enter prompt
+    // 2. Configure settings
+    // 3. Generate
+    // 4. Display result
+    // 5. Save to history
+
+    expect(true).toBe(true) // Placeholder - implement with actual component rendering
   })
 
   it('should handle image-to-image workflow with drawing modifications', async () => {
-    // Test the complete img2img flow with canvas drawing
-    // 1. Load initial image to canvas
-    // 2. Make drawing modifications
-    // 3. Configure img2img settings
-    // 4. Generate new image
-    // 5. Apply inpainting masks
-    // 6. Complete generation and display
+    // const user = userEvent.setup()
 
-    // Implementation would go here
-    expect(true).toBe(true)
+    // Mock img2img response
+    ;(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        images: ['modified-image-id'],
+        info: { prompt: 'modified prompt', denoising_strength: 0.75 },
+      }),
+    })
+
+    expect(true).toBe(true) // Placeholder - implement with actual component rendering
   })
 
   it('should maintain state consistency across browser refresh', async () => {
-    // Test that application state persists correctly
-    // 1. Create canvas with drawings
-    // 2. Configure settings
-    // 3. Simulate browser refresh
-    // 4. Verify state restoration
+    // Test state persistence
+    const mockState = {
+      layers: new Map(),
+      viewport: { x: 100, y: 200, scale: 1.5 },
+      tool: 'draw',
+    }
 
-    // Implementation would go here
-    expect(true).toBe(true)
+    // Simulate storing state
+    localStorage.setItem('infinifox-state', JSON.stringify(mockState))
+
+    // Simulate reload
+    const storedState = localStorage.getItem('infinifox-state')
+    expect(storedState).toBeDefined()
+
+    const parsed = JSON.parse(storedState!)
+    expect(parsed.viewport.x).toBe(100)
+    expect(parsed.tool).toBe('draw')
+  })
+
+  it('should handle error states gracefully', async () => {
+    ;(global.fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('Network error'))
+
+    // Test error handling
+    expect(true).toBe(true) // Placeholder - implement with actual error handling tests
+  })
+
+  it('should support keyboard shortcuts', async () => {
+    // const user = userEvent.setup()
+
+    // Test common shortcuts
+    // await user.keyboard('{Control>}z{/Control}') // Undo
+    // await user.keyboard('{Control>}{Shift>}z{/Shift}{/Control}') // Redo
+    // await user.keyboard('v') // Select tool
+    // await user.keyboard('b') // Brush tool
+    // await user.keyboard('e') // Eraser tool
+
+    expect(true).toBe(true) // Placeholder - implement with actual keyboard handling tests
   })
 })

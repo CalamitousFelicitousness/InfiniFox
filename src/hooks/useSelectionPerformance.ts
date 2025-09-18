@@ -4,6 +4,7 @@
  */
 
 import { useCallback, useMemo, useRef, useEffect } from 'react'
+
 import { useStore } from '../store/store'
 import type { ImageData } from '../store/types'
 
@@ -28,16 +29,16 @@ interface UseSelectionPerformanceOptions {
 export function useSelectionPerformance(options: UseSelectionPerformanceOptions = {}) {
   const {
     virtualizationThreshold = 100,
-    selectionBoxDebounce = 16,
+    // selectionBoxDebounce = 16,
     batchSize = 50,
     enableMetrics = false,
   } = options
 
   // Store subscriptions with specific selectors for performance
-  const selectedIds = useStore(state => state.selectedIds)
-  const images = useStore(state => state.images)
-  const selectionBox = useStore(state => state.selectionBox)
-  
+  const selectedIds = useStore((state) => state.selectedIds)
+  const images = useStore((state) => state.images)
+  // const selectionBox = useStore((state) => state.selectionBox)
+
   // Store actions
   const {
     selectItem,
@@ -45,7 +46,7 @@ export function useSelectionPerformance(options: UseSelectionPerformanceOptions 
     selectItems,
     deselectAll,
     batchUpdatePositions,
-    batchUpdateTransforms,
+    // batchUpdateTransforms,
   } = useStore()
 
   // Performance metrics tracking
@@ -70,36 +71,44 @@ export function useSelectionPerformance(options: UseSelectionPerformanceOptions 
   /**
    * Measure operation performance
    */
-  const measureOperation = useCallback(<T extends any[], R>(
-    operation: (...args: T) => R
-  ) => {
-    if (!enableMetrics) return operation
+  const measureOperation = useCallback(
+    <T extends unknown[], R>(operation: (...args: T) => R) => {
+      if (!enableMetrics) return operation
 
-    return (...args: T): R => {
-      const startTime = performance.now()
-      const startMemory = (performance as any).memory?.usedJSHeapSize || 0
-      
-      const result = operation(...args)
-      
-      const endTime = performance.now()
-      const endMemory = (performance as any).memory?.usedJSHeapSize || 0
-      const operationTime = endTime - startTime
-      const memoryUsed = endMemory - startMemory
+      return (...args: T): R => {
+        const startTime = performance.now()
+        const startMemory =
+          (performance as Performance & { memory?: { usedJSHeapSize: number } }).memory
+            ?.usedJSHeapSize || 0
 
-      // Update metrics
-      operationTimesRef.current.push(operationTime)
-      if (operationTimesRef.current.length > 100) {
-        operationTimesRef.current.shift()
+        const result = operation(...args)
+
+        const endTime = performance.now()
+        const endMemory =
+          (performance as Performance & { memory?: { usedJSHeapSize: number } }).memory
+            ?.usedJSHeapSize || 0
+        const operationTime = endTime - startTime
+        const memoryUsed = endMemory - startMemory
+
+        // Update metrics
+        operationTimesRef.current.push(operationTime)
+        if (operationTimesRef.current.length > 100) {
+          operationTimesRef.current.shift()
+        }
+
+        metricsRef.current.lastOperationTime = operationTime
+        metricsRef.current.averageOperationTime =
+          operationTimesRef.current.reduce((a, b) => a + b, 0) / operationTimesRef.current.length
+        metricsRef.current.peakMemoryUsage = Math.max(
+          metricsRef.current.peakMemoryUsage,
+          memoryUsed
+        )
+
+        return result
       }
-
-      metricsRef.current.lastOperationTime = operationTime
-      metricsRef.current.averageOperationTime = 
-        operationTimesRef.current.reduce((a, b) => a + b, 0) / operationTimesRef.current.length
-      metricsRef.current.peakMemoryUsage = Math.max(metricsRef.current.peakMemoryUsage, memoryUsed)
-
-      return result
-    }
-  }, [enableMetrics])
+    },
+    [enableMetrics]
+  )
 
   /**
    * Memoized selected images for efficient access
@@ -107,7 +116,7 @@ export function useSelectionPerformance(options: UseSelectionPerformanceOptions 
   const selectedImages = useMemo(() => {
     const selected: ImageData[] = []
     for (const id of selectedIds) {
-      const image = images.find(img => img.id === id)
+      const image = images.find((img) => img.id === id)
       if (image) selected.push(image)
     }
     return selected
@@ -150,29 +159,30 @@ export function useSelectionPerformance(options: UseSelectionPerformanceOptions 
    * Optimized batch selection with chunking
    */
   const selectItemsBatched = useCallback(
-    measureOperation((itemIds: string[]) => {
-      if (itemIds.length <= batchSize) {
-        selectItems(itemIds)
-        return
-      }
-
-      // Process in batches to avoid blocking
-      const chunks: string[][] = []
-      for (let i = 0; i < itemIds.length; i += batchSize) {
-        chunks.push(itemIds.slice(i, i + batchSize))
-      }
-
-      let currentChunk = 0
-      const processNextChunk = () => {
-        if (currentChunk < chunks.length) {
-          selectItems(chunks[currentChunk])
-          currentChunk++
-          requestAnimationFrame(processNextChunk)
+    (itemIds: string[]) =>
+      measureOperation((itemIds: string[]) => {
+        if (itemIds.length <= batchSize) {
+          selectItems(itemIds)
+          return
         }
-      }
-      
-      processNextChunk()
-    }),
+
+        // Process in batches to avoid blocking
+        const chunks: string[][] = []
+        for (let i = 0; i < itemIds.length; i += batchSize) {
+          chunks.push(itemIds.slice(i, i + batchSize))
+        }
+
+        let currentChunk = 0
+        const processNextChunk = () => {
+          if (currentChunk < chunks.length) {
+            selectItems(chunks[currentChunk])
+            currentChunk++
+            requestAnimationFrame(processNextChunk)
+          }
+        }
+
+        processNextChunk()
+      })(itemIds),
     [selectItems, batchSize, measureOperation]
   )
 
@@ -180,24 +190,25 @@ export function useSelectionPerformance(options: UseSelectionPerformanceOptions 
    * Optimized batch position update
    */
   const updatePositionsBatched = useCallback(
-    measureOperation((updates: Array<{ id: string; x: number; y: number }>) => {
-      if (updates.length <= batchSize) {
-        batchUpdatePositions(updates)
-        return
-      }
+    (updates: Array<{ id: string; x: number; y: number }>) =>
+      measureOperation((updates: Array<{ id: string; x: number; y: number }>) => {
+        if (updates.length <= batchSize) {
+          batchUpdatePositions(updates)
+          return
+        }
 
-      // Process in chunks
-      const chunks: typeof updates[] = []
-      for (let i = 0; i < updates.length; i += batchSize) {
-        chunks.push(updates.slice(i, i + batchSize))
-      }
+        // Process in chunks
+        const chunks: (typeof updates)[] = []
+        for (let i = 0; i < updates.length; i += batchSize) {
+          chunks.push(updates.slice(i, i + batchSize))
+        }
 
-      chunks.forEach((chunk, index) => {
-        setTimeout(() => {
-          batchUpdatePositions(chunk)
-        }, index * 0) // Use 0 delay to yield to event loop
-      })
-    }),
+        chunks.forEach((chunk, index) => {
+          setTimeout(() => {
+            batchUpdatePositions(chunk)
+          }, index * 0) // Use 0 delay to yield to event loop
+        })
+      })(updates),
     [batchUpdatePositions, batchSize, measureOperation]
   )
 
@@ -206,12 +217,12 @@ export function useSelectionPerformance(options: UseSelectionPerformanceOptions 
    */
   const updateSelectionBoxDebounced = useMemo(() => {
     let timeoutId: number | null = null
-    
+
     return (x: number, y: number) => {
       if (timeoutId) {
         cancelAnimationFrame(timeoutId)
       }
-      
+
       timeoutId = requestAnimationFrame(() => {
         useStore.getState().updateSelectionBox(x, y)
       })
@@ -222,13 +233,14 @@ export function useSelectionPerformance(options: UseSelectionPerformanceOptions 
    * Optimized selection toggle
    */
   const toggleSelectionOptimized = useCallback(
-    measureOperation((id: string) => {
-      if (selectedIds.has(id)) {
-        deselectItem(id)
-      } else {
-        selectItem(id)
-      }
-    }),
+    (id: string) =>
+      measureOperation((id: string) => {
+        if (selectedIds.has(id)) {
+          deselectItem(id)
+        } else {
+          selectItem(id)
+        }
+      })(id),
     [selectedIds, selectItem, deselectItem, measureOperation]
   )
 
@@ -236,25 +248,26 @@ export function useSelectionPerformance(options: UseSelectionPerformanceOptions 
    * Clear selection with cleanup
    */
   const clearSelectionOptimized = useCallback(
-    measureOperation(() => {
-      // Clear in batches if many items selected
-      if (selectedIds.size > batchSize) {
-        const ids = Array.from(selectedIds)
-        const chunks: string[][] = []
-        
-        for (let i = 0; i < ids.length; i += batchSize) {
-          chunks.push(ids.slice(i, i + batchSize))
-        }
+    () =>
+      measureOperation(() => {
+        // Clear in batches if many items selected
+        if (selectedIds.size > batchSize) {
+          const ids = Array.from(selectedIds)
+          const chunks: string[][] = []
 
-        chunks.forEach((chunk, index) => {
-          setTimeout(() => {
-            chunk.forEach(id => deselectItem(id))
-          }, index * 0)
-        })
-      } else {
-        deselectAll()
-      }
-    }),
+          for (let i = 0; i < ids.length; i += batchSize) {
+            chunks.push(ids.slice(i, i + batchSize))
+          }
+
+          chunks.forEach((chunk, index) => {
+            setTimeout(() => {
+              chunk.forEach((id) => deselectItem(id))
+            }, index * 0)
+          })
+        } else {
+          deselectAll()
+        }
+      })(),
     [selectedIds, deselectAll, deselectItem, batchSize, measureOperation]
   )
 
@@ -284,14 +297,14 @@ export function useSelectionPerformance(options: UseSelectionPerformanceOptions 
     selectedImages,
     selectionBounds,
     shouldVirtualize,
-    
+
     // Optimized operations
     selectItemsBatched,
     updatePositionsBatched,
     updateSelectionBoxDebounced,
     toggleSelectionOptimized,
     clearSelectionOptimized,
-    
+
     // Metrics
     metrics: enableMetrics ? metricsRef.current : undefined,
     getMetrics,
@@ -303,31 +316,37 @@ export function useSelectionPerformance(options: UseSelectionPerformanceOptions 
  * Hook for memoizing selection callbacks
  */
 export function useSelectionCallbacks() {
-  const {
-    selectItem,
-    deselectItem,
-    toggleSelection,
-    selectRange,
-    selectAll,
-    deselectAll,
-  } = useStore()
+  const { selectItem, deselectItem, toggleSelection, selectRange, selectAll, deselectAll } =
+    useStore()
 
   // Memoize all selection callbacks
-  const handleSelectItem = useCallback((id: string, mode?: 'none' | 'shift' | 'ctrl') => {
-    selectItem(id, mode)
-  }, [selectItem])
+  const handleSelectItem = useCallback(
+    (id: string, mode?: 'none' | 'shift' | 'ctrl') => {
+      selectItem(id, mode)
+    },
+    [selectItem]
+  )
 
-  const handleDeselectItem = useCallback((id: string) => {
-    deselectItem(id)
-  }, [deselectItem])
+  const handleDeselectItem = useCallback(
+    (id: string) => {
+      deselectItem(id)
+    },
+    [deselectItem]
+  )
 
-  const handleToggleSelection = useCallback((id: string) => {
-    toggleSelection(id)
-  }, [toggleSelection])
+  const handleToggleSelection = useCallback(
+    (id: string) => {
+      toggleSelection(id)
+    },
+    [toggleSelection]
+  )
 
-  const handleSelectRange = useCallback((fromId: string, toId: string) => {
-    selectRange(fromId, toId)
-  }, [selectRange])
+  const handleSelectRange = useCallback(
+    (fromId: string, toId: string) => {
+      selectRange(fromId, toId)
+    },
+    [selectRange]
+  )
 
   const handleSelectAll = useCallback(() => {
     selectAll()

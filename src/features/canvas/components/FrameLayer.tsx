@@ -1,6 +1,6 @@
 import type { KonvaEventObject } from 'konva/lib/Node'
 import React, { useEffect, useState } from 'react'
-import { Layer, Rect, Text, Circle, Image as KonvaImage } from 'react-konva'
+import { Group, Rect, Text, Circle, Image as KonvaImage } from 'react-konva'
 
 import { useKonvaTokens } from '../../../hooks/useKonvaTokens'
 import { CanvasTool } from '../hooks/useCanvasTools'
@@ -64,13 +64,14 @@ function usePreviewImage(src: string | undefined) {
 
     img.onerror = () => {
       if (!cancelled) {
-        console.error('Failed to load preview image:', src)
+        console.error('Failed to load preview image')
         setImage(null)
       }
     }
 
-    // Set src after attaching handlers
-    img.src = src
+    // Add data URL prefix if needed
+    const imageSrc = src.startsWith('data:') ? src : `data:image/png;base64,${src}`
+    img.src = imageSrc
 
     return () => {
       cancelled = true
@@ -335,7 +336,7 @@ function FrameLayerComponent({
   }
 
   return (
-    <Layer listening={currentTool === CanvasTool.SELECT}>
+    <Group listening={currentTool === CanvasTool.SELECT}>
       {frames.map((frame) => (
         <React.Fragment key={frame.id}>
           {/* Frame border */}
@@ -382,7 +383,7 @@ function FrameLayerComponent({
           {renderError(frame)}
         </React.Fragment>
       ))}
-    </Layer>
+    </Group>
   )
 }
 

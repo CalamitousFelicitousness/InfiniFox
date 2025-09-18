@@ -1,5 +1,5 @@
 import React from 'react'
-import { Layer, Rect } from 'react-konva'
+import { Rect } from 'react-konva'
 
 interface SelectionBoxProps {
   startX: number
@@ -26,20 +26,18 @@ export const SelectionBox: React.FC<SelectionBoxProps> = ({
   const height = Math.abs(endY - startY)
 
   return (
-    <Layer>
-      <Rect
-        x={x}
-        y={y}
-        width={width}
-        height={height}
-        fill="rgba(59, 130, 246, 0.1)"
-        stroke="rgb(59, 130, 246)"
-        strokeWidth={1 / scale}
-        dash={[5 / scale, 5 / scale]}
-        listening={false}
-        perfectDrawEnabled={false}
-        shadowForStrokeEnabled={false}
-      />
-    </Layer>
+    <Rect
+      x={x}
+      y={y}
+      width={width}
+      height={height}
+      fill="rgba(59, 130, 246, 0.1)"
+      stroke="rgb(59, 130, 246)"
+      strokeWidth={1 / scale}
+      dash={[5 / scale, 5 / scale]}
+      listening={false}
+      perfectDrawEnabled={false}
+      shadowForStrokeEnabled={false}
+    />
   )
 }

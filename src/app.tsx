@@ -9,6 +9,7 @@ import { ProgressProvider } from './contexts/ProgressContext'
 import { Canvas } from './features/canvas/Canvas'
 import { DrawingModal } from './features/drawing'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
+import { StorageMigrationService } from './services/migration/StorageMigrationService'
 import { imageStorage } from './services/storage'
 import { useStore } from './store/store'
 
@@ -30,6 +31,18 @@ export function App() {
   // Initialize app on mount
   useEffect(() => {
     const initApp = async () => {
+      // Check and run storage migration if needed
+      if (await StorageMigrationService.isMigrationNeeded()) {
+        try {
+          console.log('Starting storage migration...')
+          await StorageMigrationService.migrate()
+          console.log('Storage migration completed')
+        } catch (error) {
+          console.error('Storage migration failed:', error)
+          // Continue with app initialization despite migration failure
+        }
+      }
+
       // Test API connection
       const result = await testConnection()
       if (!result.connected) {

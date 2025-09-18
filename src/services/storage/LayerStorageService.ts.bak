@@ -1,0 +1,286 @@
+import Dexie from 'dexie'
+import type { Table } from 'dexie'
+
+import type { LayerNode } from '../../store/slices/layerSystemSlice'
+
+export interface LayerStorageMetadata {
+  id: 'layer-metadata'
+  layerOrder: string[]
+  activeArtboardId: string | null
+  version: number
+  lastUpdated: number
+}
+
+export interface LayerBlob {
+  blobId: string
+  blob: Blob
+  layerId: string
+  createdAt: number
+}
+
+class LayerStorageDatabase extends Dexie {
+  layers!: Table<LayerNode>
+  layerBlobs!: Table<LayerBlob>
+  layerMetadata!: Table<LayerStorageMetadata>
+
+  constructor() {
+    super('InfiniFoxLayerStorage')
+
+    // Define schema version 1
+    this.version(1).stores({
+      layers: 'id, type, parentId, createdAt',
+      layerBlobs: 'blobId, layerId, createdAt',
+      layerMetadata: 'id',
+    })
+  }
+}
+
+export class LayerStorageService {
+  private db: LayerStorageDatabase
+
+  constructor() {
+    this.db = new LayerStorageDatabase()
+  }
+
+  /**
+   * Save entire layer structure to IndexedDB
+   */
+  async saveLayerStructure(
+    layers: Map<string, LayerNode>,
+    layerOrder: string[],
+    activeArtboardId: string | null
+  ): Promise<void> {
+    try {
+      await this.db.transaction('rw', this.db.layers, this.db.layerMetadata, this.db.layerBlobs, async () => {
+        // Clear existing data
+        await this.db.layers.clear()
+
+        // Save each layer
+        const layerArray = Array.from(layers.values())
+        for (const layer of layerArray) {
+          // Save associated blob if image layer
+          if (layer.type === 'image' && layer.imageProps?.src) {
+            const blobId = await this.saveBlobForLayer(layer.id, layer.imageProps.src)
+            if (blobId) {
+              // Store blobId and clear the blob URL since it won't be valid next session
+              layer.imageProps.blobId = blobId
+              // Keep src for reference but it will be invalid on reload
+            }
+          }
+          
+          // Save layer data with updated blobId
+          await this.db.layers.put(layer)
+        }
+
+        // Save metadata
+        const metadata: LayerStorageMetadata = {
+          id: 'layer-metadata',
+          layerOrder,
+          activeArtboardId,
+          version: 1,
+          lastUpdated: Date.now(),
+        }
+        await this.db.layerMetadata.put(metadata)
+      })
+    } catch (error) {
+      console.error('Failed to save layer structure:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Load layer structure from IndexedDB
+   */
+  async loadLayerStructure(): Promise<{
+    layers: Map<string, LayerNode>
+    layerOrder: string[]
+    activeArtboardId: string | null
+  } | null> {
+    try {
+      const metadata = await this.db.layerMetadata.get('layer-metadata')
+      if (!metadata) return null
+
+      const layerArray = await this.db.layers.toArray()
+      const layers = new Map<string, LayerNode>()
+
+      // Restore layers with blob URLs
+      const allBlobs = await this.db.layerBlobs.toArray()
+      const blobMap = new Map(allBlobs.map(b => [b.blobId, b]))
+      
+      for (const layer of layerArray) {
+        if (layer.type === 'image' && layer.imageProps) {
+          // First check for blobId
+          if (layer.imageProps.blobId) {
+            const blobData = blobMap.get(layer.imageProps.blobId)
+            if (blobData) {
+              layer.imageProps.src = URL.createObjectURL(blobData.blob)
+              console.log(`Restored blob URL for layer ${layer.id}: ${layer.imageProps.src}`)
+            } else {
+              console.warn(`Blob not found for layer ${layer.id}: ${layer.imageProps.blobId}`)
+            }
+          }
+          // Fallback: try to find blob by layerId if no blobId
+          else {
+            const blobData = allBlobs.find(b => b.layerId === layer.id)
+            if (blobData) {
+              layer.imageProps.src = URL.createObjectURL(blobData.blob)
+              layer.imageProps.blobId = blobData.blobId
+              console.log(`Restored blob URL for layer ${layer.id} (fallback): ${layer.imageProps.src}`)
+            }
+          }
+        }
+        layers.set(layer.id, layer)
+      }
+
+      return {
+        layers,
+        layerOrder: metadata.layerOrder,
+        activeArtboardId: metadata.activeArtboardId,
+      }
+    } catch (error) {
+      console.error('Failed to load layer structure:', error)
+      return null
+    }
+  }
+
+  /**
+   * Save a single layer
+   */
+  async saveLayer(layer: LayerNode): Promise<void> {
+    // Save blob if image layer
+    if (layer.type === 'image' && layer.imageProps?.src) {
+      const blobId = await this.saveBlobForLayer(layer.id, layer.imageProps.src)
+      if (blobId) {
+        layer.imageProps.blobId = blobId
+      }
+    }
+    
+    await this.db.layers.put(layer)
+  }
+
+  /**
+   * Delete a layer and its associated data
+   */
+  async deleteLayer(layerId: string): Promise<void> {
+    const layer = await this.db.layers.get(layerId)
+    if (!layer) return
+
+    // Delete associated blob if exists
+    if (layer.type === 'image' && layer.imageProps?.blobId) {
+      await this.db.layerBlobs.delete(layer.imageProps.blobId)
+    }
+
+    // Delete layer
+    await this.db.layers.delete(layerId)
+
+    // Recursively delete children
+    if (layer.children) {
+      for (const childId of layer.children) {
+        await this.deleteLayer(childId)
+      }
+    }
+  }
+
+  /**
+   * Save blob for a layer
+   */
+  private async saveBlobForLayer(
+    layerId: string,
+    src: string
+  ): Promise<string | null> {
+    if (!src.startsWith('blob:') && !src.startsWith('data:')) {
+      return null // Not a local blob
+    }
+
+    try {
+      // Check if we already have this blob saved
+      const existingBlob = await this.db.layerBlobs
+        .where('layerId')
+        .equals(layerId)
+        .first()
+      
+      if (existingBlob) {
+        // Update existing blob
+        await this.db.layerBlobs.delete(existingBlob.blobId)
+      }
+      
+      let blob: Blob
+
+      if (src.startsWith('data:')) {
+        // Convert data URL to blob
+        const response = await fetch(src)
+        blob = await response.blob()
+      } else {
+        // Fetch existing blob
+        const response = await fetch(src)
+        blob = await response.blob()
+      }
+
+      const blobId = `blob-${layerId}-${Date.now()}`
+      const blobData: LayerBlob = {
+        blobId,
+        blob,
+        layerId,
+        createdAt: Date.now(),
+      }
+
+      await this.db.layerBlobs.put(blobData)
+
+      return blobId
+    } catch (error) {
+      console.error('Failed to save blob for layer:', error)
+      return null
+    }
+  }
+
+  /**
+   * Clean up orphaned blobs
+   */
+  async cleanupOrphanedBlobs(): Promise<void> {
+    const layers = await this.db.layers.toArray()
+    const validBlobIds = new Set<string>()
+
+    // Collect valid blob IDs
+    layers.forEach((layer) => {
+      if (layer.type === 'image' && layer.imageProps?.blobId) {
+        validBlobIds.add(layer.imageProps.blobId)
+      }
+    })
+
+    // Delete orphaned blobs
+    const allBlobs = await this.db.layerBlobs.toArray()
+    for (const blobData of allBlobs) {
+      if (!validBlobIds.has(blobData.blobId)) {
+        await this.db.layerBlobs.delete(blobData.blobId)
+      }
+    }
+  }
+
+  /**
+   * Get storage size info
+   */
+  async getStorageInfo(): Promise<{
+    layerCount: number
+    blobCount: number
+    estimatedSize: number
+  }> {
+    const layerCount = await this.db.layers.count()
+    const blobCount = await this.db.layerBlobs.count()
+
+    // Estimate size (rough)
+    let estimatedSize = 0
+    const blobs = await this.db.layerBlobs.toArray()
+    blobs.forEach((b) => {
+      estimatedSize += b.blob.size
+    })
+
+    return {
+      layerCount,
+      blobCount,
+      estimatedSize,
+    }
+  }
+}
+
+// Export singleton instance
+export const layerStorage = new LayerStorageService()

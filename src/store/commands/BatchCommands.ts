@@ -1,11 +1,11 @@
-import type { ImageData, Transform } from '../types'
 import type { Command } from '../historyStore'
+import type { ImageData, Transform } from '../types'
 
 // Store reference type to avoid circular dependency
 type StoreRef = {
   getState: () => {
-    batchUpdatePositions: (updates: Array<{id: string, x: number, y: number}>) => void
-    batchUpdateTransforms: (updates: Array<{id: string, transform: Transform}>) => void
+    batchUpdatePositions: (updates: Array<{ id: string; x: number; y: number }>) => void
+    batchUpdateTransforms: (updates: Array<{ id: string; transform: Transform }>) => void
     batchRemoveImages: (ids: string[]) => void
     batchDuplicateImages: (ids: string[]) => void
     addImageDirect: (image: ImageData) => void
@@ -19,24 +19,28 @@ type StoreRef = {
  */
 export class BatchMoveCommand implements Command {
   constructor(
-    private updates: Array<{id: string, oldPosition: {x: number, y: number}, newPosition: {x: number, y: number}}>,
+    private updates: Array<{
+      id: string
+      oldPosition: { x: number; y: number }
+      newPosition: { x: number; y: number }
+    }>,
     private storeRef: StoreRef
   ) {}
 
   execute(): void {
-    const positionUpdates = this.updates.map(u => ({
+    const positionUpdates = this.updates.map((u) => ({
       id: u.id,
       x: u.newPosition.x,
-      y: u.newPosition.y
+      y: u.newPosition.y,
     }))
     this.storeRef.getState().batchUpdatePositions(positionUpdates)
   }
 
   undo(): void {
-    const positionUpdates = this.updates.map(u => ({
+    const positionUpdates = this.updates.map((u) => ({
       id: u.id,
       x: u.oldPosition.x,
-      y: u.oldPosition.y
+      y: u.oldPosition.y,
     }))
     this.storeRef.getState().batchUpdatePositions(positionUpdates)
   }
@@ -47,22 +51,22 @@ export class BatchMoveCommand implements Command {
  */
 export class BatchTransformCommand implements Command {
   constructor(
-    private updates: Array<{id: string, oldTransform: Transform, newTransform: Transform}>,
+    private updates: Array<{ id: string; oldTransform: Transform; newTransform: Transform }>,
     private storeRef: StoreRef
   ) {}
 
   execute(): void {
-    const transformUpdates = this.updates.map(u => ({
+    const transformUpdates = this.updates.map((u) => ({
       id: u.id,
-      transform: u.newTransform
+      transform: u.newTransform,
     }))
     this.storeRef.getState().batchUpdateTransforms(transformUpdates)
   }
 
   undo(): void {
-    const transformUpdates = this.updates.map(u => ({
+    const transformUpdates = this.updates.map((u) => ({
       id: u.id,
-      transform: u.oldTransform
+      transform: u.oldTransform,
     }))
     this.storeRef.getState().batchUpdateTransforms(transformUpdates)
   }
@@ -81,8 +85,8 @@ export class BatchDeleteCommand implements Command {
     // Store copies of images to be deleted for undo
     const state = this.storeRef.getState()
     this.deletedImages = state.images
-      .filter(img => this.imageIds.includes(img.id))
-      .map(img => ({ ...img })) // Create copies
+      .filter((img) => this.imageIds.includes(img.id))
+      .map((img) => ({ ...img })) // Create copies
   }
 
   execute(): void {
@@ -92,7 +96,7 @@ export class BatchDeleteCommand implements Command {
   undo(): void {
     // Restore deleted images
     const state = this.storeRef.getState()
-    this.deletedImages.forEach(img => {
+    this.deletedImages.forEach((img) => {
       state.addImageDirect(img)
     })
   }
@@ -113,13 +117,13 @@ export class BatchDuplicateCommand implements Command {
     // Store the IDs of duplicated images for undo
     const state = this.storeRef.getState()
     const beforeCount = state.images.length
-    
+
     state.batchDuplicateImages(this.imageIds)
-    
+
     // After duplication, get the new image IDs
     const afterImages = state.images
     const newImages = afterImages.slice(beforeCount)
-    this.duplicatedImageIds = newImages.map(img => img.id)
+    this.duplicatedImageIds = newImages.map((img) => img.id)
   }
 
   undo(): void {
@@ -143,8 +147,8 @@ export class BatchZIndexCommand implements Command {
   ) {
     // Store current z-indices for undo
     const state = this.storeRef.getState()
-    this.imageIds.forEach(id => {
-      const img = state.images.find(i => i.id === id)
+    this.imageIds.forEach((id) => {
+      const img = state.images.find((i) => i.id === id)
       if (img) {
         this.oldZIndices.set(id, img.zIndex)
       }
@@ -152,8 +156,15 @@ export class BatchZIndexCommand implements Command {
   }
 
   execute(): void {
-    const state = this.storeRef.getState() as any
-    
+    const state = this.storeRef.getState() as StoreRef['getState'] extends () => infer R
+      ? R & {
+          bringToFront?: (ids: string[]) => void
+          sendToBack?: (ids: string[]) => void
+          bringForward?: (ids: string[]) => void
+          sendBackward?: (ids: string[]) => void
+        }
+      : never
+
     switch (this.operation) {
       case 'front':
         state.bringToFront?.(this.imageIds)
@@ -172,15 +183,15 @@ export class BatchZIndexCommand implements Command {
 
   undo(): void {
     // Restore original z-indices
-    const updates: Array<{id: string, transform: Transform}> = []
-    
+    const updates: Array<{ id: string; transform: Transform }> = []
+
     this.oldZIndices.forEach((zIndex, id) => {
       updates.push({
         id,
-        transform: { zIndex: zIndex ?? 0 }
+        transform: { zIndex: zIndex ?? 0 },
       })
     })
-    
+
     if (updates.length > 0) {
       this.storeRef.getState().batchUpdateTransforms(updates)
     }

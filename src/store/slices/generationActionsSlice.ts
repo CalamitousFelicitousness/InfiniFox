@@ -1,6 +1,6 @@
 import { sdnextApi } from '../../api/sdnextApi'
 import { progressService } from '../../services/progress/ProgressService'
-import { imageStorage } from '../../services/storage'
+import { imageStorage } from '../../services/storage/UnifiedImageStorageService'
 import { useQueueStore } from '../queueStore'
 import type { InpaintParams, SliceCreator } from '../types'
 
@@ -78,8 +78,17 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       // Create unique ID for the image
       const imageId = `img-${Date.now()}`
 
-      // Convert base64 to blob and create object URL
-      const storedImage = await imageStorage.createFromBase64(imageId, response.images[0], {
+      // Convert base64 to blob
+      const base64 = response.images[0]
+      const binaryString = atob(base64.startsWith('data:') ? base64.split(',')[1] : base64)
+      const bytes = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+      const blob = new Blob([bytes], { type: 'image/png' })
+
+      // Store the blob
+      const storedImage = await imageStorage.createFromBlob(imageId, blob, {
         type: 'generated',
         prompt,
         negativePrompt,
@@ -92,25 +101,51 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
         usedIn: new Set(),
       })
 
+      // Get object URL for display
+      const objectUrl = await imageStorage.getOrCreateObjectUrl(imageId)
+
       // Use the frame position
       const frame = generationFrames.find((f) => f.id === actualFrameId)
       const frameX = frame ? frame.x : Math.random() * (window.innerWidth - 400)
       const frameY = frame ? frame.y : Math.random() * (window.innerHeight - 200)
 
-      // Add image to canvas with object URL instead of base64
-      const newImage = {
-        id: imageId,
-        src: storedImage.objectUrl, // Use object URL instead of base64
-        x: frameX,
-        y: frameY,
-        width,
-        height,
-        metadata: storedImage.metadata,
-        blobId: imageId, // Reference to stored blob
-        isTemporary: false,
-      }
+      // Check if layer system is enabled (look for addLayer function)
+      const hasLayerSystem = typeof get().addLayer === 'function'
 
-      get().addImage(newImage)
+      if (hasLayerSystem) {
+        // Add as layer for layer system
+        get().addLayer(
+          {
+            type: 'image',
+            name: prompt ? `Generated: ${prompt.slice(0, 30)}...` : 'Generated Image',
+            x: frameX,
+            y: frameY,
+            imageProps: {
+              imageId, // Reference to unified storage
+              width,
+              height,
+              naturalWidth: width,
+              naturalHeight: height,
+            },
+          },
+          undefined // No parent - add as root layer
+        )
+      } else {
+        // Add to flat images array for old system
+        const newImage = {
+          id: imageId,
+          src: objectUrl, // Use object URL instead of base64
+          x: frameX,
+          y: frameY,
+          width,
+          height,
+          metadata: storedImage.metadata,
+          blobId: imageId, // Reference to stored blob
+          isTemporary: false,
+        }
+
+        get().addImage(newImage)
+      }
 
       // Remove the generation frame
       removeGenerationFrame(actualFrameId)
@@ -123,12 +158,17 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       progressService.stopPolling(true)
     } catch (error) {
       console.error('Failed to generate image:', error)
-      alert('Failed to generate image. Check console for details.')
+
+      // Extract detailed error message
+      const errorMessage = error instanceof Error ? error.message : 'Generation failed'
+      const userMessage = errorMessage.replace('API request failed: ', '')
+
+      alert(`Failed to generate image: ${userMessage}`)
 
       // Mark frame as error
       updateGenerationFrame(actualFrameId, {
         isGenerating: false,
-        error: error.message || 'Generation failed',
+        error: userMessage,
       })
       // Remove frame after delay
       setTimeout(() => {
@@ -200,7 +240,16 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       const response = await sdnextApi.txt2img(params)
 
       const imageId = `img-${Date.now()}`
-      const storedImage = await imageStorage.createFromBase64(imageId, response.images[0], {
+      // Convert base64 to blob
+      const base64 = response.images[0]
+      const binaryString = atob(base64.startsWith('data:') ? base64.split(',')[1] : base64)
+      const bytes = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+      const blob = new Blob([bytes], { type: 'image/png' })
+
+      const storedImage = await imageStorage.createFromBlob(imageId, blob, {
         type: 'generated',
         prompt,
         negativePrompt,
@@ -213,19 +262,45 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
         usedIn: new Set(),
       })
 
-      const newImage = {
-        id: imageId,
-        src: storedImage.objectUrl,
-        x: frame.x,
-        y: frame.y,
-        width: frame.width,
-        height: frame.height,
-        metadata: storedImage.metadata,
-        blobId: imageId,
-        isTemporary: false,
-      }
+      const objectUrl = await imageStorage.getOrCreateObjectUrl(imageId)
 
-      get().addImage(newImage)
+      // Check if layer system is enabled
+      const hasLayerSystem = typeof get().addLayer === 'function'
+
+      if (hasLayerSystem) {
+        // Add as layer for layer system
+        get().addLayer(
+          {
+            type: 'image',
+            name: prompt ? `Generated: ${prompt.slice(0, 30)}...` : 'Generated Image',
+            x: frame.x,
+            y: frame.y,
+            imageProps: {
+              imageId,
+              width: frame.width,
+              height: frame.height,
+              naturalWidth: frame.width,
+              naturalHeight: frame.height,
+            },
+          },
+          undefined
+        )
+      } else {
+        // Add to flat images array for old system
+        const newImage = {
+          id: imageId,
+          src: objectUrl,
+          x: frame.x,
+          y: frame.y,
+          width: frame.width,
+          height: frame.height,
+          metadata: storedImage.metadata,
+          blobId: imageId,
+          isTemporary: false,
+        }
+
+        get().addImage(newImage)
+      }
 
       // Remove frame after successful generation
       removeGenerationFrame?.(frameId)
@@ -235,12 +310,17 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       progressService.stopPolling(true)
     } catch (error) {
       console.error('Failed to generate image:', error)
-      alert('Failed to generate image. Check console for details.')
+
+      // Extract detailed error message
+      const errorMessage = error instanceof Error ? error.message : 'Generation failed'
+      const userMessage = errorMessage.replace('API request failed: ', '')
+
+      alert(`Failed to generate image: ${userMessage}`)
 
       // Mark frame as error
       updateGenerationFrame?.(frameId, {
         isGenerating: false,
-        error: error.message || 'Generation failed',
+        error: userMessage,
       })
 
       progressService.stopPolling(false)
@@ -316,8 +396,16 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       // Create unique ID for the image
       const imageId = `img-${Date.now()}`
 
-      // Convert base64 to blob and create object URL
-      const storedImage = await imageStorage.createFromBase64(imageId, response.images[0], {
+      // Convert base64 to blob
+      const base64 = response.images[0]
+      const binaryString = atob(base64.startsWith('data:') ? base64.split(',')[1] : base64)
+      const bytes = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+      const blob = new Blob([bytes], { type: 'image/png' })
+
+      const storedImage = await imageStorage.createFromBlob(imageId, blob, {
         type: 'generated',
         prompt,
         negativePrompt,
@@ -331,6 +419,8 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
         usedIn: new Set(),
       })
 
+      const objectUrl = await imageStorage.getOrCreateObjectUrl(imageId)
+
       // Determine position based on frame or active generation frame
       let x: number, y: number
       if (frame) {
@@ -342,20 +432,40 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
         y = activeFrame ? activeFrame.y : Math.random() * (window.innerHeight - 200)
       }
 
-      // Add image to canvas with object URL
-      const newImage = {
-        id: imageId,
-        src: storedImage.objectUrl,
-        x,
-        y,
-        width: finalWidth,
-        height: finalHeight,
-        metadata: storedImage.metadata,
-        blobId: imageId,
-        isTemporary: false,
-      }
+      // Check if layer system is enabled
+      const hasLayerSystem = typeof get().addLayer === 'function'
 
-      get().addImage(newImage)
+      if (hasLayerSystem) {
+        get().addLayer(
+          {
+            type: 'image',
+            name: prompt ? `Img2Img: ${prompt.slice(0, 25)}...` : 'Img2Img Result',
+            x,
+            y,
+            imageProps: {
+              imageId,
+              width: finalWidth,
+              height: finalHeight,
+              naturalWidth: finalWidth,
+              naturalHeight: finalHeight,
+            },
+          },
+          undefined
+        )
+      } else {
+        const newImage = {
+          id: imageId,
+          src: objectUrl,
+          x,
+          y,
+          width: finalWidth,
+          height: finalHeight,
+          metadata: storedImage.metadata,
+          blobId: imageId,
+          isTemporary: false,
+        }
+        get().addImage(newImage)
+      }
 
       // Mark frame as complete before removing
       if (frameId) {
@@ -378,13 +488,18 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       set({ isLoading: false })
     } catch (error) {
       console.error('Failed to generate image:', error)
-      alert('Failed to generate image. Check console for details.')
+
+      // Extract detailed error message
+      const errorMessage = error instanceof Error ? error.message : 'Generation failed'
+      const userMessage = errorMessage.replace('API request failed: ', '')
+
+      alert(`Failed to generate image: ${userMessage}`)
 
       // Mark frame as error if it exists
       if (frameId) {
         updateGenerationFrame?.(frameId, {
           isGenerating: false,
-          error: error.message || 'Generation failed',
+          error: userMessage,
         })
       }
 
@@ -468,8 +583,16 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       // Create unique ID for the image
       const imageId = `img-${Date.now()}`
 
-      // Convert base64 to blob and create object URL
-      const storedImage = await imageStorage.createFromBase64(imageId, response.images[0], {
+      // Convert base64 to blob
+      const base64 = response.images[0]
+      const binaryString = atob(base64.startsWith('data:') ? base64.split(',')[1] : base64)
+      const bytes = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+      const blob = new Blob([bytes], { type: 'image/png' })
+
+      const storedImage = await imageStorage.createFromBlob(imageId, blob, {
         type: 'generated',
         prompt,
         negativePrompt,
@@ -483,6 +606,8 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
         usedIn: new Set(),
       })
 
+      const objectUrl = await imageStorage.getOrCreateObjectUrl(imageId)
+
       // Determine position based on frame or active generation frame
       let x: number, y: number
       if (frame) {
@@ -494,20 +619,40 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
         y = activeFrame ? activeFrame.y : Math.random() * (window.innerHeight - 200)
       }
 
-      // Add image to canvas with object URL
-      const newImage = {
-        id: imageId,
-        src: storedImage.objectUrl,
-        x,
-        y,
-        width: finalWidth,
-        height: finalHeight,
-        metadata: storedImage.metadata,
-        blobId: imageId,
-        isTemporary: false,
-      }
+      // Check if layer system is enabled
+      const hasLayerSystem = typeof get().addLayer === 'function'
 
-      get().addImage(newImage)
+      if (hasLayerSystem) {
+        get().addLayer(
+          {
+            type: 'image',
+            name: prompt ? `Inpaint: ${prompt.slice(0, 25)}...` : 'Inpaint Result',
+            x,
+            y,
+            imageProps: {
+              imageId,
+              width: finalWidth,
+              height: finalHeight,
+              naturalWidth: finalWidth,
+              naturalHeight: finalHeight,
+            },
+          },
+          undefined
+        )
+      } else {
+        const newImage = {
+          id: imageId,
+          src: objectUrl,
+          x,
+          y,
+          width: finalWidth,
+          height: finalHeight,
+          metadata: storedImage.metadata,
+          blobId: imageId,
+          isTemporary: false,
+        }
+        get().addImage(newImage)
+      }
 
       // Mark frame as complete before removing
       if (frameId) {
@@ -530,13 +675,18 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       set({ isLoading: false })
     } catch (error) {
       console.error('Failed to generate inpaint:', error)
-      alert('Failed to generate inpaint. Check console for details.')
+
+      // Extract detailed error message
+      const errorMessage = error instanceof Error ? error.message : 'Generation failed'
+      const userMessage = errorMessage.replace('API request failed: ', '')
+
+      alert(`Failed to generate inpaint: ${userMessage}`)
 
       // Mark frame as error if it exists
       if (frameId) {
         updateGenerationFrame?.(frameId, {
           isGenerating: false,
-          error: error.message || 'Generation failed',
+          error: userMessage,
         })
       }
 
@@ -554,21 +704,35 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       console.log('Loading images from storage...')
       const storedImages = await imageStorage.loadAllFromIndexedDB()
 
-      const images = storedImages.map((stored) => ({
-        id: stored.id,
-        src: stored.objectUrl,
-        // Use saved position if available, otherwise use random position
-        x: stored.position?.x ?? Math.random() * (window.innerWidth - 400),
-        y: stored.position?.y ?? Math.random() * (window.innerHeight - 200),
-        width: stored.metadata.width,
-        height: stored.metadata.height,
-        metadata: stored.metadata,
-        blobId: stored.id,
-        isTemporary: false,
-      }))
+      const images = await Promise.all(
+        storedImages.map(async (stored) => {
+          // Get object URL for each stored image
+          const objectUrl = await imageStorage.getOrCreateObjectUrl(stored.id)
+          if (!objectUrl) {
+            console.warn(`Failed to create object URL for image ${stored.id}`)
+            return null
+          }
 
-      set({ images })
-      console.log(`Loaded ${images.length} images from storage with positions`)
+          return {
+            id: stored.id,
+            src: objectUrl,
+            // Use saved position if available, otherwise use random position
+            x: stored.position?.x ?? Math.random() * (window.innerWidth - 400),
+            y: stored.position?.y ?? Math.random() * (window.innerHeight - 200),
+            width: stored.metadata.width,
+            height: stored.metadata.height,
+            metadata: stored.metadata,
+            blobId: stored.id,
+            isTemporary: false,
+          }
+        })
+      )
+
+      // Filter out any null entries from failed URL creation
+      const validImages = images.filter(Boolean)
+
+      set({ images: validImages })
+      console.log(`Loaded ${validImages.length} images from storage with positions`)
 
       // Update storage stats
       await get().updateStorageStats()

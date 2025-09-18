@@ -25,7 +25,7 @@
 :root {
   /* Apply base color scheme */
   color-scheme: dark;
-  
+
   /* Base font settings */
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -54,7 +54,7 @@ body {
   line-height: var(--line-height-normal);
   color: var(--color-text-primary);
   background-color: var(--color-background-primary);
-  
+
   /* Prevent iOS bounce scrolling */
   position: fixed;
   overflow: hidden;
@@ -164,13 +164,13 @@ label {
   user-select: none;
 }
 
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="number"],
-input[type="search"],
-input[type="tel"],
-input[type="url"],
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='number'],
+input[type='search'],
+input[type='tel'],
+input[type='url'],
 textarea,
 select {
   width: 100%;
@@ -182,25 +182,25 @@ select {
   border: var(--border-default);
   border-radius: var(--radius-base);
   transition: var(--transition-input);
-  
+
   &:hover {
     border-color: var(--color-border-primary);
     background-color: var(--color-surface-primary);
   }
-  
+
   &:focus {
     outline: none;
     border-color: var(--color-border-focus);
     box-shadow: var(--ring-sm);
     background-color: var(--color-surface-primary);
   }
-  
+
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     background-color: var(--color-surface-disabled);
   }
-  
+
   &::placeholder {
     color: var(--color-text-tertiary);
   }
@@ -225,8 +225,8 @@ select {
    Checkbox and Radio
    ========================================== */
 
-input[type="checkbox"],
-input[type="radio"] {
+input[type='checkbox'],
+input[type='radio'] {
   width: var(--spacing-5);
   height: var(--spacing-5);
   margin-right: var(--spacing-2);
@@ -256,7 +256,7 @@ pre {
   background-color: var(--custom-code-background, var(--color-gray-50));
   border-radius: var(--radius-base);
   overflow-x: auto;
-  
+
   code {
     padding: 0;
     background-color: transparent;
@@ -283,7 +283,7 @@ pre {
 .loading {
   position: relative;
   pointer-events: none;
-  
+
   &::after {
     content: '';
     position: absolute;
@@ -345,7 +345,7 @@ pre {
    ========================================== */
 
 .theme-transitioning * {
-  transition: 
+  transition:
     background-color var(--duration-moderate) var(--easing-ease),
     border-color var(--duration-moderate) var(--easing-ease),
     color var(--duration-moderate) var(--easing-ease) !important;
@@ -367,7 +367,7 @@ pre {
   :root {
     --font-size-base: 1rem;
   }
-  
+
   .container {
     max-width: var(--container-xl);
   }
@@ -376,13 +376,13 @@ pre {
 /* Touch device adjustments */
 @media (hover: none) and (pointer: coarse) {
   button,
-  input[type="checkbox"],
-  input[type="radio"],
+  input[type='checkbox'],
+  input[type='radio'],
   select {
     min-height: 44px;
     min-width: 44px;
   }
-  
+
   .form-group {
     margin-bottom: var(--spacing-6);
   }

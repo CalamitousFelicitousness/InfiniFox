@@ -95,11 +95,15 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
         error: 'Failed to parse error response',
         detail: `Status: ${processedResponse.status} ${processedResponse.statusText}`,
       }))
-      throw new ApiClientError(
-        `API request failed: ${processedResponse.status} ${processedResponse.statusText}`,
-        processedResponse,
-        errorData
-      )
+
+      // Extract detailed error message from SDNext response
+      const errorMessage =
+        errorData.detail ||
+        errorData.errors ||
+        errorData.error ||
+        `${processedResponse.status} ${processedResponse.statusText}`
+
+      throw new ApiClientError(`API request failed: ${errorMessage}`, processedResponse, errorData)
     }
 
     // Handle cases where the response might be empty

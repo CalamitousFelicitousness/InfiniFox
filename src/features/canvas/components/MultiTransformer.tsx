@@ -1,7 +1,8 @@
+import type Konva from 'konva'
 import React, { useRef, useEffect } from 'react'
 import { Transformer } from 'react-konva'
-import type Konva from 'konva'
-import { useStore } from '../../../store/store'
+
+// import { useStore } from '../../../store/store'
 
 interface MultiTransformerProps {
   selectedIds: string[]
@@ -63,7 +64,16 @@ export const MultiTransformer: React.FC<MultiTransformerProps> = ({
       rotateAnchorOffset={20}
       enabledAnchors={
         selectedIds.length === 1
-          ? ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right', 'top-center', 'bottom-center']
+          ? [
+              'top-left',
+              'top-right',
+              'bottom-left',
+              'bottom-right',
+              'middle-left',
+              'middle-right',
+              'top-center',
+              'bottom-center',
+            ]
           : ['top-left', 'top-right', 'bottom-left', 'bottom-right'] // Simplified anchors for multiple selection
       }
       onTransformEnd={onTransformEnd}

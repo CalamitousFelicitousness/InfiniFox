@@ -25,7 +25,7 @@
   background-color: var(--color-primary-bg-hover);
 }
 
-.upload-area input[type="file"] {
+.upload-area input[type='file'] {
   display: none;
 }
 

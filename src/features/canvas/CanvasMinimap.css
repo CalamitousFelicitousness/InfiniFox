@@ -159,12 +159,12 @@
     max-width: 180px;
     max-height: 150px;
   }
-  
+
   .minimap-header {
     padding: var(--spacing-1);
     height: 28px;
   }
-  
+
   .minimap-title {
     font-size: var(--font-size-2xs);
   }

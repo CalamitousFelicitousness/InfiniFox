@@ -122,7 +122,7 @@ export class ProgressService {
     if (this.activeMonitor) {
       await this.activeMonitor.connect()
 
-      // Forward messages from monitor to our handlers
+      // Forward messages from monitor to our handlers (only register once)
       this.activeMonitor.onProgress((message) => {
         this.handlers.forEach((handler) => handler(message))
       })
@@ -158,15 +158,8 @@ export class ProgressService {
   onProgress(handler: ProgressHandler): () => void {
     this.handlers.add(handler)
 
-    // If we have an active monitor, also register with it
-    let unsubscribe: (() => void) | null = null
-    if (this.activeMonitor) {
-      unsubscribe = this.activeMonitor.onProgress(handler)
-    }
-
     return () => {
       this.handlers.delete(handler)
-      unsubscribe?.()
     }
   }
 

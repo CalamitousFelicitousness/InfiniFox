@@ -29,6 +29,13 @@ export function StorageStats() {
       try {
         await imageStorage.clearAll()
         await useStore.getState().clearCanvas()
+
+        // Also clear layer system if present
+        const state = useStore.getState()
+        if (typeof state.clearAllLayers === 'function') {
+          state.clearAllLayers()
+        }
+
         await updateStorageStats()
         alert('Storage cleared successfully')
       } catch (error) {
@@ -63,16 +70,38 @@ export function StorageStats() {
       <div className={`panel-content compact ${!isExpanded ? 'collapsed' : ''}`}>
         <div className="storage-stats-grid">
           <div className="storage-stat-item">
-            <span className="storage-stat-label">Images:</span>
+            <span className="storage-stat-label">Total Images:</span>
             <span className="storage-stat-value">{storageStats.imageCount}</span>
           </div>
           <div className="storage-stat-item">
-            <span className="storage-stat-label">Size:</span>
+            <span className="storage-stat-label">Total Size:</span>
             <span className="storage-stat-value">{formatBytes(storageStats.totalSize)}</span>
           </div>
+          {storageStats.flatSystemImages !== undefined && (
+            <>
+              <div className="storage-stat-item">
+                <span className="storage-stat-label">Canvas Images:</span>
+                <span className="storage-stat-value">{storageStats.flatSystemImages}</span>
+              </div>
+              <div className="storage-stat-item">
+                <span className="storage-stat-label">Layer Images:</span>
+                <span className="storage-stat-value">{storageStats.layerSystemImages}</span>
+              </div>
+              <div className="storage-stat-item">
+                <span className="storage-stat-label">Shared Images:</span>
+                <span className="storage-stat-value">{storageStats.sharedImages}</span>
+              </div>
+              <div className="storage-stat-item">
+                <span className="storage-stat-label">Orphaned:</span>
+                <span className="storage-stat-value">{storageStats.orphanedImages}</span>
+              </div>
+            </>
+          )}
           <div className="storage-stat-item">
             <span className="storage-stat-label">Active URLs:</span>
-            <span className="storage-stat-value">{storageStats.memoryUrls}</span>
+            <span className="storage-stat-value">
+              {storageStats.memoryUrls || storageStats.activeUrls}
+            </span>
           </div>
         </div>
 

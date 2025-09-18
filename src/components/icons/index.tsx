@@ -116,7 +116,7 @@ export {
   PanelRight as PanelRightIcon,
   Magnet,
   Ruler,
-  
+
   // Alignment
   AlignHorizontalDistributeCenter as AlignHorizontalSpaceAroundIcon,
   AlignVerticalDistributeCenter as AlignVerticalSpaceAroundIcon,

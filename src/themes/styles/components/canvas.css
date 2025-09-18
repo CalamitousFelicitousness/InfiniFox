@@ -13,15 +13,15 @@
   height: 100%;
   overflow: hidden;
   background-color: var(--color-background-canvas);
-  
+
   /* Grid pattern background */
   &.show-grid {
-    background-image: 
+    background-image:
       linear-gradient(var(--custom-canvas-grid-color) 1px, transparent 1px),
       linear-gradient(90deg, var(--custom-canvas-grid-color) 1px, transparent 1px),
       linear-gradient(var(--custom-canvas-grid-color-strong) 2px, transparent 2px),
       linear-gradient(90deg, var(--custom-canvas-grid-color-strong) 2px, transparent 2px);
-    background-size: 
+    background-size:
       20px 20px,
       20px 20px,
       100px 100px,
@@ -32,13 +32,13 @@
       0 0,
       0 0;
   }
-  
+
   /* Dot grid pattern */
   &.show-dots {
     background-image: radial-gradient(circle, var(--custom-canvas-grid-color) 1px, transparent 1px);
     background-size: 20px 20px;
   }
-  
+
   /* Performance optimizations */
   will-change: transform;
   transform: translateZ(0);
@@ -59,17 +59,31 @@
   height: 100%;
   cursor: crosshair;
   touch-action: none;
-  
+
   /* Drawing mode cursors */
-  &.tool-brush { cursor: crosshair; }
-  &.tool-eraser { cursor: crosshair; }
-  &.tool-move { cursor: move; }
-  &.tool-select { cursor: default; }
-  &.tool-zoom { cursor: zoom-in; }
-  &.tool-hand { cursor: grab; }
-  
-  &.tool-hand.dragging { cursor: grabbing; }
-  
+  &.tool-brush {
+    cursor: crosshair;
+  }
+  &.tool-eraser {
+    cursor: crosshair;
+  }
+  &.tool-move {
+    cursor: move;
+  }
+  &.tool-select {
+    cursor: default;
+  }
+  &.tool-zoom {
+    cursor: zoom-in;
+  }
+  &.tool-hand {
+    cursor: grab;
+  }
+
+  &.tool-hand.dragging {
+    cursor: grabbing;
+  }
+
   /* Disable default touch behaviors */
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
@@ -88,7 +102,7 @@
   height: 100%;
   pointer-events: none;
   z-index: var(--z-overlay);
-  
+
   &.interactive {
     pointer-events: auto;
   }
@@ -104,7 +118,7 @@
   background-color: var(--custom-canvas-selection-opacity);
   pointer-events: none;
   animation: var(--animation-pulse-slow);
-  
+
   .selection-handle {
     position: absolute;
     width: 8px;
@@ -114,15 +128,51 @@
     border-radius: var(--radius-sm);
     pointer-events: auto;
     cursor: pointer;
-    
-    &.nw { top: -4px; left: -4px; cursor: nwse-resize; }
-    &.ne { top: -4px; right: -4px; cursor: nesw-resize; }
-    &.sw { bottom: -4px; left: -4px; cursor: nesw-resize; }
-    &.se { bottom: -4px; right: -4px; cursor: nwse-resize; }
-    &.n { top: -4px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
-    &.s { bottom: -4px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
-    &.w { left: -4px; top: 50%; transform: translateY(-50%); cursor: ew-resize; }
-    &.e { right: -4px; top: 50%; transform: translateY(-50%); cursor: ew-resize; }
+
+    &.nw {
+      top: -4px;
+      left: -4px;
+      cursor: nwse-resize;
+    }
+    &.ne {
+      top: -4px;
+      right: -4px;
+      cursor: nesw-resize;
+    }
+    &.sw {
+      bottom: -4px;
+      left: -4px;
+      cursor: nesw-resize;
+    }
+    &.se {
+      bottom: -4px;
+      right: -4px;
+      cursor: nwse-resize;
+    }
+    &.n {
+      top: -4px;
+      left: 50%;
+      transform: translateX(-50%);
+      cursor: ns-resize;
+    }
+    &.s {
+      bottom: -4px;
+      left: 50%;
+      transform: translateX(-50%);
+      cursor: ns-resize;
+    }
+    &.w {
+      left: -4px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: ew-resize;
+    }
+    &.e {
+      right: -4px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: ew-resize;
+    }
   }
 }
 
@@ -145,16 +195,16 @@
   overflow: hidden;
   z-index: var(--z-sticky);
   transition: var(--transition-opacity);
-  
+
   &.collapsed {
     width: 40px;
     height: 40px;
     cursor: pointer;
-    
+
     .minimap-content {
       display: none;
     }
-    
+
     .minimap-toggle {
       position: absolute;
       top: 50%;
@@ -162,18 +212,18 @@
       transform: translate(-50%, -50%);
     }
   }
-  
+
   .minimap-content {
     position: relative;
     width: 100%;
     height: 100%;
-    
+
     canvas {
       width: 100%;
       height: 100%;
       image-rendering: pixelated;
     }
-    
+
     .minimap-viewport {
       position: absolute;
       border: 2px solid var(--color-primary-500);
@@ -181,7 +231,7 @@
       pointer-events: none;
     }
   }
-  
+
   .minimap-toggle {
     position: absolute;
     top: var(--spacing-1);
@@ -196,7 +246,7 @@
     border-radius: var(--radius-sm);
     cursor: pointer;
     transition: var(--transition-all);
-    
+
     &:hover {
       background-color: var(--color-surface-hover);
       border-color: var(--color-primary-400);
@@ -220,7 +270,7 @@
   padding: var(--spacing-1);
   z-index: var(--z-dropdown);
   animation: var(--animation-scale-in);
-  
+
   .context-menu-item {
     display: flex;
     align-items: center;
@@ -231,38 +281,38 @@
     font-size: var(--font-size-sm);
     cursor: pointer;
     transition: var(--transition-colors);
-    
+
     &:hover {
       background-color: var(--color-surface-hover);
     }
-    
+
     &.disabled {
       opacity: 0.5;
       cursor: not-allowed;
       pointer-events: none;
     }
-    
+
     &.destructive {
       color: var(--color-error-500);
-      
+
       &:hover {
         background-color: var(--color-error-50);
       }
     }
-    
+
     .context-menu-icon {
       width: 16px;
       height: 16px;
       opacity: 0.7;
     }
-    
+
     .context-menu-shortcut {
       margin-left: auto;
       font-size: var(--font-size-xs);
       color: var(--color-text-tertiary);
     }
   }
-  
+
   .context-menu-separator {
     height: 1px;
     background-color: var(--color-border-secondary);
@@ -283,7 +333,7 @@
   flex-direction: column;
   align-items: center;
   gap: var(--spacing-3);
-  
+
   .loading-spinner {
     width: 48px;
     height: 48px;
@@ -292,19 +342,19 @@
     border-radius: 50%;
     animation: var(--animation-spin);
   }
-  
+
   .loading-text {
     font-size: var(--font-size-sm);
     color: var(--color-text-secondary);
   }
-  
+
   .loading-progress {
     width: 200px;
     height: 4px;
     background-color: var(--color-surface-primary);
     border-radius: var(--radius-full);
     overflow: hidden;
-    
+
     .progress-bar {
       height: 100%;
       background-color: var(--color-primary-500);
@@ -343,7 +393,7 @@
   left: 0;
   pointer-events: none;
   z-index: var(--z-base);
-  
+
   .ruler-horizontal {
     position: absolute;
     top: 0;
@@ -354,7 +404,7 @@
     border-bottom: var(--border-subtle);
     overflow: hidden;
   }
-  
+
   .ruler-vertical {
     position: absolute;
     top: 30px;
@@ -365,7 +415,7 @@
     border-right: var(--border-subtle);
     overflow: hidden;
   }
-  
+
   .ruler-corner {
     position: absolute;
     top: 0;
@@ -381,25 +431,25 @@
     font-size: var(--font-size-xs);
     color: var(--color-text-tertiary);
   }
-  
+
   .ruler-marks {
     position: relative;
     width: 100%;
     height: 100%;
-    
+
     .ruler-mark {
       position: absolute;
       background-color: var(--color-text-tertiary);
-      
+
       &.major {
         opacity: 0.5;
       }
-      
+
       &.minor {
         opacity: 0.3;
       }
     }
-    
+
     .ruler-label {
       position: absolute;
       font-size: 10px;
@@ -421,24 +471,24 @@
   height: 100%;
   pointer-events: none;
   z-index: var(--z-base);
-  
+
   .guide {
     position: absolute;
     background-color: var(--color-primary-500);
     opacity: 0.5;
-    
+
     &.horizontal {
       left: 0;
       right: 0;
       height: 1px;
     }
-    
+
     &.vertical {
       top: 0;
       bottom: 0;
       width: 1px;
     }
-    
+
     &.dragging {
       opacity: 1;
       box-shadow: var(--shadow-glow-sm);
@@ -458,7 +508,7 @@
     bottom: var(--spacing-2);
     right: var(--spacing-2);
   }
-  
+
   .canvas-context-menu {
     min-width: 160px;
     font-size: var(--font-size-xs);
@@ -471,7 +521,7 @@
     width: 12px;
     height: 12px;
   }
-  
+
   .canvas-context-menu .context-menu-item {
     padding: var(--spacing-3) var(--spacing-4);
     min-height: 44px;

@@ -5,8 +5,24 @@ import type {
   SelectionGroup,
   SelectionModifier,
   SelectionMode,
-  ImageData,
 } from '../types'
+
+import type { LayerSystemSlice } from './layerSystemSlice'
+
+// Type for combined store state
+type StoreState = SelectionSlice &
+  LayerSystemSlice & {
+    images: Array<{
+      id: string
+      x: number
+      y: number
+      width?: number
+      height?: number
+      scaleX?: number
+      scaleY?: number
+      selected?: boolean
+    }>
+  }
 
 export interface SelectionSlice {
   // State
@@ -15,6 +31,7 @@ export interface SelectionSlice {
   lastSelectedId: string | null
   selectionMode: SelectionMode
   selectionGroup: SelectionGroup | null
+  useLayerSystem: boolean // Flag to determine selection behavior
 
   // Core Selection Actions
   selectItem: (id: string, modifier?: SelectionModifier) => void
@@ -39,6 +56,7 @@ export interface SelectionSlice {
   getSelectedCount: () => number
   getSelectionBounds: () => SelectionBounds | null
   getSelectedIds: () => string[]
+  setUseLayerSystem: (useLayerSystem: boolean) => void
 }
 
 export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => ({
@@ -48,9 +66,17 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
   lastSelectedId: null,
   selectionMode: 'single',
   selectionGroup: null,
+  useLayerSystem: true, // Enable layer system by default
 
   // Core Selection Actions
   selectItem: (id: string, modifier: SelectionModifier = 'none') => {
+    const state = get() as StoreState
+
+    // Use layer system selection if enabled
+    if (state.useLayerSystem && state.selectLayer) {
+      state.selectLayer(id, modifier === 'ctrl' || modifier === 'ctrl-shift')
+      return
+    }
     set((state) => {
       const newSelectedIds = new Set(state.selectedIds)
 
@@ -69,7 +95,7 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
         case 'shift':
           // Range selection
           if (state.lastSelectedId) {
-            const images = (state as any).images as ImageData[]
+            const images = state.images
             const startIndex = images.findIndex((img) => img.id === state.lastSelectedId)
             const endIndex = images.findIndex((img) => img.id === id)
 
@@ -97,7 +123,7 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
       }
 
       // Update selected state on images
-      const images = (state as any).images as ImageData[]
+      const images = state.images
       const updatedImages = images.map((img) => ({
         ...img,
         selected: newSelectedIds.has(img.id),
@@ -113,11 +139,19 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
   },
 
   selectItems: (ids: string[]) => {
+    const state = get() as StoreState
+
+    // Use layer system selection if enabled
+    if (state.useLayerSystem && state.selectLayers) {
+      state.selectLayers(ids)
+      return
+    }
+
     set((state) => {
       const newSelectedIds = new Set(ids)
 
       // Update selected state on images
-      const images = (state as any).images as ImageData[]
+      const images = state.images
       const updatedImages = images.map((img) => ({
         ...img,
         selected: newSelectedIds.has(img.id),
@@ -133,12 +167,20 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
   },
 
   deselectItem: (id: string) => {
+    const state = get() as StoreState
+
+    // Use layer system deselection if enabled
+    if (state.useLayerSystem && state.deselectLayer) {
+      state.deselectLayer(id)
+      return
+    }
+
     set((state) => {
       const newSelectedIds = new Set(state.selectedIds)
       newSelectedIds.delete(id)
 
       // Update selected state on images
-      const images = (state as any).images as ImageData[]
+      const images = state.images
       const updatedImages = images.map((img) => ({
         ...img,
         selected: newSelectedIds.has(img.id),
@@ -153,9 +195,17 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
   },
 
   deselectAll: () => {
+    const state = get() as StoreState
+
+    // Use layer system deselection if enabled
+    if (state.useLayerSystem && state.deselectAllLayers) {
+      state.deselectAllLayers()
+      return
+    }
+
     set((state) => {
       // Update selected state on images
-      const images = (state as any).images as ImageData[]
+      const images = state.images
       const updatedImages = images.map((img) => ({
         ...img,
         selected: false,
@@ -182,7 +232,7 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
 
   selectRange: (fromId: string, toId: string) => {
     set((state) => {
-      const images = (state as any).images as ImageData[]
+      const images = (state as StoreState).images
       const startIndex = images.findIndex((img) => img.id === fromId)
       const endIndex = images.findIndex((img) => img.id === toId)
 
@@ -202,8 +252,8 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
   },
 
   selectAll: () => {
-    const images = (get() as any).images as ImageData[]
-    const allIds = images.map((img) => img.id)
+    const state = get() as StoreState
+    const allIds = state.images.map((img) => img.id)
     get().selectItems(allIds)
   },
 
@@ -223,7 +273,7 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
   updateSelectionBox: (x: number, y: number) => {
     set((state) => {
       if (!state.selectionBox) return state
-      
+
       // Only update if values actually changed to prevent unnecessary re-renders
       if (state.selectionBox.endX === x && state.selectionBox.endY === y) {
         return state
@@ -241,6 +291,7 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
 
   endSelectionBox: () => {
     const { selectionBox } = get()
+    const state = get() as StoreState
     if (!selectionBox) return
 
     // Calculate box bounds
@@ -249,28 +300,78 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
     const minY = Math.min(selectionBox.startY, selectionBox.endY)
     const maxY = Math.max(selectionBox.startY, selectionBox.endY)
 
-    // Find images within selection box
-    const images = (get() as any).images as ImageData[]
     const selectedIds: string[] = []
 
-    images.forEach((image) => {
-      const imgWidth = image.width || 512
-      const imgHeight = image.height || 512
-      const imgScaleX = image.scaleX || 1
-      const imgScaleY = image.scaleY || 1
-      
-      const imgLeft = image.x
-      const imgRight = image.x + imgWidth * imgScaleX
-      const imgTop = image.y
-      const imgBottom = image.y + imgHeight * imgScaleY
+    // Handle layer system selection
+    if (state.useLayerSystem && state.layers) {
+      // Find layers within selection box
+      state.layers.forEach((layer) => {
+        // Skip if layer is not visible or locked
+        if (!layer.visible || layer.locked) return
 
-      // Check if selection box completely contains the image
-      const isContained = imgLeft >= minX && imgRight <= maxX && imgTop >= minY && imgBottom <= maxY
-      
-      if (isContained) {
-        selectedIds.push(image.id)
-      }
-    })
+        // Get layer bounds based on type
+        let bounds = state.getLayerBounds?.(layer.id)
+        if (!bounds) {
+          // Fallback for basic layers
+          if (layer.type === 'image' && layer.imageProps) {
+            bounds = {
+              x: layer.x,
+              y: layer.y,
+              width: layer.imageProps.width * (layer.scaleX || 1),
+              height: layer.imageProps.height * (layer.scaleY || 1),
+            }
+          } else if (layer.type === 'artboard' && layer.artboardProps) {
+            bounds = {
+              x: layer.x,
+              y: layer.y,
+              width: layer.artboardProps.width,
+              height: layer.artboardProps.height,
+            }
+          }
+        }
+
+        if (bounds) {
+          const layerLeft = bounds.x
+          const layerRight = bounds.x + bounds.width
+          const layerTop = bounds.y
+          const layerBottom = bounds.y + bounds.height
+
+          // Check if selection box intersects or contains the layer
+          const isIntersecting = !(
+            layerRight < minX ||
+            layerLeft > maxX ||
+            layerBottom < minY ||
+            layerTop > maxY
+          )
+
+          if (isIntersecting) {
+            selectedIds.push(layer.id)
+          }
+        }
+      })
+    } else {
+      // Original image-based selection
+      const images = state.images
+      images.forEach((image) => {
+        const imgWidth = image.width || 512
+        const imgHeight = image.height || 512
+        const imgScaleX = image.scaleX || 1
+        const imgScaleY = image.scaleY || 1
+
+        const imgLeft = image.x
+        const imgRight = image.x + imgWidth * imgScaleX
+        const imgTop = image.y
+        const imgBottom = image.y + imgHeight * imgScaleY
+
+        // Check if selection box completely contains the image
+        const isContained =
+          imgLeft >= minX && imgRight <= maxX && imgTop >= minY && imgBottom <= maxY
+
+        if (isContained) {
+          selectedIds.push(image.id)
+        }
+      })
+    }
 
     // Select the items
     if (selectedIds.length > 0) {
@@ -314,30 +415,50 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
   },
 
   getSelectionBounds: () => {
-    const { selectedIds } = get()
-    if (selectedIds.size === 0) return null
-
-    const images = (get() as any).images as ImageData[]
-    const selectedImages = images.filter((img) => selectedIds.has(img.id))
-
-    if (selectedImages.length === 0) return null
+    const state = get() as StoreState
+    const selectedIds = state.useLayerSystem ? state.selectedLayerIds : state.selectedIds
+    if (!selectedIds || selectedIds.size === 0) return null
 
     let minX = Infinity
     let minY = Infinity
     let maxX = -Infinity
     let maxY = -Infinity
 
-    selectedImages.forEach((image) => {
-      const imgLeft = image.x
-      const imgRight = image.x + (image.width || 100) * (image.scaleX || 1)
-      const imgTop = image.y
-      const imgBottom = image.y + (image.height || 100) * (image.scaleY || 1)
+    if (state.useLayerSystem && state.layers) {
+      // Get bounds for selected layers
+      selectedIds.forEach((layerId: string) => {
+        const layer = state.layers.get(layerId)
+        if (!layer) return
 
-      minX = Math.min(minX, imgLeft)
-      minY = Math.min(minY, imgTop)
-      maxX = Math.max(maxX, imgRight)
-      maxY = Math.max(maxY, imgBottom)
-    })
+        const bounds = state.getLayerBounds?.(layerId)
+        if (bounds) {
+          minX = Math.min(minX, bounds.x)
+          minY = Math.min(minY, bounds.y)
+          maxX = Math.max(maxX, bounds.x + bounds.width)
+          maxY = Math.max(maxY, bounds.y + bounds.height)
+        }
+      })
+    } else {
+      // Original image-based bounds
+      const images = state.images
+      const selectedImages = images.filter((img) => selectedIds.has(img.id))
+
+      selectedImages.forEach((image) => {
+        const imgLeft = image.x
+        const imgRight = image.x + (image.width || 100) * (image.scaleX || 1)
+        const imgTop = image.y
+        const imgBottom = image.y + (image.height || 100) * (image.scaleY || 1)
+
+        minX = Math.min(minX, imgLeft)
+        minY = Math.min(minY, imgTop)
+        maxX = Math.max(maxX, imgRight)
+        maxY = Math.max(maxY, imgBottom)
+      })
+    }
+
+    if (!isFinite(minX) || !isFinite(minY) || !isFinite(maxX) || !isFinite(maxY)) {
+      return null
+    }
 
     return {
       x: minX,
@@ -348,6 +469,14 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
   },
 
   getSelectedIds: () => {
-    return Array.from(get().selectedIds)
+    const state = get() as StoreState
+    if (state.useLayerSystem && state.selectedLayerIds) {
+      return Array.from(state.selectedLayerIds)
+    }
+    return Array.from(state.selectedIds)
+  },
+
+  setUseLayerSystem: (useLayerSystem: boolean) => {
+    set({ useLayerSystem })
   },
 })

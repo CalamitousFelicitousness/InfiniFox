@@ -1,6 +1,7 @@
 # Store Architecture
 
 ## Overview
+
 The store has been refactored from a monolithic 650+ line file into a modular slice-based architecture using Zustand.
 
 ## Structure
@@ -23,26 +24,31 @@ store/
 ## Slices
 
 ### GenerationSlice
+
 - **State**: prompt, negativePrompt, seed, steps, cfgScale, width, height
 - **Actions**: Simple setters for all parameters
 - **Purpose**: Manages all generation parameters
 
 ### ModelSlice
+
 - **State**: sampler, samplers[], sdModel, sdModels[]
 - **Actions**: setSampler, setSdModel, fetchSdModels, fetchSamplers
 - **Purpose**: Handles model and sampler selection
 
 ### ApiSlice
+
 - **State**: apiSettings, isLoading
 - **Actions**: setApiSettings, setIsLoading, testConnection, detectApiType
 - **Purpose**: Manages API configuration and connection
 
 ### CanvasSlice
+
 - **State**: images[], activeImageRoles[], canvasSelectionMode
 - **Actions**: addImage, removeImage, duplicateImage, updateImagePosition, etc.
 - **Purpose**: Handles all canvas and image management
 
 ### GenerationActionsSlice
+
 - **Actions**: generateTxt2Img, generateImg2Img, generateInpaint
 - **Purpose**: High-level orchestration of generation workflows
 
@@ -70,6 +76,7 @@ function MyComponent() {
 ## Persistence
 
 Only essential state is persisted to localStorage:
+
 - Generation parameters (prompt, seed, steps, etc.)
 - API settings
 - **NOT persisted**: images, isLoading, fetched data (samplers, models)

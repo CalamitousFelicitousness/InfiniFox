@@ -7,5 +7,11 @@ export { createGenerationActionsSlice, type GenerationActionsSlice } from './gen
 export { createDrawingSlice, type DrawingSlice } from './drawingSlice'
 export { createAuthSlice, type AuthSlice } from './authSlice'
 export { createSelectionSlice, type SelectionSlice } from './selectionSlice'
-
 export { createGroupingSlice, type GroupingSlice } from './groupingSlice'
+export {
+  createLayerSystemSlice,
+  type LayerSystemSlice,
+  type LayerNode,
+  type LayerType,
+  type BlendMode,
+} from './layerSystemSlice'

@@ -57,7 +57,10 @@ export function CanvasMinimap({
   const initialState = getInitialState()
   const [isMinimized, setIsMinimized] = useState(initialState.minimized)
   const [minimapPos, setMinimapPos] = useState({ x: initialState.x, y: initialState.y })
-  const [minimapSize, setMinimapSize] = useState({ width: initialState.width, height: initialState.height })
+  const [minimapSize, setMinimapSize] = useState({
+    width: initialState.width,
+    height: initialState.height,
+  })
   const [isDragging, setIsDragging] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
   const [isPanning, setIsPanning] = useState(false)

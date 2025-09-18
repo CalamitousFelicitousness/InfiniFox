@@ -1,6 +1,8 @@
 import Konva from 'konva'
 import { useState, useCallback, useRef } from 'react'
+
 import { useStore } from '../../../store/store'
+
 import { CanvasTool } from './useCanvasTools'
 
 type Position = {
@@ -14,6 +16,7 @@ interface ContextMenuState {
   y: number
   imageId: string | null
   frameId: string | null
+  layerId?: string | null
 }
 
 interface UseCanvasEventsProps {
@@ -60,6 +63,7 @@ export function useCanvasEvents({
     y: 0,
     imageId: null,
     frameId: null,
+    layerId: null,
   })
 
   /**
@@ -80,14 +84,14 @@ export function useCanvasEvents({
   const updateSelectionBox = useStore((state) => state.updateSelectionBox)
   const endSelectionBox = useStore((state) => state.endSelectionBox)
   const deselectAll = useStore((state) => state.deselectAll)
-  
+
   // Track if we're dragging a selection box
   const [isSelectionBoxDragging, setIsSelectionBoxDragging] = useState(false)
   const justFinishedSelectionBox = useRef(false)
-  
+
   // Throttling for selection box updates
   const lastUpdateTime = useRef(0)
-  const pendingUpdate = useRef<{x: number, y: number} | null>(null)
+  const pendingUpdate = useRef<{ x: number; y: number } | null>(null)
   const updateAnimationFrame = useRef<number | null>(null)
 
   /**
@@ -122,6 +126,11 @@ export function useCanvasEvents({
         }
 
         case CanvasTool.SELECT: {
+          // Only proceed with selection for left mouse button
+          if (e.evt.button !== 0) {
+            return
+          }
+
           // Handle selection based on what was clicked
           if (targetClassName === 'Image') {
             // Image clicked - should be handled by image's own handler
@@ -141,12 +150,12 @@ export function useCanvasEvents({
               justFinishedSelectionBox.current = false
               return
             }
-            
+
             // Clicked on empty stage/layer - start selection box
             const canvasPos = screenToCanvas(pointer)
             startSelectionBox(canvasPos.x, canvasPos.y)
             setIsSelectionBoxDragging(true)
-            
+
             // Also deselect all if not holding ctrl
             if (!e.evt.ctrlKey && !e.evt.metaKey) {
               deselectAll()
@@ -181,37 +190,49 @@ export function useCanvasEvents({
         }
       }
     },
-    [currentTool, stageRef, onDrawingPointerDown, onImageSelect, onFrameSelect, startSelectionBox, deselectAll, screenToCanvas]
+    [
+      currentTool,
+      stageRef,
+      onDrawingPointerDown,
+      onImageSelect,
+      onFrameSelect,
+      startSelectionBox,
+      deselectAll,
+      screenToCanvas,
+    ]
   )
 
   /**
    * Throttled selection box update
    */
-  const throttledUpdateSelectionBox = useCallback((x: number, y: number) => {
-    const now = Date.now()
-    const timeSinceLastUpdate = now - lastUpdateTime.current
-    
-    // Update immediately if enough time has passed (16ms for ~60fps)
-    if (timeSinceLastUpdate >= 16) {
-      updateSelectionBox(x, y)
-      lastUpdateTime.current = now
-      pendingUpdate.current = null
-    } else {
-      // Store pending update and schedule it
-      pendingUpdate.current = { x, y }
-      
-      if (updateAnimationFrame.current === null) {
-        updateAnimationFrame.current = requestAnimationFrame(() => {
-          if (pendingUpdate.current) {
-            updateSelectionBox(pendingUpdate.current.x, pendingUpdate.current.y)
-            lastUpdateTime.current = Date.now()
-            pendingUpdate.current = null
-          }
-          updateAnimationFrame.current = null
-        })
+  const throttledUpdateSelectionBox = useCallback(
+    (x: number, y: number) => {
+      const now = Date.now()
+      const timeSinceLastUpdate = now - lastUpdateTime.current
+
+      // Update immediately if enough time has passed (16ms for ~60fps)
+      if (timeSinceLastUpdate >= 16) {
+        updateSelectionBox(x, y)
+        lastUpdateTime.current = now
+        pendingUpdate.current = null
+      } else {
+        // Store pending update and schedule it
+        pendingUpdate.current = { x, y }
+
+        if (updateAnimationFrame.current === null) {
+          updateAnimationFrame.current = requestAnimationFrame(() => {
+            if (pendingUpdate.current) {
+              updateSelectionBox(pendingUpdate.current.x, pendingUpdate.current.y)
+              lastUpdateTime.current = Date.now()
+              pendingUpdate.current = null
+            }
+            updateAnimationFrame.current = null
+          })
+        }
       }
-    }
-  }, [updateSelectionBox])
+    },
+    [updateSelectionBox]
+  )
 
   /**
    * Main pointer move handler
@@ -222,15 +243,15 @@ export function useCanvasEvents({
       if (isSelectionBoxDragging && currentTool === CanvasTool.SELECT) {
         const stage = stageRef.current
         if (!stage) return
-        
+
         const pointer = stage.getPointerPosition()
         if (!pointer) return
-        
+
         const canvasPos = screenToCanvas(pointer)
         throttledUpdateSelectionBox(canvasPos.x, canvasPos.y)
         return
       }
-      
+
       // Route to drawing system if applicable
       if (
         (currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER) &&
@@ -239,7 +260,14 @@ export function useCanvasEvents({
         onDrawingPointerMove(e)
       }
     },
-    [currentTool, onDrawingPointerMove, isSelectionBoxDragging, stageRef, screenToCanvas, throttledUpdateSelectionBox]
+    [
+      currentTool,
+      onDrawingPointerMove,
+      isSelectionBoxDragging,
+      stageRef,
+      screenToCanvas,
+      throttledUpdateSelectionBox,
+    ]
   )
 
   /**
@@ -256,23 +284,23 @@ export function useCanvasEvents({
         }
         pendingUpdate.current = null
         lastUpdateTime.current = 0
-        
+
         endSelectionBox()
         setIsSelectionBoxDragging(false)
         justFinishedSelectionBox.current = true
-        
+
         // Clear flag after a brief delay
         setTimeout(() => {
           justFinishedSelectionBox.current = false
         }, 100)
-        
+
         // Stop event propagation to prevent deselect
         if (e) {
           e.cancelBubble = true
         }
         return
       }
-      
+
       // Route to drawing system if applicable
       if (
         (currentTool === CanvasTool.BRUSH || currentTool === CanvasTool.ERASER) &&
@@ -309,11 +337,15 @@ export function useCanvasEvents({
 
       let imageId: string | null = null
       let frameId: string | null = null
+      let layerId: string | null = null
 
       if (targetClassName === 'Image') {
         imageId = targetId
       } else if (targetId && targetId.startsWith('frame-')) {
         frameId = targetId.replace('frame-', '')
+      } else if (targetId) {
+        // Could be a layer or artboard
+        layerId = targetId
       }
 
       // Show context menu
@@ -323,6 +355,7 @@ export function useCanvasEvents({
         y: pointer.y,
         imageId,
         frameId,
+        layerId,
       })
 
       // Store position for potential actions

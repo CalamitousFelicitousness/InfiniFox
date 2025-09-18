@@ -55,7 +55,7 @@
   transform: translateY(0);
 }
 
-.theme-switcher__toggle[aria-expanded="true"] {
+.theme-switcher__toggle[aria-expanded='true'] {
   background: var(--color-primary-bg);
   border-color: var(--color-primary);
   color: var(--color-primary);
@@ -326,7 +326,7 @@
     bottom: auto;
     left: auto;
   }
-  
+
   .theme-switcher__dropdown {
     position: fixed;
     top: 50%;
@@ -336,7 +336,7 @@
     max-width: 320px;
     animation: modalSlideIn var(--duration-md) var(--ease-spring);
   }
-  
+
   @keyframes modalSlideIn {
     from {
       opacity: 0;

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Layer, Line } from 'react-konva'
+import { Group, Line } from 'react-konva'
 
 import { snappingManager } from '../../../services/canvas/SnappingManager'
 
@@ -36,7 +36,7 @@ function GridLayerComponent({
   )
 
   return (
-    <Layer listening={false}>
+    <Group listening={false}>
       {/* Vertical grid lines */}
       {gridLines.vertical.map((x) => (
         <Line
@@ -60,7 +60,7 @@ function GridLayerComponent({
           listening={false}
         />
       ))}
-    </Layer>
+    </Group>
   )
 }
 

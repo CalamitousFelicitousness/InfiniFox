@@ -384,7 +384,7 @@
 .canvas-grid {
   width: 100%;
   height: 100px;
-  background-image: 
+  background-image:
     linear-gradient(var(--custom-canvas-grid-color) 1px, transparent 1px),
     linear-gradient(90deg, var(--custom-canvas-grid-color) 1px, transparent 1px);
   background-size: 20px 20px;

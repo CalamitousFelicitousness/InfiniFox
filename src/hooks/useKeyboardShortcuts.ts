@@ -16,10 +16,10 @@ interface ShortcutHandlers {
 }
 
 export function useKeyboardShortcuts(handlers: ShortcutHandlers = {}) {
-  const { 
-    clearCanvas, 
-    selectAll, 
-    deselectAll, 
+  const {
+    clearCanvas,
+    selectAll,
+    deselectAll,
     moveSelectedImagesWithHistory,
     deleteSelectedImagesWithHistory,
     duplicateSelectedImagesWithHistory,
@@ -45,6 +45,10 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers = {}) {
 
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
       const ctrlOrCmd = isMac ? e.metaKey : e.ctrlKey
+
+      // Get layer system state for artboard shortcuts
+      const store = useStore.getState()
+      const { selectedLayerIds } = store
 
       // Generate (Ctrl/Cmd + Enter)
       if (ctrlOrCmd && e.key === 'Enter') {
@@ -89,7 +93,7 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers = {}) {
       // Move Selection (Arrow Keys)
       if (!ctrlOrCmd && !e.shiftKey && !e.altKey) {
         const moveDistance = e.shiftKey ? 50 : 10 // Shift for larger moves
-        
+
         if (e.key === 'ArrowUp') {
           e.preventDefault()
           if (selectedIds.size > 0) {
@@ -120,7 +124,7 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers = {}) {
       // Z-Index Management
       if (ctrlOrCmd && selectedIds.size > 0) {
         const selectedIdsArray = Array.from(selectedIds)
-        
+
         // Bring to Front (Ctrl/Cmd + ])
         if (e.key === ']' && e.shiftKey) {
           e.preventDefault()
@@ -166,6 +170,32 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers = {}) {
           clearCanvas()
         }
       }
+
+      // Artboard shortcuts - check if selected layer is an artboard
+      if (selectedLayerIds.size === 1) {
+        const layerId = Array.from(selectedLayerIds)[0]
+        const layer = store.getLayer(layerId)
+
+        if (layer?.type === 'artboard') {
+          // Select All Children (Ctrl/Cmd + Shift + A)
+          if (ctrlOrCmd && e.shiftKey && e.key === 'a') {
+            e.preventDefault()
+            store.selectArtboardChildren(layerId)
+          }
+
+          // Bring to Front (Ctrl/Cmd + Shift + ])
+          if (ctrlOrCmd && e.shiftKey && e.key === ']') {
+            e.preventDefault()
+            store.moveArtboardToFront(layerId)
+          }
+
+          // Send to Back (Ctrl/Cmd + Shift + [)
+          if (ctrlOrCmd && e.shiftKey && e.key === '[') {
+            e.preventDefault()
+            store.moveArtboardToBack(layerId)
+          }
+        }
+      }
     }
 
     // Use capture phase to intercept before bubbling
@@ -175,8 +205,8 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers = {}) {
       document.removeEventListener('keydown', handleKeyDown, { capture: true })
     }
   }, [
-    handlers, 
-    clearCanvas, 
+    handlers,
+    clearCanvas,
     selectAll,
     deselectAll,
     moveSelectedImagesWithHistory,
@@ -187,9 +217,9 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers = {}) {
     sendToBack,
     bringForward,
     sendBackward,
-    undo, 
-    redo, 
-    canUndo, 
-    canRedo
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   ])
 }

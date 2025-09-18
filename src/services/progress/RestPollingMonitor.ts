@@ -157,11 +157,16 @@ export class RestPollingMonitor extends BaseProgressMonitor {
               currentJob.toLowerCase().includes('decode') ||
               (currentStep === totalSteps && totalSteps > 0 && this.lastPhase === 'sampling')
             ) {
-              phase = 'vae'
-              this.vaeStarted = true
-              this.vaeCompleted = false // Reset completion flag
-              shouldNotify = phase !== this.lastPhase
-              console.log('VAE phase started')
+              if (!this.vaeStarted) {
+                phase = 'vae'
+                shouldNotify = true
+                this.vaeStarted = true
+                this.vaeCompleted = false // Reset completion flag
+                console.log('VAE phase started')
+              } else {
+                phase = 'vae'
+                shouldNotify = false // Don't notify again for same VAE phase
+              }
             } else if (currentJob.toLowerCase().includes('postprocess')) {
               phase = 'postprocessing'
               shouldNotify = phase !== this.lastPhase
@@ -180,9 +185,13 @@ export class RestPollingMonitor extends BaseProgressMonitor {
             }
 
             // Create progress message
+            // For VAE phase, show progress as 0/1 or 1/1 instead of 0/0
+            const effectiveCurrent = phase === 'vae' ? (this.vaeCompleted ? 1 : 0) : currentStep
+            const effectiveTotal = phase === 'vae' ? 1 : totalSteps || 1
+
             const message: ProgressMessage = {
-              current: currentStep,
-              total: totalSteps || 1,
+              current: effectiveCurrent,
+              total: effectiveTotal,
               status: currentJob || phase,
               phase: phase,
               preview: data.current_image,
@@ -192,15 +201,15 @@ export class RestPollingMonitor extends BaseProgressMonitor {
               jobNo: data.state?.job_no,
             }
 
-            // Update tracking variables
-            this.lastStep = currentStep
-            this.lastJob = currentJob
-            this.lastPhase = phase
-
-            // Notify if needed
+            // Notify if needed (before updating tracking variables)
             if (shouldNotify) {
               this.notifyHandlers(message)
             }
+
+            // Update tracking variables after notification
+            this.lastStep = currentStep
+            this.lastJob = currentJob
+            this.lastPhase = phase
 
             // Reset completion check counter when we see activity
             this.completionCheckCount = 0
@@ -217,15 +226,19 @@ export class RestPollingMonitor extends BaseProgressMonitor {
                 this.vaeCompleted = true
                 phase = 'completed'
 
-                const message: ProgressMessage = {
-                  current: 1,
-                  total: 1,
-                  status: 'completed',
-                  phase: 'completed',
-                  preview: data.current_image,
-                }
+                // Only send completion once
+                if (this.lastPhase !== 'completed') {
+                  const message: ProgressMessage = {
+                    current: 1,
+                    total: 1,
+                    status: 'completed',
+                    phase: 'completed',
+                    preview: data.current_image,
+                  }
 
-                this.notifyHandlers(message)
+                  this.lastPhase = 'completed'
+                  this.notifyHandlers(message)
+                }
                 this.stopPolling()
                 return
               }

@@ -96,16 +96,16 @@
   .status-bar__layout {
     padding: 0 8px;
   }
-  
+
   .status-bar__section {
     gap: 8px;
   }
-  
+
   .status-bar__section--center {
     max-width: calc(100% - 300px);
     padding: 0 10px;
   }
-  
+
   /* Hide less important items on mobile */
   .status-bar__item--hide-mobile {
     display: none;
@@ -117,7 +117,7 @@
   .status-bar__section--center {
     display: none;
   }
-  
+
   .status-bar__section--left,
   .status-bar__section--right {
     max-width: 50%;
@@ -465,7 +465,7 @@
     background-color: var(--color-gray-1000);
     border-color: var(--color-gray-800);
   }
-  
+
   @supports (backdrop-filter: blur(10px)) {
     .status-bar__selection {
       background-color: rgba(255, 255, 255, 0.9);

@@ -8,18 +8,18 @@
    ========================================== */
 
 .btn,
-button[type="button"],
-button[type="submit"],
+button[type='button'],
+button[type='submit'],
 .button {
   /* Layout */
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--spacing-button-icon-gap);
-  
+
   /* Spacing */
   padding: var(--spacing-button-padding-y-base) var(--spacing-button-padding-x-base);
-  
+
   /* Typography */
   font-family: var(--font-family-base);
   font-size: var(--font-size-sm);
@@ -29,23 +29,23 @@ button[type="submit"],
   text-align: center;
   text-decoration: none;
   white-space: nowrap;
-  
+
   /* Appearance */
   color: var(--color-text-primary);
   background-color: var(--color-surface-primary);
   border: var(--border-default);
   border-radius: var(--radius-button-base);
-  
+
   /* Effects */
   box-shadow: var(--shadow-button-default);
   transition: var(--transition-button);
-  
+
   /* Interaction */
   cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
   touch-action: manipulation;
-  
+
   /* States */
   &:hover:not(:disabled) {
     background-color: var(--color-surface-hover);
@@ -53,19 +53,19 @@ button[type="submit"],
     box-shadow: var(--shadow-button-hover);
     transform: translateY(-1px);
   }
-  
+
   &:active:not(:disabled) {
     background-color: var(--color-surface-active);
     box-shadow: var(--shadow-xs);
     transform: translateY(0);
   }
-  
+
   &:focus-visible {
     outline: none;
     box-shadow: var(--ring-base);
     border-color: var(--color-border-focus);
   }
-  
+
   &:disabled,
   &.disabled {
     opacity: 0.5;
@@ -83,17 +83,17 @@ button[type="submit"],
   color: var(--color-text-on-primary);
   background-color: var(--color-primary-500);
   border-color: var(--color-primary-500);
-  
+
   &:hover:not(:disabled) {
     background-color: var(--color-primary-400);
     border-color: var(--color-primary-400);
   }
-  
+
   &:active:not(:disabled) {
     background-color: var(--color-primary-600);
     border-color: var(--color-primary-600);
   }
-  
+
   &:focus-visible {
     box-shadow: var(--ring-primary);
   }
@@ -104,12 +104,12 @@ button[type="submit"],
   color: var(--color-text-primary);
   background-color: var(--color-surface-secondary);
   border-color: var(--color-border-primary);
-  
+
   &:hover:not(:disabled) {
     background-color: var(--color-surface-hover);
     border-color: var(--color-primary-400);
   }
-  
+
   &:active:not(:disabled) {
     background-color: var(--color-surface-active);
   }
@@ -121,14 +121,14 @@ button[type="submit"],
   background-color: transparent;
   border-color: transparent;
   box-shadow: none;
-  
+
   &:hover:not(:disabled) {
     color: var(--color-text-primary);
     background-color: var(--color-surface-hover);
     border-color: transparent;
     box-shadow: none;
   }
-  
+
   &:active:not(:disabled) {
     background-color: var(--color-surface-active);
   }
@@ -139,17 +139,17 @@ button[type="submit"],
   color: var(--color-text-on-primary);
   background-color: var(--color-success-500);
   border-color: var(--color-success-500);
-  
+
   &:hover:not(:disabled) {
     background-color: var(--color-success-400);
     border-color: var(--color-success-400);
   }
-  
+
   &:active:not(:disabled) {
     background-color: var(--color-success-600);
     border-color: var(--color-success-600);
   }
-  
+
   &:focus-visible {
     box-shadow: var(--ring-success);
   }
@@ -160,17 +160,17 @@ button[type="submit"],
   color: var(--color-text-on-primary);
   background-color: var(--color-warning-500);
   border-color: var(--color-warning-500);
-  
+
   &:hover:not(:disabled) {
     background-color: var(--color-warning-400);
     border-color: var(--color-warning-400);
   }
-  
+
   &:active:not(:disabled) {
     background-color: var(--color-warning-600);
     border-color: var(--color-warning-600);
   }
-  
+
   &:focus-visible {
     box-shadow: var(--ring-warning);
   }
@@ -182,17 +182,17 @@ button[type="submit"],
   color: var(--color-text-on-primary);
   background-color: var(--color-error-500);
   border-color: var(--color-error-500);
-  
+
   &:hover:not(:disabled) {
     background-color: var(--color-error-400);
     border-color: var(--color-error-400);
   }
-  
+
   &:active:not(:disabled) {
     background-color: var(--color-error-600);
     border-color: var(--color-error-600);
   }
-  
+
   &:focus-visible {
     box-shadow: var(--ring-error);
   }
@@ -245,11 +245,19 @@ button[type="submit"],
 .btn-icon {
   padding: var(--spacing-2);
   aspect-ratio: 1;
-  
-  &.btn-xs { padding: var(--spacing-1); }
-  &.btn-sm { padding: var(--spacing-1-5); }
-  &.btn-lg { padding: var(--spacing-3); }
-  &.btn-xl { padding: var(--spacing-4); }
+
+  &.btn-xs {
+    padding: var(--spacing-1);
+  }
+  &.btn-sm {
+    padding: var(--spacing-1-5);
+  }
+  &.btn-lg {
+    padding: var(--spacing-3);
+  }
+  &.btn-xl {
+    padding: var(--spacing-4);
+  }
 }
 
 /* Loading State */
@@ -257,7 +265,7 @@ button[type="submit"],
   position: relative;
   color: transparent !important;
   pointer-events: none;
-  
+
   &::after {
     content: '';
     position: absolute;
@@ -290,26 +298,26 @@ button[type="submit"],
   color: var(--color-text-secondary);
   cursor: pointer;
   transition: var(--transition-button);
-  
+
   &:hover {
     background-color: var(--color-surface-hover);
     color: var(--color-text-primary);
   }
-  
+
   &:active {
     background-color: var(--color-surface-active);
   }
-  
+
   &:focus-visible {
     outline: none;
     box-shadow: var(--ring-sm);
   }
-  
+
   &.active {
     background-color: var(--color-surface-selected);
     color: var(--color-primary-500);
   }
-  
+
   /* Icon styling */
   .lucide-icon {
     width: 1.25em;
@@ -336,42 +344,42 @@ button[type="submit"],
   font-size: var(--font-size-sm);
   cursor: pointer;
   transition: var(--transition-button);
-  
+
   &:hover:not(:disabled) {
     background-color: var(--color-surface-hover);
     border-color: var(--color-border-primary);
     color: var(--color-text-primary);
     transform: translateY(-1px);
   }
-  
+
   &:active:not(:disabled) {
     background-color: var(--color-surface-active);
     transform: translateY(0);
   }
-  
+
   &.active {
     background-color: var(--color-surface-selected);
     border-color: var(--color-primary-500);
     color: var(--color-primary-400);
     box-shadow: var(--shadow-glow-sm);
   }
-  
+
   &:focus-visible {
     outline: none;
     box-shadow: var(--ring-sm);
   }
-  
+
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
-  
+
   /* Icon adjustments */
   .lucide-icon {
     width: 16px;
     height: 16px;
   }
-  
+
   /* With label */
   &.with-label {
     gap: var(--spacing-1);
@@ -396,24 +404,24 @@ button[type="submit"],
   box-shadow: var(--shadow-button-default);
   cursor: pointer;
   transition: var(--transition-button);
-  
+
   &:hover:not(:disabled) {
     background: linear-gradient(135deg, var(--color-primary-400), var(--color-primary-500));
     box-shadow: var(--shadow-button-hover), var(--shadow-glow-sm);
     transform: translateY(-2px);
   }
-  
+
   &:active:not(:disabled) {
     transform: translateY(0);
     box-shadow: var(--shadow-button-default);
   }
-  
+
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     background: var(--color-gray-500);
   }
-  
+
   &.generating {
     background: linear-gradient(
       270deg,
@@ -428,9 +436,15 @@ button[type="submit"],
 }
 
 @keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 /* ==========================================
@@ -440,20 +454,20 @@ button[type="submit"],
 .btn-group {
   display: inline-flex;
   gap: -1px;
-  
+
   .btn {
     border-radius: 0;
-    
+
     &:first-child {
       border-top-left-radius: var(--radius-button-base);
       border-bottom-left-radius: var(--radius-button-base);
     }
-    
+
     &:last-child {
       border-top-right-radius: var(--radius-button-base);
       border-bottom-right-radius: var(--radius-button-base);
     }
-    
+
     &:focus-visible {
       z-index: 1;
     }
@@ -530,7 +544,7 @@ button[type="submit"],
     min-height: 44px;
     min-width: 44px;
   }
-  
+
   .toolbar-btn,
   .icon-btn {
     min-width: 44px;
@@ -543,15 +557,15 @@ button[type="submit"],
   .btn-group {
     flex-direction: column;
     width: 100%;
-    
+
     .btn {
       width: 100%;
       border-radius: 0;
-      
+
       &:first-child {
         border-radius: var(--radius-button-base) var(--radius-button-base) 0 0;
       }
-      
+
       &:last-child {
         border-radius: 0 0 var(--radius-button-base) var(--radius-button-base);
       }

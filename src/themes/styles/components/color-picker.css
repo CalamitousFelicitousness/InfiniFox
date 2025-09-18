@@ -168,7 +168,8 @@
 
 /* Hue slider gradient */
 .color-slider-hue {
-  background: linear-gradient(to right, 
+  background: linear-gradient(
+    to right,
     hsl(0, 100%, 50%),
     hsl(60, 100%, 50%),
     hsl(120, 100%, 50%),
@@ -181,15 +182,13 @@
 
 /* Saturation slider gradient */
 .color-slider-saturation {
-  background: linear-gradient(to right, 
-    hsl(var(--hue), 0%, 50%),
-    hsl(var(--hue), 100%, 50%)
-  );
+  background: linear-gradient(to right, hsl(var(--hue), 0%, 50%), hsl(var(--hue), 100%, 50%));
 }
 
 /* Lightness slider gradient */
 .color-slider-lightness {
-  background: linear-gradient(to right, 
+  background: linear-gradient(
+    to right,
     hsl(var(--hue), var(--saturation), 0%),
     hsl(var(--hue), var(--saturation), 50%),
     hsl(var(--hue), var(--saturation), 100%)
@@ -198,14 +197,9 @@
 
 /* Alpha slider gradient */
 .color-slider-alpha {
-  background-image: 
+  background-image:
     linear-gradient(to right, transparent, var(--current-color)),
-    repeating-linear-gradient(45deg,
-      #ccc 0,
-      #ccc 2px,
-      #fff 2px,
-      #fff 4px
-    );
+    repeating-linear-gradient(45deg, #ccc 0, #ccc 2px, #fff 2px, #fff 4px);
 }
 
 /* Scrollbar styling for palette */

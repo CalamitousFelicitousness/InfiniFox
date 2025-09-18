@@ -52,7 +52,7 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
     createGroup,
     dissolveGroup,
     groups,
-    getItemGroup,
+    // getItemGroup,
     selectItems,
   } = useStore()
 
@@ -170,7 +170,7 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
     const updates = selected.map((img) => ({
       id: img.id,
       x: leftMost,
-      y: img.y
+      y: img.y,
     }))
     console.log('alignLeft - updates:', updates)
     console.log('batchUpdatePositions function:', batchUpdatePositions)
@@ -194,7 +194,7 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
       return {
         id: img.id,
         x: rightMost - width,
-        y: img.y
+        y: img.y,
       }
     })
     batchUpdatePositions(updates)
@@ -208,7 +208,7 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
     const updates = selected.map((img) => ({
       id: img.id,
       x: img.x,
-      y: topMost
+      y: topMost,
     }))
     batchUpdatePositions(updates)
   }
@@ -225,7 +225,7 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
       return {
         id: img.id,
         x: img.x,
-        y: bottomMost - height
+        y: bottomMost - height,
       }
     })
     batchUpdatePositions(updates)
@@ -236,11 +236,13 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
     if (selected.length < 2) return
 
     // Find the center Y position (horizontal line)
-    const minY = Math.min(...selected.map(img => img.y))
-    const maxY = Math.max(...selected.map(img => {
-      const height = (img.height || 512) * (img.scaleY || 1)
-      return img.y + height
-    }))
+    const minY = Math.min(...selected.map((img) => img.y))
+    const maxY = Math.max(
+      ...selected.map((img) => {
+        const height = (img.height || 512) * (img.scaleY || 1)
+        return img.y + height
+      })
+    )
     const centerY = (minY + maxY) / 2
 
     const updates = selected.map((img) => {
@@ -248,7 +250,7 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
       return {
         id: img.id,
         x: img.x,
-        y: centerY - height / 2
+        y: centerY - height / 2,
       }
     })
     batchUpdatePositions(updates)
@@ -259,11 +261,13 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
     if (selected.length < 2) return
 
     // Find the center X position (vertical line)
-    const minX = Math.min(...selected.map(img => img.x))
-    const maxX = Math.max(...selected.map(img => {
-      const width = (img.width || 512) * (img.scaleX || 1)
-      return img.x + width
-    }))
+    const minX = Math.min(...selected.map((img) => img.x))
+    const maxX = Math.max(
+      ...selected.map((img) => {
+        const width = (img.width || 512) * (img.scaleX || 1)
+        return img.x + width
+      })
+    )
     const centerX = (minX + maxX) / 2
 
     const updates = selected.map((img) => {
@@ -271,7 +275,7 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
       return {
         id: img.id,
         x: centerX - width / 2,
-        y: img.y
+        y: img.y,
       }
     })
     batchUpdatePositions(updates)
@@ -290,17 +294,19 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
 
     const spacing = totalWidth / (sorted.length - 1)
 
-    const updates = sorted.map((img, index) => {
-      if (index > 0 && index < sorted.length - 1) {
-        return {
-          id: img.id,
-          x: firstX + spacing * index,
-          y: img.y
+    const updates = sorted
+      .map((img, index) => {
+        if (index > 0 && index < sorted.length - 1) {
+          return {
+            id: img.id,
+            x: firstX + spacing * index,
+            y: img.y,
+          }
         }
-      }
-      return null
-    }).filter(Boolean) as Array<{id: string, x: number, y: number}>
-    
+        return null
+      })
+      .filter(Boolean) as Array<{ id: string; x: number; y: number }>
+
     if (updates.length > 0) {
       batchUpdatePositions(updates)
     }
@@ -319,17 +325,19 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
 
     const spacing = totalHeight / (sorted.length - 1)
 
-    const updates = sorted.map((img, index) => {
-      if (index > 0 && index < sorted.length - 1) {
-        return {
-          id: img.id,
-          x: img.x,
-          y: firstY + spacing * index
+    const updates = sorted
+      .map((img, index) => {
+        if (index > 0 && index < sorted.length - 1) {
+          return {
+            id: img.id,
+            x: img.x,
+            y: firstY + spacing * index,
+          }
         }
-      }
-      return null
-    }).filter(Boolean) as Array<{id: string, x: number, y: number}>
-    
+        return null
+      })
+      .filter(Boolean) as Array<{ id: string; x: number; y: number }>
+
     if (updates.length > 0) {
       batchUpdatePositions(updates)
     }
@@ -551,7 +559,7 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
               <button
                 className="toolbar-item align-button"
                 onClick={alignLeft}
-                title={selectedIds.size < 2 ? "Select 2+ items to align" : "Align Left"}
+                title={selectedIds.size < 2 ? 'Select 2+ items to align' : 'Align Left'}
                 disabled={selectedIds.size < 2}
               >
                 <AlignStartVerticalIcon />
@@ -559,7 +567,9 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
               <button
                 className="toolbar-item align-button"
                 onClick={alignCenterHorizontal}
-                title={selectedIds.size < 2 ? "Select 2+ items to align" : "Align Center Horizontal"}
+                title={
+                  selectedIds.size < 2 ? 'Select 2+ items to align' : 'Align Center Horizontal'
+                }
                 disabled={selectedIds.size < 2}
               >
                 <AlignCenterHorizontalIcon />
@@ -567,7 +577,7 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
               <button
                 className="toolbar-item align-button"
                 onClick={alignRight}
-                title={selectedIds.size < 2 ? "Select 2+ items to align" : "Align Right"}
+                title={selectedIds.size < 2 ? 'Select 2+ items to align' : 'Align Right'}
                 disabled={selectedIds.size < 2}
               >
                 <AlignEndVerticalIcon />
@@ -576,7 +586,7 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
               <button
                 className="toolbar-item align-button"
                 onClick={alignTop}
-                title={selectedIds.size < 2 ? "Select 2+ items to align" : "Align Top"}
+                title={selectedIds.size < 2 ? 'Select 2+ items to align' : 'Align Top'}
                 disabled={selectedIds.size < 2}
               >
                 <AlignStartHorizontalIcon />
@@ -584,7 +594,7 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
               <button
                 className="toolbar-item align-button"
                 onClick={alignCenterVertical}
-                title={selectedIds.size < 2 ? "Select 2+ items to align" : "Align Center Vertical"}
+                title={selectedIds.size < 2 ? 'Select 2+ items to align' : 'Align Center Vertical'}
                 disabled={selectedIds.size < 2}
               >
                 <AlignCenterVerticalIcon />
@@ -592,7 +602,7 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
               <button
                 className="toolbar-item align-button"
                 onClick={alignBottom}
-                title={selectedIds.size < 2 ? "Select 2+ items to align" : "Align Bottom"}
+                title={selectedIds.size < 2 ? 'Select 2+ items to align' : 'Align Bottom'}
                 disabled={selectedIds.size < 2}
               >
                 <AlignEndHorizontalIcon />
@@ -606,7 +616,9 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
               <button
                 className="toolbar-item align-button"
                 onClick={distributeHorizontal}
-                title={selectedIds.size < 3 ? "Select 3+ items to distribute" : "Distribute Horizontal"}
+                title={
+                  selectedIds.size < 3 ? 'Select 3+ items to distribute' : 'Distribute Horizontal'
+                }
                 disabled={selectedIds.size < 3}
               >
                 <AlignHorizontalSpaceAroundIcon />
@@ -614,7 +626,9 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
               <button
                 className="toolbar-item align-button"
                 onClick={distributeVertical}
-                title={selectedIds.size < 3 ? "Select 3+ items to distribute" : "Distribute Vertical"}
+                title={
+                  selectedIds.size < 3 ? 'Select 3+ items to distribute' : 'Distribute Vertical'
+                }
                 disabled={selectedIds.size < 3}
               >
                 <AlignVerticalSpaceAroundIcon />
@@ -628,14 +642,14 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
               <button
                 className="toolbar-item align-button"
                 onClick={() => {
-                  const selectedArray = Array.from(selectedIds);
-                  console.log('Group button clicked, selected items:', selectedArray);
+                  const selectedArray = Array.from(selectedIds)
+                  console.log('Group button clicked, selected items:', selectedArray)
                   if (selectedArray.length >= 2) {
-                    const groupId = createGroup(selectedArray, `Group ${groups.size + 1}`);
-                    console.log('Created group:', groupId);
+                    const groupId = createGroup(selectedArray, `Group ${groups.size + 1}`)
+                    console.log('Created group:', groupId)
                   }
                 }}
-                title={selectedIds.size < 2 ? "Select 2+ items to group" : "Group Selection"}
+                title={selectedIds.size < 2 ? 'Select 2+ items to group' : 'Group Selection'}
                 disabled={selectedIds.size < 2}
               >
                 <GroupIcon />
@@ -647,23 +661,25 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
                   // Find groups containing selected items
                   const groupsToDissolve = new Set<string>()
                   groups.forEach((group, groupId) => {
-                    if (Array.from(selectedIds).some(id => group.itemIds.has(id))) {
+                    if (Array.from(selectedIds).some((id) => group.itemIds.has(id))) {
                       groupsToDissolve.add(groupId)
                     }
                   })
-                  
+
                   console.log('Dissolving groups:', Array.from(groupsToDissolve))
-                  groupsToDissolve.forEach(groupId => dissolveGroup(groupId))
+                  groupsToDissolve.forEach((groupId) => dissolveGroup(groupId))
                 }}
                 title={(() => {
-                  const hasGroupedItems = Array.from(groups.values()).some(group => 
-                    Array.from(selectedIds).some(id => group.itemIds.has(id))
+                  const hasGroupedItems = Array.from(groups.values()).some((group) =>
+                    Array.from(selectedIds).some((id) => group.itemIds.has(id))
                   )
-                  return !hasGroupedItems ? "No grouped items selected" : "Ungroup Selection"
+                  return !hasGroupedItems ? 'No grouped items selected' : 'Ungroup Selection'
                 })()}
-                disabled={!Array.from(groups.values()).some(group => 
-                  Array.from(selectedIds).some(id => group.itemIds.has(id))
-                )}
+                disabled={
+                  !Array.from(groups.values()).some((group) =>
+                    Array.from(selectedIds).some((id) => group.itemIds.has(id))
+                  )
+                }
               >
                 <UngroupIcon />
                 <span className="toolbar-item-label">Ungroup</span>
@@ -676,8 +692,8 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
               {selectedIds.size === 0
                 ? 'No items selected'
                 : selectedIds.size === 1
-                ? '1 item selected (select 2+ for alignment)'
-                : `${selectedIds.size} items selected`}
+                  ? '1 item selected (select 2+ for alignment)'
+                  : `${selectedIds.size} items selected`}
             </span>
           </div>
 
@@ -689,7 +705,7 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
                 <span className="toolbar-section-label">Existing Groups</span>
                 <div className="groups-list">
                   {Array.from(groups.entries()).map(([groupId, group]) => {
-                    const isSelected = Array.from(group.itemIds).every(id => selectedIds.has(id))
+                    const isSelected = Array.from(group.itemIds).every((id) => selectedIds.has(id))
                     return (
                       <button
                         key={groupId}

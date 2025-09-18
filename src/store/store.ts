@@ -1,6 +1,6 @@
+import { enableMapSet } from 'immer'
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import { enableMapSet } from 'immer'
 
 // Enable Immer MapSet plugin for Map/Set support
 enableMapSet()
@@ -16,6 +16,7 @@ import {
   createAuthSlice,
   createSelectionSlice,
   createGroupingSlice,
+  createLayerSystemSlice,
   setStoreRef,
   type GenerationSlice,
   type ModelSlice,
@@ -26,6 +27,7 @@ import {
   type AuthSlice,
   type SelectionSlice,
   type GroupingSlice,
+  type LayerSystemSlice,
 } from './slices'
 
 // Re-export types for convenience
@@ -40,7 +42,8 @@ export type AppState = GenerationSlice &
   DrawingSlice &
   AuthSlice &
   SelectionSlice &
-  GroupingSlice
+  GroupingSlice &
+  LayerSystemSlice
 
 // Create the store by combining all slices
 export const useStore = create<AppState>()(
@@ -55,6 +58,7 @@ export const useStore = create<AppState>()(
       ...createAuthSlice(...a),
       ...createSelectionSlice(...a),
       ...createGroupingSlice(...a),
+      ...createLayerSystemSlice(...a),
     }),
     {
       name: 'sdnextnewui-store',
@@ -72,9 +76,17 @@ export const useStore = create<AppState>()(
         height: state.height,
         apiSettings: state.apiSettings,
         canvasViewport: state.canvasViewport, // Persist canvas zoom/pan
+
+        // Don't persist layer system - images are already in IndexedDB
+        // Layer system will be reconstructed from canvas images on load
+
         // Explicitly exclude:
         // isLoading: state.isLoading, // DO NOT PERSIST
         // images: state.images, // DO NOT PERSIST - too large for localStorage
+        // layers: state.layers, // DO NOT PERSIST - too large for localStorage
+        // layerOrder: state.layerOrder, // DO NOT PERSIST
+        // activeArtboardId: state.activeArtboardId, // DO NOT PERSIST
+        // selectedLayerIds: state.selectedLayerIds, // Don't persist selection
         // samplers, sdModels arrays - fetched on load
       }),
     }

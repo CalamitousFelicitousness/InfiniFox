@@ -3,8 +3,8 @@
  * Displays available keyboard shortcuts in a modal overlay
  */
 
-import React, { useState, useCallback, useEffect } from 'react'
 import { X, Keyboard, Command } from 'lucide-react'
+import React, { useState, useCallback, useEffect } from 'react'
 
 interface ShortcutCategory {
   name: string
@@ -128,7 +128,7 @@ export const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({
       // Show help with '?' key
       if (e.key === '?' && !e.ctrlKey && !e.altKey && !e.metaKey) {
         e.preventDefault()
-        setIsOpen(prev => !prev)
+        setIsOpen((prev) => !prev)
       }
       // Close with Escape
       if (e.key === 'Escape' && isOpen) {
@@ -138,7 +138,7 @@ export const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({
 
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [isOpen, trigger])
+  }, [isOpen, trigger, handleClose])
 
   const handleClose = useCallback(() => {
     setIsOpen(false)
@@ -148,21 +148,23 @@ export const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({
   }, [onClose])
 
   // Filter shortcuts based on search
-  const filteredCategories = SHORTCUTS.map(category => ({
+  const filteredCategories = SHORTCUTS.map((category) => ({
     ...category,
-    shortcuts: category.shortcuts.filter(shortcut =>
-      shortcut.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      shortcut.keys.some(key => key.toLowerCase().includes(searchQuery.toLowerCase()))
+    shortcuts: category.shortcuts.filter(
+      (shortcut) =>
+        shortcut.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        shortcut.keys.some((key) => key.toLowerCase().includes(searchQuery.toLowerCase()))
     ),
-  })).filter(category => 
-    category.shortcuts.length > 0 || 
-    (!searchQuery && (!selectedCategory || selectedCategory === category.name))
+  })).filter(
+    (category) =>
+      category.shortcuts.length > 0 ||
+      (!searchQuery && (!selectedCategory || selectedCategory === category.name))
   )
 
   // Get platform-specific key names
   const getPlatformKey = (key: string) => {
     const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
-    
+
     switch (key) {
       case 'Ctrl':
         return isMac ? '⌘' : 'Ctrl'
@@ -189,17 +191,14 @@ export const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({
 
   return (
     <div className="keyboard-shortcuts-overlay" onClick={handleClose}>
-      <div 
-        className="keyboard-shortcuts-modal"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="keyboard-shortcuts-modal" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="keyboard-shortcuts-header">
           <div className="keyboard-shortcuts-title">
             <Keyboard size={24} />
             <h2>Keyboard Shortcuts</h2>
           </div>
-          <button 
+          <button
             className="keyboard-shortcuts-close"
             onClick={handleClose}
             aria-label="Close shortcuts help"
@@ -227,7 +226,7 @@ export const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({
           >
             All
           </button>
-          {SHORTCUTS.map(category => (
+          {SHORTCUTS.map((category) => (
             <button
               key={category.name}
               className={`category-tab ${selectedCategory === category.name ? 'active' : ''}`}
@@ -240,7 +239,7 @@ export const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({
 
         {/* Shortcuts List */}
         <div className="keyboard-shortcuts-content">
-          {filteredCategories.map(category => (
+          {filteredCategories.map((category) => (
             <div key={category.name} className="shortcut-category">
               <h3>{category.name}</h3>
               <div className="shortcuts-list">
@@ -259,9 +258,7 @@ export const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({
                         <span className="shortcut-context">({shortcut.context})</span>
                       )}
                     </div>
-                    <div className="shortcut-description">
-                      {shortcut.description}
-                    </div>
+                    <div className="shortcut-description">{shortcut.description}</div>
                   </div>
                 ))}
               </div>
@@ -289,7 +286,7 @@ export function useKeyboardShortcutsHelp() {
 
   const open = useCallback(() => setIsOpen(true), [])
   const close = useCallback(() => setIsOpen(false), [])
-  const toggle = useCallback(() => setIsOpen(prev => !prev), [])
+  const toggle = useCallback(() => setIsOpen((prev) => !prev), [])
 
   return {
     isOpen,
@@ -297,11 +294,7 @@ export function useKeyboardShortcutsHelp() {
     close,
     toggle,
     Component: (props: Omit<KeyboardShortcutsHelpProps, 'isOpen' | 'onClose'>) => (
-      <KeyboardShortcutsHelp
-        {...props}
-        isOpen={isOpen}
-        onClose={close}
-      />
+      <KeyboardShortcutsHelp {...props} isOpen={isOpen} onClose={close} />
     ),
   }
 }

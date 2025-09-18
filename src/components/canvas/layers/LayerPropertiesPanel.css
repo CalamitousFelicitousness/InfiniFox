@@ -1,0 +1,148 @@
+.layer-properties-panel {
+  background: var(--panel-bg);
+  border-left: 1px solid var(--border-color);
+  width: 280px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.layer-properties-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-secondary);
+  gap: 12px;
+}
+
+.layer-properties-header {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.layer-properties-header h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.layer-type {
+  font-size: 11px;
+  padding: 2px 8px;
+  background: var(--token-surface-secondary);
+  border-radius: 4px;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.layer-properties-content {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.property-group {
+  margin-bottom: 20px;
+}
+
+.property-group label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+}
+
+.property-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.property-control input[type='range'] {
+  flex: 1;
+  height: 24px;
+}
+
+.property-value {
+  font-size: 12px;
+  min-width: 36px;
+  text-align: right;
+}
+
+.property-select {
+  width: 100%;
+  padding: 6px;
+  background: var(--token-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.filter-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.filter-buttons button {
+  padding: 6px 12px;
+  background: var(--token-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-buttons button:hover {
+  background: var(--token-surface-secondary);
+}
+
+.filter-buttons button.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.transform-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+  gap: 8px;
+}
+
+.transform-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.transform-item span {
+  font-size: 10px;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.transform-item input {
+  padding: 4px 6px;
+  background: var(--token-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  font-size: 12px;
+  width: 100%;
+}
+
+.transform-item input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: var(--token-surface-secondary);
+}

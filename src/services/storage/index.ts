@@ -3,4 +3,4 @@ export {
   type StoredImage,
   type ImageMetadata,
   type PersistedImage,
-} from './ImageStorageService'
+} from './UnifiedImageStorageService'
