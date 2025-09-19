@@ -5,8 +5,8 @@ interface Command {
   id: string
   type: string
   timestamp: number
-  execute: () => void
-  undo: () => void
+  execute: () => void | Promise<void>
+  undo: () => void | Promise<void>
   description: string
 }
 
@@ -160,8 +160,8 @@ interface HistoryState {
   canRedo: boolean
 
   executeCommand: (command: Command) => void
-  undo: () => void
-  redo: () => void
+  undo: () => Promise<void>
+  redo: () => Promise<void>
   clearHistory: () => void
   getHistoryList: () => { id: string; description: string; timestamp: number; isCurrent: boolean }[]
 }
@@ -173,7 +173,7 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
   canUndo: false,
   canRedo: false,
 
-  executeCommand: (command: Command) => {
+  executeCommand: async (command: Command) => {
     const { history, currentIndex, maxHistorySize } = get()
 
     // Remove any commands after current index (lose redo history)
@@ -183,7 +183,7 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     newHistory.push(command)
 
     // Execute the command
-    command.execute()
+    await command.execute()
 
     // Trim history if too long
     if (newHistory.length > maxHistorySize) {
@@ -200,12 +200,12 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     })
   },
 
-  undo: () => {
+  undo: async () => {
     const { history, currentIndex } = get()
 
     if (currentIndex >= 0) {
       const command = history[currentIndex]
-      command.undo()
+      await command.undo()
 
       const newIndex = currentIndex - 1
 
@@ -217,13 +217,13 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     }
   },
 
-  redo: () => {
+  redo: async () => {
     const { history, currentIndex } = get()
 
     if (currentIndex < history.length - 1) {
       const newIndex = currentIndex + 1
       const command = history[newIndex]
-      command.execute()
+      await command.execute()
 
       set({
         currentIndex: newIndex,

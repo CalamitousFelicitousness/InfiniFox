@@ -169,31 +169,42 @@ class LayerCommand {
     }
   }
 
-  execute() {
+  async execute() {
     switch (this.action) {
       case 'add':
-        this.store.addLayerDirect(this.newState)
+        this.store.addLayerDirect(this.newState as LayerNode)
         break
       case 'delete':
-        this.store.deleteLayerDirect(this.layerId)
+        // Use the version that preserves image data for undo
+        this.store.deleteLayerDirectWithPreservedImage(this.layerId)
         break
       case 'update':
-        this.store.updateLayerDirect(this.layerId, this.newState)
+        this.store.updateLayerDirect(this.layerId, this.newState as Partial<LayerNode>)
         break
-      case 'move':
-        this.store.moveLayerDirect(this.layerId, this.newState.parentId, this.newState.index)
+      case 'move': {
+        const moveState = this.newState as { parentId?: string | null; index?: number }
+        this.store.moveLayerDirect(this.layerId, moveState.parentId, moveState.index)
         break
+      }
     }
   }
 
-  undo() {
+  async undo() {
     switch (this.action) {
       case 'add':
         this.store.deleteLayerDirect(this.layerId)
         break
-      case 'delete':
-        this.store.addLayerDirect(this.oldState)
+      case 'delete': {
+        // For image layers, ensure the blob URL is recreated
+        const restoredLayer = this.oldState as LayerNode
+        if (restoredLayer.type === 'image' && restoredLayer.imageProps?.imageId) {
+          // The imageId should still be valid in storage
+          // The LayerRenderer will create a new blob URL when it loads
+          console.log('Restoring image layer with imageId:', restoredLayer.imageProps.imageId)
+        }
+        this.store.addLayerDirect(restoredLayer)
         break
+      }
       case 'update':
         this.store.updateLayerDirect(this.layerId, this.oldState)
         break
@@ -231,6 +242,7 @@ export interface LayerSystemSlice {
   updateLayerDirect: (layerId: string, updates: Partial<LayerNode>) => void
   deleteLayer: (layerId: string) => void
   deleteLayerDirect: (layerId: string) => void
+  deleteLayerDirectWithPreservedImage: (layerId: string) => void
   duplicateLayer: (layerId: string) => string
 
   // Layer hierarchy operations
@@ -306,6 +318,7 @@ export interface LayerSystemSlice {
 
   // Utility operations
   clearAllLayers: () => Promise<void>
+  getGroups: () => LayerNode[]
   getLayerBounds: (
     layerId: string
   ) => { x: number; y: number; width: number; height: number } | null
@@ -362,20 +375,19 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
 
   getRootLayers: () => {
     const state = get() as LayerSystemSlice
-    return state.layerOrder.map((id: string) => state.layers.get(id)).filter(Boolean) as LayerNode[]
+    return state.layerOrder
+      .map((id: string) => state.layers.get(id))
+      .filter((layer): layer is LayerNode => layer !== undefined && !layer.parentId) // Only return layers without a parent
   },
 
   getArtboards: () => {
     const state = get() as LayerSystemSlice
-    const artboards: LayerNode[] = []
+    // Get artboards from root layers (layerOrder)
+    const rootArtboards = state.layerOrder
+      .map((id: string) => state.layers.get(id))
+      .filter((layer): layer is LayerNode => layer !== undefined && layer.type === 'artboard')
 
-    state.layers.forEach((layer: LayerNode) => {
-      if (layer.type === 'artboard') {
-        artboards.push(layer)
-      }
-    })
-
-    return artboards.sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0))
+    return rootArtboards.sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0))
   },
 
   getSelectedLayers: () => {
@@ -448,8 +460,11 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
       imageStorage.addLayerReference(newLayer.imageProps.imageId, id).catch(console.error)
     }
 
+    // Create a copy for history to avoid reference issues
+    const newLayerCopy = JSON.parse(JSON.stringify(newLayer))
+
     // Create command for history
-    const command = new LayerCommand('add', id, null, newLayer, get())
+    const command = new LayerCommand('add', id, null, newLayerCopy, get())
     useHistoryStore.getState().executeCommand(command)
 
     return id
@@ -498,7 +513,10 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
     const oldLayer = get().getLayer(layerId)
     if (!oldLayer) return
 
-    const command = new LayerCommand('update', layerId, oldLayer, updates, get())
+    // Create a deep copy of the old layer state for history
+    const oldLayerCopy = JSON.parse(JSON.stringify(oldLayer))
+
+    const command = new LayerCommand('update', layerId, oldLayerCopy, updates, get())
     useHistoryStore.getState().executeCommand(command)
   },
 
@@ -526,7 +544,12 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
     const layer = get().getLayer(layerId)
     if (!layer) return
 
-    const command = new LayerCommand('delete', layerId, layer, null, get())
+    // Create a deep copy of the layer for undo
+    const layerCopy = JSON.parse(JSON.stringify(layer))
+
+    // The LayerCommand will use deleteLayerDirectWithPreservedImage
+    // which preserves the image data in storage for undo
+    const command = new LayerCommand('delete', layerId, layerCopy, null, get())
     useHistoryStore.getState().executeCommand(command)
   },
 
@@ -537,6 +560,9 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
 
       if (!layer) return state
 
+      // Store parent ID for later cleanup check
+      const parentId = layer.parentId
+
       // Recursively delete children
       if (layer.children) {
         layer.children.forEach((childId) => {
@@ -545,11 +571,19 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
       }
 
       // Remove from parent's children
-      if (layer.parentId) {
-        const parent = newLayers.get(layer.parentId)
+      if (parentId) {
+        const parent = newLayers.get(parentId)
         if (parent?.children) {
           parent.children = parent.children.filter((id) => id !== layerId)
           parent.updatedAt = Date.now()
+
+          // Auto-delete empty groups
+          if (parent.type === 'group' && parent.children.length === 0) {
+            // Recursively delete the empty group
+            setTimeout(() => {
+              get().deleteLayerDirect(parentId)
+            }, 0)
+          }
         }
       }
 
@@ -567,6 +601,70 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
       if (layer.type === 'image' && layer.imageProps?.imageId) {
         imageStorage.removeLayerReference(layer.imageProps.imageId, layerId).catch(console.error)
       }
+
+      // Schedule auto-save
+      layerPersistenceManager.scheduleSave({
+        layers: newLayers,
+        layerOrder: newLayerOrder,
+        activeArtboardId: state.activeArtboardId,
+      })
+
+      return {
+        layers: newLayers,
+        layerOrder: newLayerOrder,
+        selectedLayerIds: newSelectedIds,
+      }
+    })
+  },
+
+  // Delete layer without removing image from storage (for undo support)
+  deleteLayerDirectWithPreservedImage: (layerId: string) => {
+    set((state) => {
+      const newLayers = new Map(state.layers)
+      const layer = newLayers.get(layerId)
+
+      if (!layer) return state
+
+      // Store parent ID for later cleanup check
+      const parentId = layer.parentId
+
+      // Recursively delete children
+      if (layer.children) {
+        layer.children.forEach((childId) => {
+          get().deleteLayerDirectWithPreservedImage(childId)
+        })
+      }
+
+      // Remove from parent's children
+      if (parentId) {
+        const parent = newLayers.get(parentId)
+        if (parent?.children) {
+          parent.children = parent.children.filter((id) => id !== layerId)
+          parent.updatedAt = Date.now()
+
+          // Auto-delete empty groups
+          if (parent.type === 'group' && parent.children.length === 0) {
+            // Recursively delete the empty group
+            setTimeout(() => {
+              get().deleteLayerDirectWithPreservedImage(parentId)
+            }, 0)
+          }
+        }
+      }
+
+      // Remove from selection
+      const newSelectedIds = new Set(state.selectedLayerIds)
+      newSelectedIds.delete(layerId)
+
+      // Remove from layers
+      newLayers.delete(layerId)
+
+      // Remove from root order if applicable
+      const newLayerOrder = state.layerOrder.filter((id) => id !== layerId)
+
+      // NOTE: We intentionally DO NOT remove the image reference from storage
+      // This allows the image to be restored if the delete is undone
+      // The image will be cleaned up later by garbage collection if needed
 
       // Schedule auto-save
       layerPersistenceManager.scheduleSave({
@@ -1293,6 +1391,20 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
     })
   },
 
+  // Get all group layers
+  getGroups: () => {
+    const groups: LayerNode[] = []
+    const state = get() as LayerSystemSlice
+
+    state.layers.forEach((layer) => {
+      if (layer.type === 'group') {
+        groups.push(layer)
+      }
+    })
+
+    return groups
+  },
+
   // Persistence operations
   persistLayerStructure: async () => {
     const state = get() as LayerSystemSlice
@@ -1314,6 +1426,31 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
         selectedLayerIds: new Set(),
         lastPersistedAt: Date.now(),
       })
+
+      // Clean up any empty groups that might have been persisted
+      setTimeout(() => {
+        const state = get() as LayerSystemSlice
+        const emptyGroups: string[] = []
+
+        state.layers.forEach((layer) => {
+          if (layer.type === 'group') {
+            const children = get().getLayerChildren(layer.id)
+            if (children.length === 0) {
+              emptyGroups.push(layer.id)
+            }
+          }
+        })
+
+        // Delete all empty groups
+        emptyGroups.forEach((groupId) => {
+          get().deleteLayerDirect(groupId)
+        })
+
+        if (emptyGroups.length > 0) {
+          console.log(`Cleaned up ${emptyGroups.length} empty group(s)`)
+        }
+      }, 100)
+
       return true
     }
     return false

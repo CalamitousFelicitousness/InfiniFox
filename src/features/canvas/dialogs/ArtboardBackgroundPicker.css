@@ -12,9 +12,11 @@
 }
 
 .background-picker {
-  background: var(--color-surface);
+  background: var(--color-surface-primary);
+  border: 1px solid var(--color-border-primary);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xl);
+  backdrop-filter: blur(10px);
   width: 360px;
   max-width: 90vw;
 }
@@ -180,7 +182,7 @@
 }
 
 .background-picker-cancel {
-  background: var(--color-surface);
+  background: var(--color-surface-primary);
   border: 1px solid var(--color-border);
   color: var(--color-text);
 }

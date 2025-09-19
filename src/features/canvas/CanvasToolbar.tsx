@@ -35,6 +35,8 @@ interface CanvasToolbarProps {
     objectSnapEnabled: boolean
     snapThreshold: number
     showSnapGuides: boolean
+    artboardSnapEnabled?: boolean
+    artboardPriority?: number
   }) => void
 }
 
@@ -49,11 +51,13 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
     selectedIds,
     images,
     batchUpdatePositions,
-    createGroup,
-    dissolveGroup,
-    groups,
-    // getItemGroup,
-    selectItems,
+    // Layer system functions
+    groupLayers,
+    ungroupLayers,
+    getGroups,
+    selectedLayerIds,
+    getLayerChildren,
+    selectLayers,
   } = useStore()
 
   // Load saved position or use defaults
@@ -351,6 +355,10 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
     setConfig((prev) => ({ ...prev, objectSnapEnabled: !prev.objectSnapEnabled }))
   }
 
+  const toggleArtboardSnap = () => {
+    setConfig((prev) => ({ ...prev, artboardSnapEnabled: !prev.artboardSnapEnabled }))
+  }
+
   const toggleSnapGuides = () => {
     setConfig((prev) => ({ ...prev, showSnapGuides: !prev.showSnapGuides }))
   }
@@ -447,6 +455,15 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
             </button>
 
             <button
+              className={`toolbar-item ${config.artboardSnapEnabled !== false ? 'active' : ''}`}
+              onClick={toggleArtboardSnap}
+              title="Artboard Snap"
+            >
+              <Layers2Icon />
+              <span className="toolbar-item-label">Artboards</span>
+            </button>
+
+            <button
               className={`toolbar-item ${config.showSnapGuides ? 'active' : ''}`}
               onClick={toggleSnapGuides}
               title="Snap Guides"
@@ -508,6 +525,7 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
                     gridEnabled: true,
                     gridSize: 50,
                     objectSnapEnabled: false,
+                    artboardSnapEnabled: true,
                     snapThreshold: 20,
                     showSnapGuides: true,
                   })
@@ -523,6 +541,7 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
                     gridEnabled: false,
                     gridSize: 50,
                     objectSnapEnabled: true,
+                    artboardSnapEnabled: true,
                     snapThreshold: 20,
                     showSnapGuides: true,
                   })
@@ -538,6 +557,7 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
                     gridEnabled: true,
                     gridSize: 25,
                     objectSnapEnabled: true,
+                    artboardSnapEnabled: true,
                     snapThreshold: 30,
                     showSnapGuides: true,
                   })
@@ -642,15 +662,15 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
               <button
                 className="toolbar-item align-button"
                 onClick={() => {
-                  const selectedArray = Array.from(selectedIds)
+                  const selectedArray = Array.from(selectedLayerIds)
                   console.log('Group button clicked, selected items:', selectedArray)
                   if (selectedArray.length >= 2) {
-                    const groupId = createGroup(selectedArray, `Group ${groups.size + 1}`)
+                    const groupId = groupLayers(selectedArray)
                     console.log('Created group:', groupId)
                   }
                 }}
-                title={selectedIds.size < 2 ? 'Select 2+ items to group' : 'Group Selection'}
-                disabled={selectedIds.size < 2}
+                title={selectedLayerIds.size < 2 ? 'Select 2+ items to group' : 'Group Selection'}
+                disabled={selectedLayerIds.size < 2}
               >
                 <GroupIcon />
                 <span className="toolbar-item-label">Group</span>
@@ -659,26 +679,40 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
                 className="toolbar-item align-button"
                 onClick={() => {
                   // Find groups containing selected items
+                  const groups = getGroups()
                   const groupsToDissolve = new Set<string>()
-                  groups.forEach((group, groupId) => {
-                    if (Array.from(selectedIds).some((id) => group.itemIds.has(id))) {
-                      groupsToDissolve.add(groupId)
+
+                  groups.forEach((group) => {
+                    const children = getLayerChildren(group.id)
+                    if (
+                      Array.from(selectedLayerIds).some((id) =>
+                        children.some((child) => child.id === id)
+                      )
+                    ) {
+                      groupsToDissolve.add(group.id)
                     }
                   })
 
                   console.log('Dissolving groups:', Array.from(groupsToDissolve))
-                  groupsToDissolve.forEach((groupId) => dissolveGroup(groupId))
+                  groupsToDissolve.forEach((groupId) => ungroupLayers(groupId))
                 }}
                 title={(() => {
-                  const hasGroupedItems = Array.from(groups.values()).some((group) =>
-                    Array.from(selectedIds).some((id) => group.itemIds.has(id))
-                  )
+                  const groups = getGroups()
+                  const hasGroupedItems = groups.some((group) => {
+                    const children = getLayerChildren(group.id)
+                    return Array.from(selectedLayerIds).some((id) =>
+                      children.some((child) => child.id === id)
+                    )
+                  })
                   return !hasGroupedItems ? 'No grouped items selected' : 'Ungroup Selection'
                 })()}
                 disabled={
-                  !Array.from(groups.values()).some((group) =>
-                    Array.from(selectedIds).some((id) => group.itemIds.has(id))
-                  )
+                  !getGroups().some((group) => {
+                    const children = getLayerChildren(group.id)
+                    return Array.from(selectedLayerIds).some((id) =>
+                      children.some((child) => child.id === id)
+                    )
+                  })
                 }
               >
                 <UngroupIcon />
@@ -689,32 +723,34 @@ export function CanvasToolbar({ className = '', onSnapConfigChange }: CanvasTool
 
           <div className="align-info">
             <span className="align-info-text">
-              {selectedIds.size === 0
+              {selectedLayerIds.size === 0
                 ? 'No items selected'
-                : selectedIds.size === 1
+                : selectedLayerIds.size === 1
                   ? '1 item selected (select 2+ for alignment)'
-                  : `${selectedIds.size} items selected`}
+                  : `${selectedLayerIds.size} items selected`}
             </span>
           </div>
 
           {/* Groups List */}
-          {groups.size > 0 && (
+          {getGroups().length > 0 && (
             <>
               <div className="toolbar-panel-separator" />
               <div className="align-section">
                 <span className="toolbar-section-label">Existing Groups</span>
                 <div className="groups-list">
-                  {Array.from(groups.entries()).map(([groupId, group]) => {
-                    const isSelected = Array.from(group.itemIds).every((id) => selectedIds.has(id))
+                  {getGroups().map((group) => {
+                    const children = getLayerChildren(group.id)
+                    const childIds = children.map((c) => c.id)
+                    const isSelected = childIds.every((id) => selectedLayerIds.has(id))
                     return (
                       <button
-                        key={groupId}
+                        key={group.id}
                         className={`group-item ${isSelected ? 'selected' : ''}`}
-                        onClick={() => selectItems(Array.from(group.itemIds))}
+                        onClick={() => selectLayers(childIds)}
                         title={`Select all items in ${group.name}`}
                       >
                         <span className="group-name">{group.name}</span>
-                        <span className="group-count">{group.itemIds.size} items</span>
+                        <span className="group-count">{children.length} items</span>
                       </button>
                     )
                   })}

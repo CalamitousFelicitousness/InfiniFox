@@ -129,13 +129,21 @@ export const LayerTransformer: React.FC<LayerTransformerProps> = ({ selectedLaye
         return newBox
       }}
       onTransformEnd={handleTransformEnd}
-      anchorStroke="#0066ff"
+      anchorStroke="rgba(100, 108, 255, 1)"
       anchorFill="white"
       anchorSize={8}
-      borderStroke="#0066ff"
-      borderStrokeWidth={1}
+      borderStroke="rgba(100, 108, 255, 0.8)"
+      borderStrokeWidth={2}
+      borderDash={[]}
       anchorCornerRadius={2}
-      padding={5}
+      padding={0}
+      rotateAnchorOffset={25}
+      anchorStyleFunc={(anchor) => {
+        // Style rotation anchor differently
+        if (anchor.hasName('rotater')) {
+          anchor.cornerRadius(10)
+        }
+      }}
     />
   )
 }

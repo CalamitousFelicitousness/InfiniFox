@@ -2,6 +2,9 @@ import Konva from 'konva'
 import React, { useCallback, useMemo, useRef } from 'react'
 import { Group, Rect } from 'react-konva'
 
+import { createSnapGuideScheduler } from '../../../features/canvas/utils/snapGuideScheduler'
+import { snappingManager } from '../../../services/canvas/SnappingManager'
+import type { SnapGuide } from '../../../services/canvas/SnappingManager'
 import { viewportCulling } from '../../../services/canvas/ViewportCullingService'
 import type { LayerNode } from '../../../store/slices/layerSystemSlice'
 import { useStore } from '../../../store/store'
@@ -16,6 +19,10 @@ interface ArtboardComponentProps {
   viewport?: { x: number; y: number; width: number; height: number }
   onSelect?: (artboardId: string) => void
   onContextMenu?: (e: Konva.KonvaEventObject<PointerEvent>, artboardId: string) => void
+  onSnapGuidesChange?: (guides: SnapGuide[]) => void
+  onDragStart?: (layerId: string) => void
+  onDragEnd?: () => void
+  onLayerSelect?: (layerId: string) => void
 }
 
 /**
@@ -29,8 +36,13 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
   viewport,
   onSelect,
   onContextMenu,
+  onSnapGuidesChange,
+  onDragStart,
+  onDragEnd,
+  onLayerSelect,
 }) => {
   const groupRef = useRef<Konva.Group>(null)
+  const snapSchedulerRef = useRef(createSnapGuideScheduler(onSnapGuidesChange))
 
   const { getLayerChildren, updateLayerDirect, selectedLayerIds, operationLoadingStates } =
     useStore()
@@ -132,16 +144,60 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
     }
   }, [filters, cached, artboard.id, updateLayerDirect])
 
+  // Update snap scheduler callback when it changes
+  React.useEffect(() => {
+    if (snapSchedulerRef.current && onSnapGuidesChange) {
+      snapSchedulerRef.current.setOnGuideChange(onSnapGuidesChange)
+    }
+  }, [onSnapGuidesChange])
+
+  // Handle drag start
+  const handleDragStart = useCallback(() => {
+    // Set current object for snapping manager
+    snappingManager.setCurrentObject(artboard.id)
+    onDragStart?.(artboard.id)
+  }, [artboard.id, onDragStart])
+
+  // Handle drag move with snapping
+  const handleDragMove = useCallback(
+    (e: Konva.KonvaEventObject<DragEvent>) => {
+      const node = e.target as Konva.Group
+      const { width = 800, height = 600 } = artboard.artboardProps || {}
+
+      // Get snapped position
+      const snapResult = snappingManager.snap(node.x(), node.y(), width, height)
+
+      // Apply snapped position
+      node.x(snapResult.x)
+      node.y(snapResult.y)
+
+      // Update snap guides
+      if (snapResult.guides.length > 0) {
+        snapSchedulerRef.current.scheduleUpdate(snapResult.guides)
+      } else {
+        snapSchedulerRef.current.clear()
+      }
+    },
+    [artboard.artboardProps]
+  )
+
   // Handle drag end
   const handleDragEnd = useCallback(
     (e: Konva.KonvaEventObject<DragEvent>) => {
       const node = e.target as Konva.Group
+
+      // Clear snapping state
+      snappingManager.setCurrentObject(null)
+      snapSchedulerRef.current.clear()
+      onDragEnd?.()
+
+      // Persist the snapped position
       updateLayerDirect(artboard.id, {
         x: node.x(),
         y: node.y(),
       })
     },
-    [artboard.id, updateLayerDirect]
+    [artboard.id, updateLayerDirect, onDragEnd]
   )
 
   // Handle click
@@ -202,6 +258,8 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
       opacity={opacity}
       visible={visible}
       draggable={!locked}
+      onDragStart={handleDragStart}
+      onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}
       onClick={handleClick}
       onContextMenu={handleContextMenu}
@@ -216,16 +274,56 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
         onContextMenu={handleContextMenu}
       />
 
-      {/* Render border when active or selected */}
-      {(isActive || selectedLayerIds.has(artboard.id)) && (
+      {/* Active artboard indicator - selection handled by MultiTransformer */}
+      {isActive && (
+        <>
+          {/* Active artboard border */}
+          <Rect
+            width={width}
+            height={height}
+            stroke="rgba(100, 108, 255, 0.8)"
+            strokeWidth={2}
+            strokeScaleEnabled={false}
+            listening={false}
+            fill="transparent"
+            cornerRadius={4}
+          />
+          {/* Glow effect for active artboard */}
+          {scale >= 0.5 && (
+            <Rect
+              width={width}
+              height={height}
+              stroke="transparent"
+              strokeWidth={0}
+              strokeScaleEnabled={false}
+              listening={false}
+              fill="transparent"
+              cornerRadius={4}
+              shadowColor="rgba(100, 108, 255, 0.5)"
+              shadowBlur={scale >= 0.75 ? 20 : 10}
+              shadowOpacity={0.5}
+              shadowOffsetX={0}
+              shadowOffsetY={0}
+            />
+          )}
+        </>
+      )}
+      {/* Selected artboard glow - subtle indicator */}
+      {!isActive && selectedLayerIds.has(artboard.id) && scale >= 0.5 && (
         <Rect
           width={width}
           height={height}
-          stroke={isActive ? '#0066ff' : '#00aaff'}
-          strokeWidth={2 / scale}
+          stroke="transparent"
+          strokeWidth={0}
           strokeScaleEnabled={false}
           listening={false}
           fill="transparent"
+          cornerRadius={4}
+          shadowColor="rgba(100, 108, 255, 0.4)"
+          shadowBlur={10}
+          shadowOpacity={0.3}
+          shadowOffsetX={0}
+          shadowOffsetY={0}
         />
       )}
 
@@ -237,6 +335,10 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
           parentScale={scale}
           viewport={childViewport}
           onContextMenu={handleLayerContextMenu}
+          onSnapGuidesChange={onSnapGuidesChange}
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
+          onLayerSelect={onLayerSelect}
         />
       ))}
 

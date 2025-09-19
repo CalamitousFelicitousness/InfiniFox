@@ -55,12 +55,12 @@ export const MultiTransformer: React.FC<MultiTransformerProps> = ({
         }
         return newBox
       }}
-      anchorStroke="rgb(59, 130, 246)"
+      anchorStroke="rgba(100, 108, 255, 0.9)"
       anchorFill="white"
       anchorSize={8}
-      borderStroke="rgb(59, 130, 246)"
-      borderStrokeWidth={1}
-      borderDash={[3, 3]}
+      borderStroke="rgba(100, 108, 255, 0.8)"
+      borderStrokeWidth={1.5}
+      borderDash={[]}
       rotateAnchorOffset={20}
       enabledAnchors={
         selectedIds.length === 1

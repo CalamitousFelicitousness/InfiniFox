@@ -8,6 +8,8 @@ export interface SnapConfig {
   objectSnapEnabled: boolean
   snapThreshold: number
   showSnapGuides: boolean
+  artboardSnapEnabled?: boolean
+  artboardPriority?: number
 }
 
 export interface SnapPoint {
@@ -21,6 +23,7 @@ export interface SnapGuide {
   start: number
   end: number
   color?: string
+  source?: 'image' | 'artboard' | 'layer' | 'group' | 'spacing'
 }
 
 export interface SnapResult {
@@ -37,6 +40,7 @@ export interface BoundingBox {
   width: number
   height: number
   rotation?: number
+  kind?: 'image' | 'artboard' | 'layer' | 'group'
 }
 
 export class SnappingManager {
@@ -142,7 +146,7 @@ export class SnappingManager {
    * Snap to other objects
    */
   private snapToObjects(x: number, y: number, width: number, height: number): SnapResult {
-    const { snapThreshold } = this.config
+    const { snapThreshold, artboardSnapEnabled = true, artboardPriority = 1.2 } = this.config
     const guides: SnapGuide[] = []
     let snappedX = x
     let snappedY = y
@@ -159,12 +163,18 @@ export class SnappingManager {
     let bestYSnap: { position: number; guide?: SnapGuide } | null = null
 
     for (const target of targetObjects) {
+      // Skip artboard snapping if disabled
+      if (target.kind === 'artboard' && !artboardSnapEnabled) continue
+
       const targetPoints = this.getSnapPoints(target.x, target.y, target.width, target.height)
+
+      // Apply priority for artboards (make them "stickier")
+      const distanceModifier = target.kind === 'artboard' ? artboardPriority : 1
 
       // Check X-axis snapping (vertical alignment)
       for (const currentPoint of currentPoints) {
         for (const targetPoint of targetPoints) {
-          const xDistance = Math.abs(currentPoint.x - targetPoint.x)
+          const xDistance = Math.abs(currentPoint.x - targetPoint.x) / distanceModifier
 
           if (xDistance < bestXDistance) {
             bestXDistance = xDistance
@@ -177,7 +187,8 @@ export class SnappingManager {
                     position: targetPoint.x,
                     start: Math.min(y, target.y),
                     end: Math.max(y + height, target.y + target.height),
-                    color: '#4CAF50',
+                    color: target.kind === 'artboard' ? '#0066ff' : '#4CAF50',
+                    source: target.kind || 'image',
                   }
                 : undefined,
             }
@@ -188,7 +199,7 @@ export class SnappingManager {
       // Check Y-axis snapping (horizontal alignment)
       for (const currentPoint of currentPoints) {
         for (const targetPoint of targetPoints) {
-          const yDistance = Math.abs(currentPoint.y - targetPoint.y)
+          const yDistance = Math.abs(currentPoint.y - targetPoint.y) / distanceModifier
 
           if (yDistance < bestYDistance) {
             bestYDistance = yDistance
@@ -201,7 +212,8 @@ export class SnappingManager {
                     position: targetPoint.y,
                     start: Math.min(x, target.x),
                     end: Math.max(x + width, target.x + target.width),
-                    color: '#4CAF50',
+                    color: target.kind === 'artboard' ? '#0066ff' : '#4CAF50',
+                    source: target.kind || 'image',
                   }
                 : undefined,
             }
@@ -312,6 +324,7 @@ export class SnappingManager {
                   start: Math.min(y, target.y, other.y),
                   end: Math.max(y + height, target.y + target.height, other.y + other.height),
                   color: '#FF9800',
+                  source: 'spacing',
                 }
               : undefined,
           })
@@ -335,6 +348,7 @@ export class SnappingManager {
                   start: Math.min(x, target.x, other.x),
                   end: Math.max(x + width, target.x + target.width, other.x + other.width),
                   color: '#FF9800',
+                  source: 'spacing',
                 }
               : undefined,
           })

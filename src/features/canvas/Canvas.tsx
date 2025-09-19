@@ -43,6 +43,7 @@ import { useFileOperations } from './hooks/useFileOperations'
 import { useFileOperationsLayerSystem } from './hooks/useFileOperationsLayerSystem'
 import { useGenerationFrames } from './hooks/useGenerationFrames'
 import { useImageManagement } from './hooks/useImageManagement'
+import { useLayerSnapTargets } from './hooks/useLayerSnapTargets'
 import { useViewport } from './hooks/useViewport'
 
 // Components (Phase 2)
@@ -68,6 +69,7 @@ export function Canvas() {
   const [snapGuides, setSnapGuides] = React.useState<SnapGuide[]>([])
   const [gridEnabled, setGridEnabled] = React.useState(false)
   const [showLayerPanel] = useState(USE_LAYER_SYSTEM)
+  const [activeDragId, setActiveDragId] = React.useState<string | null>(null)
 
   // Dialog state for artboard operations
   const [resizeDialogData, setResizeDialogData] = useState<{
@@ -106,6 +108,8 @@ export function Canvas() {
 
   // Layer system state
   const {
+    layers,
+    layerOrder,
     getArtboards,
     getRootLayers,
     activeArtboardId,
@@ -143,6 +147,9 @@ export function Canvas() {
     scale: viewport.scale,
     onSnapGuidesChange: setSnapGuides,
   })
+
+  // Register layer snap targets
+  useLayerSnapTargets(activeDragId)
 
   const frames = useGenerationFrames({
     currentTool: tools.currentTool,
@@ -283,6 +290,8 @@ export function Canvas() {
       // Reset snapping manager
       snappingManager.setCurrentObject(null)
       snappingManager.setObjects([])
+      // Clear active drag
+      setActiveDragId(null)
     }
   }, [])
 
@@ -418,8 +427,8 @@ export function Canvas() {
   const { konvaImages, getImageBorderColor } = images_
 
   // Get artboards and root layers for rendering
-  const artboards = useMemo(() => (USE_LAYER_SYSTEM ? getArtboards() : []), [getArtboards])
-  const rootLayers = useMemo(() => (USE_LAYER_SYSTEM ? getRootLayers() : []), [getRootLayers])
+  const artboards = useMemo(() => (USE_LAYER_SYSTEM ? getArtboards() : []), [layers, layerOrder])
+  const rootLayers = useMemo(() => (USE_LAYER_SYSTEM ? getRootLayers() : []), [layers, layerOrder])
 
   // State for minimap image URLs
   const [layerImageUrls, setLayerImageUrls] = useState<Record<string, string>>({})
@@ -465,7 +474,7 @@ export function Canvas() {
     }
 
     loadImageUrls()
-  }, [rootLayers, artboards])
+  }, [layers, layerOrder])
 
   // Memoize minimap images data
   const minimapImages = useMemo(() => {
@@ -601,82 +610,95 @@ export function Canvas() {
           {...events.getStageEventHandlers()}
           onWheel={viewport.handleWheel}
         >
-          {/* Content Layer - Modified to use Artboards if layer system enabled */}
+          {/* Layer system architecture aligned with Konva best practices */}
           {USE_LAYER_SYSTEM ? (
-            <KonvaLayer name="content">
-              {/* Grid Layer within content */}
-              <GridLayer
-                viewportX={-viewport.position.x / viewport.scale}
-                viewportY={-viewport.position.y / viewport.scale}
-                viewportWidth={stageSize.width / viewport.scale}
-                viewportHeight={stageSize.height / viewport.scale}
-                scale={viewport.scale}
-                enabled={gridEnabled}
-                opacity={0.15}
-              />
+            <>
+              {/* Background Layer - Static, non-interactive content */}
+              <KonvaLayer name="background" listening={false}>
+                <GridLayer
+                  viewportX={-viewport.position.x / viewport.scale}
+                  viewportY={-viewport.position.y / viewport.scale}
+                  viewportWidth={stageSize.width / viewport.scale}
+                  viewportHeight={stageSize.height / viewport.scale}
+                  scale={viewport.scale}
+                  enabled={gridEnabled}
+                  opacity={0.15}
+                />
+              </KonvaLayer>
 
-              {/* Generation Frames - Always render even with layer system */}
-              <FrameLayer
-                frames={frames.generationFrames || []}
-                selectedFrameId={frames.selectedFrameId}
-                contextMenuFrameId={frames.contextMenuFrameId}
-                currentTool={tools.currentTool}
-                onFrameSelect={frames.handleFrameSelect}
-                onFrameDragEnd={frames.handleFrameDragEnd}
-                onFrameContextMenu={(e, frameId) => {
-                  const pointer = stageRef.current?.getPointerPosition()
-                  if (pointer) {
-                    events.setContextMenu({
-                      visible: true,
-                      x: pointer.x,
-                      y: pointer.y,
-                      imageId: null,
-                      frameId,
-                    })
-                  }
-                }}
-                isFrameDraggable={frames.isFrameDraggable}
-                getFrameStrokeColor={frames.getFrameStrokeColor}
-                getFrameFillColor={frames.getFrameFillColor}
-              />
+              {/* Content Layer - Main interactive content */}
+              <KonvaLayer name="content">
+                {/* Generation Frames */}
+                <FrameLayer
+                  frames={frames.generationFrames || []}
+                  selectedFrameId={frames.selectedFrameId}
+                  contextMenuFrameId={frames.contextMenuFrameId}
+                  currentTool={tools.currentTool}
+                  onFrameSelect={frames.handleFrameSelect}
+                  onFrameDragEnd={frames.handleFrameDragEnd}
+                  onFrameContextMenu={(e, frameId) => {
+                    const pointer = stageRef.current?.getPointerPosition()
+                    if (pointer) {
+                      events.setContextMenu({
+                        visible: true,
+                        x: pointer.x,
+                        y: pointer.y,
+                        imageId: null,
+                        frameId,
+                      })
+                    }
+                  }}
+                  isFrameDraggable={frames.isFrameDraggable}
+                  getFrameStrokeColor={frames.getFrameStrokeColor}
+                  getFrameFillColor={frames.getFrameFillColor}
+                />
 
-              {/* Render root layers (images not in artboards) */}
-              {rootLayers
-                .filter((layer) => layer.type !== 'artboard')
-                .map((layer) => (
-                  <LayerRenderer
-                    key={layer.id}
-                    layer={layer}
-                    parentScale={viewport.scale}
+                {/* Render root layers (images not in artboards) */}
+                {rootLayers
+                  .filter((layer) => layer.type !== 'artboard')
+                  .map((layer) => (
+                    <LayerRenderer
+                      key={layer.id}
+                      layer={layer}
+                      parentScale={viewport.scale}
+                      viewport={{
+                        x: -viewport.position.x / viewport.scale,
+                        y: -viewport.position.y / viewport.scale,
+                        width: stageSize.width / viewport.scale,
+                        height: stageSize.height / viewport.scale,
+                        scale: viewport.scale,
+                      }}
+                      onContextMenu={handleLayerContextMenu}
+                      onSnapGuidesChange={setSnapGuides}
+                      onDragStart={(layerId: string) => setActiveDragId(layerId)}
+                      onDragEnd={() => setActiveDragId(null)}
+                      onLayerSelect={handleLayerSelect}
+                    />
+                  ))}
+
+                {/* Render artboards */}
+                {artboards.map((artboard) => (
+                  <ArtboardComponent
+                    key={artboard.id}
+                    artboard={artboard}
+                    isActive={activeArtboardId === artboard.id}
+                    scale={viewport.scale}
                     viewport={{
                       x: -viewport.position.x / viewport.scale,
                       y: -viewport.position.y / viewport.scale,
-                      width: stageSize.width / viewport.scale,
-                      height: stageSize.height / viewport.scale,
-                      scale: viewport.scale,
+                      width: stageSize.width,
+                      height: stageSize.height,
                     }}
+                    onSelect={setActiveArtboard}
                     onContextMenu={handleLayerContextMenu}
+                    onSnapGuidesChange={setSnapGuides}
+                    onDragStart={(layerId: string) => setActiveDragId(layerId)}
+                    onDragEnd={() => setActiveDragId(null)}
+                    onLayerSelect={handleLayerSelect}
                   />
                 ))}
-
-              {/* Render artboards */}
-              {artboards.map((artboard) => (
-                <ArtboardComponent
-                  key={artboard.id}
-                  artboard={artboard}
-                  isActive={activeArtboardId === artboard.id}
-                  scale={viewport.scale}
-                  viewport={{
-                    x: -viewport.position.x / viewport.scale,
-                    y: -viewport.position.y / viewport.scale,
-                    width: stageSize.width,
-                    height: stageSize.height,
-                  }}
-                  onSelect={setActiveArtboard}
-                  onContextMenu={handleLayerContextMenu}
-                />
-              ))}
-            </KonvaLayer>
+              </KonvaLayer>
+            </>
           ) : (
             <>
               {/* Grid Layer */}
