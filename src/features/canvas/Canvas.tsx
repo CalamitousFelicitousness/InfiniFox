@@ -392,8 +392,8 @@ export function Canvas() {
   }
 
   // Handle layer selection
-  const handleLayerSelect = (layerId: string, addToSelection: boolean = false, rangeSelect: boolean = false) => {
-    selectLayer(layerId, addToSelection, rangeSelect)
+  const handleLayerSelect = (layerId: string, addToSelection: boolean = false, rangeSelect: boolean = false, context: 'canvas' | 'menu' = 'canvas') => {
+    selectLayer(layerId, addToSelection, rangeSelect, context)
   }
 
   // Handle layer double click
@@ -678,9 +678,9 @@ export function Canvas() {
                       width: stageSize.width,
                       height: stageSize.height,
                     }}
-                    onSelect={(artboardId, addToSelection, rangeSelect) => {
+                    onSelect={(artboardId, addToSelection, rangeSelect, context) => {
                       setActiveArtboard(artboardId)
-                      selectLayer(artboardId, addToSelection || false, rangeSelect || false)
+                      selectLayer(artboardId, addToSelection || false, rangeSelect || false, context || 'canvas')
                     }}
                     onContextMenu={handleLayerContextMenu}
                     onSnapGuidesChange={setSnapGuides}
@@ -1017,8 +1017,8 @@ export function Canvas() {
             onLayerSelect={(layerId) => {
               const layer = getLayer(layerId)
               if (layer) {
-                selectLayer(layerId)
-                // Focus on the layer
+                // Don't call selectLayer here - LayerPanel handles selection already
+                // Just focus on the layer if it's an artboard
                 if (layer.type === 'artboard') {
                   setActiveArtboard(layerId)
                 }

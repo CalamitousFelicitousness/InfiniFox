@@ -200,7 +200,6 @@ class LayerCommand {
         if (restoredLayer.type === 'image' && restoredLayer.imageProps?.imageId) {
           // The imageId should still be valid in storage
           // The LayerRenderer will create a new blob URL when it loads
-          console.log('Restoring image layer with imageId:', restoredLayer.imageProps.imageId)
         }
         this.store.addLayerDirect(restoredLayer)
         break
@@ -214,6 +213,9 @@ class LayerCommand {
     }
   }
 }
+
+// Selection context type
+export type SelectionContext = 'canvas' | 'menu'
 
 // Store interface
 export interface LayerSystemSlice {
@@ -253,9 +255,11 @@ export interface LayerSystemSlice {
   ungroupLayers: (groupId: string) => void
 
   // Selection operations
-  selectLayer: (layerId: string, addToSelection?: boolean, rangeSelect?: boolean) => void
+  selectLayer: (layerId: string, addToSelection?: boolean, rangeSelect?: boolean, context?: SelectionContext) => void
   selectLayers: (layerIds: string[]) => void
   selectLayerRange: (fromId: string, toId: string, addToSelection?: boolean) => void
+  selectLayerRangeSpatial: (fromId: string, toId: string, addToSelection?: boolean) => void
+  getLayersInBounds: (bounds: { x: number; y: number; width: number; height: number }) => string[]
   deselectLayer: (layerId: string) => void
   deselectAllLayers: () => void
 
@@ -852,15 +856,22 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
   },
 
   // Selection operations
-  selectLayer: (layerId: string, addToSelection = false, rangeSelect = false) => {
+  selectLayer: (layerId: string, addToSelection = false, rangeSelect = false, context: SelectionContext = 'menu') => {
     const state = get() as LayerSystemSlice
 
-    // Handle range selection
+    // Handle range selection based on context
     if (rangeSelect && state.lastSelectedLayerId) {
-      state.selectLayerRange(state.lastSelectedLayerId, layerId, addToSelection)
+      if (context === 'canvas') {
+        // Use spatial selection for canvas
+        state.selectLayerRangeSpatial(state.lastSelectedLayerId, layerId, addToSelection)
+      } else {
+        // Use hierarchical selection for menu
+        state.selectLayerRange(state.lastSelectedLayerId, layerId, addToSelection)
+      }
       return
     }
 
+    // If range select was requested but no anchor exists, or regular selection
     set((state) => {
       const newSelectedIds = addToSelection ? new Set(state.selectedLayerIds) : new Set<string>()
       newSelectedIds.add(layerId)
@@ -882,6 +893,7 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
   selectLayerRange: (fromId: string, toId: string, addToSelection = false) => {
     const state = get() as LayerSystemSlice
 
+
     // Helper function to recursively get all layers in visual order
     const getAllLayersInOrder = (): string[] => {
       const result: string[] = []
@@ -901,8 +913,10 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
 
     // Get all layers in visual order
     const allLayers = getAllLayersInOrder()
+
     const fromIndex = allLayers.indexOf(fromId)
     const toIndex = allLayers.indexOf(toId)
+
 
     if (fromIndex === -1 || toIndex === -1) {
       // One of the layers wasn't found, just select the target
@@ -915,17 +929,92 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
     const endIndex = Math.max(fromIndex, toIndex)
     const layersToSelect = allLayers.slice(startIndex, endIndex + 1)
 
+
     // Update selection
     set((state) => {
       const newSelectedIds = addToSelection
         ? new Set([...state.selectedLayerIds, ...layersToSelect])
         : new Set(layersToSelect)
 
+
+      // Log the actual state update
+      const result = {
+        selectedLayerIds: newSelectedIds,
+        lastSelectedLayerId: toId
+      }
+
+      return result
+    })
+  },
+
+  selectLayerRangeSpatial: (fromId: string, toId: string, addToSelection = false) => {
+    const state = get() as LayerSystemSlice
+
+    // Get bounds of the two anchor layers
+    const fromBounds = state.getLayerBounds(fromId)
+    const toBounds = state.getLayerBounds(toId)
+
+    if (!fromBounds || !toBounds) {
+      // Fallback to regular selection if bounds not available
+      state.selectLayer(toId, addToSelection, false)
+      return
+    }
+
+    // Calculate the encompassing bounding box
+    const boundingBox = {
+      x: Math.min(fromBounds.x, toBounds.x),
+      y: Math.min(fromBounds.y, toBounds.y),
+      width: 0, // Will be calculated
+      height: 0 // Will be calculated
+    }
+
+    const maxX = Math.max(fromBounds.x + fromBounds.width, toBounds.x + toBounds.width)
+    const maxY = Math.max(fromBounds.y + fromBounds.height, toBounds.y + toBounds.height)
+    boundingBox.width = maxX - boundingBox.x
+    boundingBox.height = maxY - boundingBox.y
+
+    // Find all layers within this bounding box
+    const layersInBounds = state.getLayersInBounds(boundingBox)
+
+    // Update selection
+    set((state) => {
+      const newSelectedIds = addToSelection
+        ? new Set([...state.selectedLayerIds, ...layersInBounds])
+        : new Set(layersInBounds)
+
       return {
         selectedLayerIds: newSelectedIds,
         lastSelectedLayerId: toId
       }
     })
+  },
+
+  getLayersInBounds: (bounds: { x: number; y: number; width: number; height: number }) => {
+    const state = get() as LayerSystemSlice
+    const layersInBounds: string[] = []
+
+    // Helper function to check if two rectangles intersect
+    const rectsIntersect = (
+      r1: { x: number; y: number; width: number; height: number },
+      r2: { x: number; y: number; width: number; height: number }
+    ): boolean => {
+      return !(
+        r1.x > r2.x + r2.width ||
+        r1.x + r1.width < r2.x ||
+        r1.y > r2.y + r2.height ||
+        r1.y + r1.height < r2.y
+      )
+    }
+
+    // Check all layers
+    state.layers.forEach((layer, layerId) => {
+      const layerBounds = state.getLayerBounds(layerId)
+      if (layerBounds && rectsIntersect(bounds, layerBounds)) {
+        layersInBounds.push(layerId)
+      }
+    })
+
+    return layersInBounds
   },
 
   deselectLayer: (layerId: string) => {
@@ -1519,7 +1608,6 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
         })
 
         if (emptyGroups.length > 0) {
-          console.log(`Cleaned up ${emptyGroups.length} empty group(s)`)
         }
       }, 100)
 

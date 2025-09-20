@@ -5,7 +5,7 @@ import { Group, Rect, Image as KonvaImage } from 'react-konva'
 import { snappingManager } from '../../../../services/canvas/SnappingManager'
 import type { SnapGuide } from '../../../../services/canvas/SnappingManager'
 import { viewportCulling } from '../../../../services/canvas/ViewportCullingService'
-import type { LayerNode, BlendMode } from '../../../../store/slices/layerSystemSlice'
+import type { LayerNode, BlendMode, SelectionContext } from '../../../../store/slices/layerSystemSlice'
 import { useStore } from '../../../../store/store'
 import { getSelectionGlowStyles } from '../../../../utils/selectionStyles'
 
@@ -17,7 +17,7 @@ interface LayerRendererProps {
   onSnapGuidesChange?: (guides: SnapGuide[]) => void
   onDragStart?: (layerId: string) => void
   onDragEnd?: () => void
-  onLayerSelect?: (layerId: string, addToSelection?: boolean, rangeSelect?: boolean) => void
+  onLayerSelect?: (layerId: string, addToSelection?: boolean, rangeSelect?: boolean, context?: SelectionContext) => void
   isDraggingLayer?: boolean
   draggingLayerId?: string | null
   artboardId?: string
@@ -501,9 +501,9 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
       const rangeSelect = e.evt.shiftKey
       // Use passed handler or default to store's selectLayer
       if (onLayerSelect) {
-        onLayerSelect(layer.id, addToSelection, rangeSelect)
+        onLayerSelect(layer.id, addToSelection, rangeSelect, 'canvas')
       } else {
-        selectLayer(layer.id, addToSelection, rangeSelect)
+        selectLayer(layer.id, addToSelection, rangeSelect, 'canvas')
       }
     },
     [layer.id, onLayerSelect, selectLayer]

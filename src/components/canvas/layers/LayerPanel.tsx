@@ -27,6 +27,15 @@ interface LayerPanelProps {
   onLayerDoubleClick?: (layerId: string) => void
 }
 
+// Create context for LayerPanel state
+const LayerPanelContext = React.createContext<{
+  expandedLayers: Set<string>
+  renamingLayerId: string | null
+  draggedLayerId: string | null
+  dropTargetId: string | null
+  dropPosition: 'before' | 'after' | 'inside' | null
+} | null>(null)
+
 /**
  * Layer Panel component for managing the layer hierarchy
  * Provides a tree view of all layers with drag-drop reordering
@@ -60,6 +69,7 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
   const [dropPosition, setDropPosition] = useState<'before' | 'after' | 'inside' | null>(null)
 
   const rootLayers = getRootLayers()
+  const lastSelectionTimeRef = useRef<number>(0)
 
   // Toggle layer expansion
   const toggleExpanded = useCallback((layerId: string) => {
@@ -77,13 +87,25 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
   // Handle layer selection
   const handleSelect = useCallback(
     (layerId: string, e: React.MouseEvent) => {
+      // Prevent event bubbling that could cause double selection
+      e.stopPropagation()
+      e.preventDefault()
+
+      // Debounce rapid duplicate selections (browser quirk with shift+click)
+      const now = Date.now()
+      const timeDiff = now - lastSelectionTimeRef.current
+      if (timeDiff < 50) {
+        return
+      }
+      lastSelectionTimeRef.current = now
+
       if (e.ctrlKey || e.metaKey) {
-        selectLayer(layerId, true) // Add to selection
+        selectLayer(layerId, true, false, 'menu') // Add to selection
       } else if (e.shiftKey) {
-        // TODO: Implement range selection
-        selectLayer(layerId, true)
+        // Range selection - uses hierarchical order in menu
+        selectLayer(layerId, e.ctrlKey || e.metaKey, true, 'menu')
       } else {
-        selectLayer(layerId, false) // Replace selection
+        selectLayer(layerId, false, false, 'menu') // Replace selection
       }
       onLayerSelect?.(layerId)
     },
@@ -108,19 +130,19 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
       height: 600,
       backgroundColor: '#ffffff',
     })
-    selectLayer(id, false)
+    selectLayer(id, false, false, 'menu')
   }, [addArtboard, selectLayer])
 
   const handleNewGroup = useCallback(() => {
     if (selectedLayerIds.size > 0) {
       const groupId = groupLayers(Array.from(selectedLayerIds))
-      selectLayer(groupId, false)
+      selectLayer(groupId, false, false, 'menu')
     } else {
       const id = addLayer({
         type: 'group',
         name: 'New Group',
       })
-      selectLayer(id, false)
+      selectLayer(id, false, false, 'menu')
     }
   }, [selectedLayerIds, groupLayers, addLayer, selectLayer])
 
@@ -184,10 +206,23 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
     setDropPosition(null)
   }, [])
 
+  // Provide context for child components
+  const contextValue = React.useMemo(
+    () => ({
+      expandedLayers,
+      renamingLayerId,
+      draggedLayerId,
+      dropTargetId,
+      dropPosition,
+    }),
+    [expandedLayers, renamingLayerId, draggedLayerId, dropTargetId, dropPosition]
+  )
+
   return (
-    <div className={`layer-panel ${className || ''}`}>
-      {/* Toolbar */}
-      <div className="layer-panel-toolbar">
+    <LayerPanelContext.Provider value={contextValue}>
+      <div className={`layer-panel ${className || ''}`}>
+        {/* Toolbar */}
+        <div className="layer-panel-toolbar">
         <button className="layer-panel-tool" onClick={handleNewArtboard} title="New Artboard">
           <Square size={16} />
         </button>
@@ -254,6 +289,7 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
         )}
       </div>
     </div>
+    </LayerPanelContext.Provider>
   )
 }
 
@@ -393,7 +429,10 @@ const LayerTreeItem: React.FC<LayerTreeItemProps> = ({
         onDrop={(e) => onDrop(e, layer.id, dropPosition!)}
         onDragEnd={onDragEnd}
         onClick={(e) => onSelect(layer.id, e)}
-        onDoubleClick={() => {
+        onDoubleClick={(e) => {
+          // Don't handle double-click when shift is held (range selection)
+          if (e.shiftKey) return
+
           if (hasChildren) {
             onToggleExpanded(layer.id)
           } else {
@@ -462,16 +501,10 @@ const LayerTreeItem: React.FC<LayerTreeItemProps> = ({
       {hasChildren && isExpanded && (
         <div className="layer-tree-children">
           {children.map((child) => (
-            <LayerTreeItem
+            <ConnectedLayerTreeItem
               key={child.id}
               layer={child}
               depth={depth + 1}
-              isSelected={isSelected}
-              isExpanded={isExpanded}
-              isRenaming={isRenaming}
-              isDragging={isDragging}
-              isDropTarget={isDropTarget}
-              dropPosition={dropPosition}
               onSelect={onSelect}
               onDoubleClick={onDoubleClick}
               onToggleExpanded={onToggleExpanded}
@@ -488,6 +521,53 @@ const LayerTreeItem: React.FC<LayerTreeItemProps> = ({
         </div>
       )}
     </>
+  )
+}
+
+/**
+ * Connected wrapper for LayerTreeItem that gets its own state from store
+ */
+interface ConnectedLayerTreeItemProps {
+  layer: LayerNode
+  depth: number
+  onSelect: (layerId: string, e: React.MouseEvent) => void
+  onDoubleClick?: (layerId: string) => void
+  onToggleExpanded: (layerId: string) => void
+  onToggleVisibility: (layerId: string) => void
+  onToggleLock: (layerId: string) => void
+  onStartRename: (layerId: string | null) => void
+  onRename: (layerId: string, newName: string) => void
+  onDragStart: (e: React.DragEvent, layerId: string) => void
+  onDragOver: (
+    e: React.DragEvent,
+    targetId: string,
+    position: 'before' | 'after' | 'inside'
+  ) => void
+  onDrop: (e: React.DragEvent, targetId: string, position: 'before' | 'after' | 'inside') => void
+  onDragEnd: () => void
+}
+
+const ConnectedLayerTreeItem: React.FC<ConnectedLayerTreeItemProps> = (props) => {
+  const { selectedLayerIds } = useStore()
+
+  // Get state from parent component context
+  const layerPanel = React.useContext(LayerPanelContext)
+  if (!layerPanel) {
+    throw new Error('ConnectedLayerTreeItem must be used within LayerPanel')
+  }
+
+  const { expandedLayers, renamingLayerId, draggedLayerId, dropTargetId, dropPosition } = layerPanel
+
+  return (
+    <LayerTreeItem
+      {...props}
+      isSelected={selectedLayerIds.has(props.layer.id)}
+      isExpanded={expandedLayers.has(props.layer.id)}
+      isRenaming={renamingLayerId === props.layer.id}
+      isDragging={draggedLayerId === props.layer.id}
+      isDropTarget={dropTargetId === props.layer.id}
+      dropPosition={dropTargetId === props.layer.id ? dropPosition : null}
+    />
   )
 }
 

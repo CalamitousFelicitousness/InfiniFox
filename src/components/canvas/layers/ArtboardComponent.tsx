@@ -5,7 +5,7 @@ import { Group, Rect } from 'react-konva'
 import { snappingManager } from '../../../services/canvas/SnappingManager'
 import type { SnapGuide } from '../../../services/canvas/SnappingManager'
 import { viewportCulling } from '../../../services/canvas/ViewportCullingService'
-import type { LayerNode } from '../../../store/slices/layerSystemSlice'
+import type { LayerNode, SelectionContext } from '../../../store/slices/layerSystemSlice'
 import { useStore } from '../../../store/store'
 import { getSelectionBorderStyles, getSelectionGlowStyles, getDragHoverStyles } from '../../../utils/selectionStyles'
 
@@ -17,7 +17,7 @@ interface ArtboardComponentProps {
   isActive: boolean
   scale: number
   viewport?: { x: number; y: number; width: number; height: number }
-  onSelect?: (artboardId: string, addToSelection?: boolean, rangeSelect?: boolean) => void
+  onSelect?: (artboardId: string, addToSelection?: boolean, rangeSelect?: boolean, context?: SelectionContext) => void
   onContextMenu?: (e: Konva.KonvaEventObject<PointerEvent>, artboardId: string) => void
   onSnapGuidesChange?: (guides: SnapGuide[]) => void
   onDragStart?: (layerId: string) => void
@@ -246,7 +246,7 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
     // Pass modifier key information for multi-selection
     const addToSelection = e.evt.ctrlKey || e.evt.metaKey
     const rangeSelect = e.evt.shiftKey
-    onSelect?.(artboard.id, addToSelection, rangeSelect)
+    onSelect?.(artboard.id, addToSelection, rangeSelect, 'canvas')
   }, [artboard.id, onSelect])
 
   // Handle context menu for artboard itself
