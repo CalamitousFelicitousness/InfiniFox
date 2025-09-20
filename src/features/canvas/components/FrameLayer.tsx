@@ -25,6 +25,7 @@ interface FrameLayerProps {
   frames: GenerationFrame[]
   selectedFrameId: string | null
   contextMenuFrameId: string | null
+  currentlyGeneratingFrameId?: string | null
 
   // Tool state
   currentTool: CanvasTool
@@ -92,6 +93,7 @@ function FrameLayerComponent({
   frames,
   _selectedFrameId,
   _contextMenuFrameId,
+  currentlyGeneratingFrameId,
   currentTool,
   onFrameSelect,
   onFrameDragEnd,
@@ -167,7 +169,12 @@ function FrameLayerComponent({
    * Render progress bar for generating frames
    */
   const renderProgressBar = (frame: GenerationFrame) => {
-    if (!frame.isGenerating || frame.isPlaceholder) return null
+    // Check if frame is queued (not currently generating)
+    const isQueued =
+      frame.id !== currentlyGeneratingFrameId && !frame.isPlaceholder && frame.progress === 0
+
+    if (!frame.isGenerating && !isQueued) return null
+    if (frame.isPlaceholder) return null
 
     return (
       <>
@@ -182,16 +189,18 @@ function FrameLayerComponent({
           listening={false}
         />
 
-        {/* Progress bar fill */}
-        <Rect
-          x={frame.x + 2}
-          y={frame.y - 23}
-          width={(frame.width - 4) * (frame.progress / 100)}
-          height={16}
-          fill={tokens.colors.interactivePrimary}
-          cornerRadius={tokens.borders.radiusSm}
-          listening={false}
-        />
+        {/* Progress bar fill - only show for currently generating frame */}
+        {frame.id === currentlyGeneratingFrameId && (
+          <Rect
+            x={frame.x + 2}
+            y={frame.y - 23}
+            width={(frame.width - 4) * (frame.progress / 100)}
+            height={16}
+            fill={tokens.colors.interactivePrimary}
+            cornerRadius={tokens.borders.radiusSm}
+            listening={false}
+          />
+        )}
 
         {/* Progress text */}
         <Text
@@ -199,7 +208,7 @@ function FrameLayerComponent({
           y={frame.y - 20}
           width={frame.width}
           height={20}
-          text={`${Math.round(frame.progress)}%`}
+          text={isQueued ? 'Queued...' : `${Math.round(frame.progress)}%`}
           fontSize={tokens.typography.fontSizeXs}
           fontFamily={tokens.typography.fontFamilyMono}
           fill={tokens.colors.textPrimary}

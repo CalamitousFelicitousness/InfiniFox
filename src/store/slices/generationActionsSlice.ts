@@ -29,15 +29,19 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       addGenerationFrame,
       updateGenerationFrame,
       removeGenerationFrame,
-      setActiveGenerationFrameId,
+      addActiveGenerationFrameId,
+      removeActiveGenerationFrameId,
+      addToGenerationQueue,
+      removeFromGenerationQueue,
+      setCurrentlyGeneratingFrame,
+      getNextInQueue,
+      currentlyGeneratingFrameId,
     } = get()
 
     if (!prompt) {
       alert('Please enter a prompt.')
       return
     }
-
-    set({ isLoading: true })
 
     const params = {
       prompt,
@@ -54,7 +58,6 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
     const { batchSettings } = useQueueStore.getState()
     if (batchSettings.enabled) {
       useQueueStore.getState().addBatch(params, 'txt2img')
-      set({ isLoading: false })
       return
     }
 
@@ -65,8 +68,24 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       const y = Math.random() * (window.innerHeight - 200)
       actualFrameId = addGenerationFrame(x, y, width, height, false)
     }
+
+    // Add to tracking
+    addActiveGenerationFrameId(actualFrameId)
+    addToGenerationQueue(actualFrameId)
+
+    // Check if we should start generating or queue it
+    if (currentlyGeneratingFrameId) {
+      // There's already something generating, queue this one
+      updateGenerationFrame(actualFrameId, { isGenerating: false, progress: 0 })
+      console.log('Frame queued:', actualFrameId, 'Current:', currentlyGeneratingFrameId)
+      return // Don't start generation yet, it's queued
+    }
+
+    // No current generation, start this one
+    console.log('Starting generation for frame:', actualFrameId)
+    setCurrentlyGeneratingFrame(actualFrameId)
     updateGenerationFrame(actualFrameId, { isGenerating: true })
-    setActiveGenerationFrameId(actualFrameId)
+    set({ isLoading: true })
 
     try {
       // Start progress monitoring before making the request
@@ -149,7 +168,14 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
 
       // Remove the generation frame
       removeGenerationFrame(actualFrameId)
-      setActiveGenerationFrameId(null)
+      removeActiveGenerationFrameId(actualFrameId)
+      removeFromGenerationQueue(actualFrameId)
+
+      // Clear current frame if it was this one
+      if (currentlyGeneratingFrameId === actualFrameId) {
+        setCurrentlyGeneratingFrame(null)
+        // Queue continuation is now handled by the progress monitor in useGenerationFrames
+      }
 
       // Update storage stats
       await get().updateStorageStats()
@@ -173,7 +199,11 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       // Remove frame after delay
       setTimeout(() => {
         removeGenerationFrame(actualFrameId)
-        setActiveGenerationFrameId(null)
+        removeActiveGenerationFrameId(actualFrameId)
+        removeFromGenerationQueue(actualFrameId)
+        if (currentlyGeneratingFrameId === actualFrameId) {
+          setCurrentlyGeneratingFrame(null)
+        }
       }, 3000)
 
       // Don't force complete on error
@@ -196,7 +226,13 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       convertPlaceholderToActive,
       removeGenerationFrame,
       updateGenerationFrame,
-      setActiveGenerationFrameId,
+      addActiveGenerationFrameId,
+      removeActiveGenerationFrameId,
+      addToGenerationQueue,
+      removeFromGenerationQueue,
+      setCurrentlyGeneratingFrame,
+      getNextInQueue,
+      currentlyGeneratingFrameId,
     } = get()
 
     const frame = generationFrames.find((f) => f.id === frameId)
@@ -212,7 +248,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
 
     // Convert placeholder to active
     convertPlaceholderToActive?.(frameId)
-    setActiveGenerationFrameId(frameId)
+    addActiveGenerationFrameId(frameId)
 
     set({ isLoading: true })
 
@@ -304,7 +340,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
 
       // Remove frame after successful generation
       removeGenerationFrame?.(frameId)
-      setActiveGenerationFrameId(null)
+      removeActiveGenerationFrameId(frameId)
 
       await get().updateStorageStats()
       progressService.stopPolling(true)
@@ -342,7 +378,13 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       generationFrames,
       removeGenerationFrame,
       updateGenerationFrame,
-      setActiveGenerationFrameId,
+      addActiveGenerationFrameId,
+      removeActiveGenerationFrameId,
+      addToGenerationQueue,
+      removeFromGenerationQueue,
+      setCurrentlyGeneratingFrame,
+      getNextInQueue,
+      currentlyGeneratingFrameId,
     } = get()
 
     if (!prompt) {
@@ -354,8 +396,6 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       alert('Please upload an image.')
       return
     }
-
-    set({ isLoading: true })
 
     // Determine dimensions based on frame or default
     const frame = frameId ? generationFrames.find((f) => f.id === frameId) : null
@@ -379,13 +419,27 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
     const { batchSettings } = useQueueStore.getState()
     if (batchSettings.enabled) {
       useQueueStore.getState().addBatch(params, 'img2img')
-      set({ isLoading: false })
       return
     }
 
     if (frameId) {
-      setActiveGenerationFrameId(frameId)
+      addActiveGenerationFrameId(frameId)
+      addToGenerationQueue(frameId)
+
+      if (currentlyGeneratingFrameId) {
+        // There's already something generating, queue this one
+        updateGenerationFrame?.(frameId, { isGenerating: false, progress: 0 })
+        console.log('Img2Img frame queued:', frameId, 'Current:', currentlyGeneratingFrameId)
+        return // Don't start generation yet, it's queued
+      }
+
+      // No current generation, start this one
+      console.log('Starting img2img generation for frame:', frameId)
+      setCurrentlyGeneratingFrame(frameId)
+      updateGenerationFrame?.(frameId, { isGenerating: true })
     }
+
+    set({ isLoading: true })
 
     try {
       // Start progress monitoring
@@ -467,17 +521,17 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
         get().addImage(newImage)
       }
 
-      // Mark frame as complete before removing
+      // Remove frame and update queue
       if (frameId) {
-        updateGenerationFrame?.(frameId, {
-          isGenerating: false,
-          progress: 100,
-        })
-        // Remove frame after short delay to show completion
-        setTimeout(() => {
-          removeGenerationFrame?.(frameId)
-          setActiveGenerationFrameId(null)
-        }, 500)
+        removeGenerationFrame?.(frameId)
+        removeActiveGenerationFrameId(frameId)
+        removeFromGenerationQueue(frameId)
+
+        // Clear current frame if it was this one
+        if (currentlyGeneratingFrameId === frameId) {
+          setCurrentlyGeneratingFrame(null)
+          // Queue continuation is now handled by the progress monitor in useGenerationFrames
+        }
       }
 
       // Update storage stats
@@ -522,15 +576,19 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       generationFrames,
       removeGenerationFrame,
       updateGenerationFrame,
-      setActiveGenerationFrameId,
+      addActiveGenerationFrameId,
+      removeActiveGenerationFrameId,
+      addToGenerationQueue,
+      removeFromGenerationQueue,
+      setCurrentlyGeneratingFrame,
+      getNextInQueue,
+      currentlyGeneratingFrameId,
     } = get()
 
     if (!prompt) {
       alert('Please enter a prompt.')
       return
     }
-
-    set({ isLoading: true })
 
     // Determine dimensions based on frame or default
     const frame = frameId ? generationFrames.find((f) => f.id === frameId) : null
@@ -566,13 +624,27 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
     const { batchSettings } = useQueueStore.getState()
     if (batchSettings.enabled) {
       useQueueStore.getState().addBatch(apiParams, 'inpaint')
-      set({ isLoading: false })
       return
     }
 
     if (frameId) {
-      setActiveGenerationFrameId(frameId)
+      addActiveGenerationFrameId(frameId)
+      addToGenerationQueue(frameId)
+
+      if (currentlyGeneratingFrameId) {
+        // There's already something generating, queue this one
+        updateGenerationFrame?.(frameId, { isGenerating: false, progress: 0 })
+        console.log('Inpaint frame queued:', frameId, 'Current:', currentlyGeneratingFrameId)
+        return // Don't start generation yet, it's queued
+      }
+
+      // No current generation, start this one
+      console.log('Starting inpaint generation for frame:', frameId)
+      setCurrentlyGeneratingFrame(frameId)
+      updateGenerationFrame?.(frameId, { isGenerating: true })
     }
+
+    set({ isLoading: true })
 
     try {
       // Start progress monitoring
@@ -654,17 +726,17 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
         get().addImage(newImage)
       }
 
-      // Mark frame as complete before removing
+      // Remove frame and update queue
       if (frameId) {
-        updateGenerationFrame?.(frameId, {
-          isGenerating: false,
-          progress: 100,
-        })
-        // Remove frame after short delay to show completion
-        setTimeout(() => {
-          removeGenerationFrame?.(frameId)
-          setActiveGenerationFrameId(null)
-        }, 500)
+        removeGenerationFrame?.(frameId)
+        removeActiveGenerationFrameId(frameId)
+        removeFromGenerationQueue(frameId)
+
+        // Clear current frame if it was this one
+        if (currentlyGeneratingFrameId === frameId) {
+          setCurrentlyGeneratingFrame(null)
+          // Queue continuation is now handled by the progress monitor in useGenerationFrames
+        }
       }
 
       // Update storage stats

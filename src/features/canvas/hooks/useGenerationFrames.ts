@@ -34,8 +34,14 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
     removeGenerationFrame,
     updateGenerationFrame,
     updateFramePosition,
-    activeGenerationFrameId,
-    setActiveGenerationFrameId,
+    activeGenerationFrameIds,
+    addActiveGenerationFrameId,
+    removeActiveGenerationFrameId,
+    currentlyGeneratingFrameId,
+    setCurrentlyGeneratingFrame,
+    addToGenerationQueue,
+    removeFromGenerationQueue,
+    getNextInQueue,
     width,
     height,
     generateTxt2Img,
@@ -52,63 +58,158 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
   const [contextMenuFrameId, setContextMenuFrameId] = useState<string | null>(null)
 
   /**
-   * Monitor progress for active generation frame
+   * Monitor progress for the currently generating frame
    */
   useEffect(() => {
-    if (!activeGenerationFrameId) return
+    if (!currentlyGeneratingFrameId) return
 
     let timeoutId: NodeJS.Timeout | null = null
 
     const unsubscribe = progressService.onProgress((message) => {
-      // Handle progress messages from REST polling monitor
-      console.log('Progress event for frame:', activeGenerationFrameId, message)
+      // Only update the currently generating frame
+      console.log('Progress event for frame:', currentlyGeneratingFrameId, message)
 
       if (message.phase === 'sampling') {
         const progress = message.total > 0 ? (message.current / message.total) * 100 : 0
-        updateGenerationFrame(activeGenerationFrameId, {
+        updateGenerationFrame(currentlyGeneratingFrameId, {
           progress,
           previewImage: message.preview ? `data:image/png;base64,${message.preview}` : undefined,
           isGenerating: true,
         })
       } else if (message.phase === 'vae' || message.phase === 'postprocessing') {
-        updateGenerationFrame(activeGenerationFrameId, {
+        updateGenerationFrame(currentlyGeneratingFrameId, {
           progress: 95,
           previewImage: message.preview ? `data:image/png;base64,${message.preview}` : undefined,
           isGenerating: true,
         })
       } else if (message.phase === 'completed') {
-        updateGenerationFrame(activeGenerationFrameId, {
+        updateGenerationFrame(currentlyGeneratingFrameId, {
           isGenerating: false,
           progress: 100,
         })
-        setActiveGenerationFrameId(null)
+        removeActiveGenerationFrameId(currentlyGeneratingFrameId)
+        removeFromGenerationQueue(currentlyGeneratingFrameId)
+        setCurrentlyGeneratingFrame(null)
+
+        // Start next in queue if any
+        const nextId = getNextInQueue()
+        if (nextId) {
+          console.log('Starting next in queue:', nextId)
+          // Remove from queue first
+          removeFromGenerationQueue(nextId)
+
+          // Determine generation type based on active image roles
+          const img2imgRole = activeImageRoles.find((r) => r.role === 'img2img_init')
+          const inpaintRole = activeImageRoles.find((r) => r.role === 'inpaint_image')
+
+          // Start the appropriate generation
+          if (inpaintRole) {
+            const inpaintImage = images.find((img) => img.id === inpaintRole.imageId)
+            if (inpaintImage) {
+              exportImageAsBase64(inpaintImage.id).then((baseImageBase64) => {
+                generateInpaint(
+                  {
+                    baseImage: baseImageBase64,
+                    maskImage: baseImageBase64,
+                    denoisingStrength: 0.75,
+                    maskBlur: 4,
+                    inpaintingFill: 'original',
+                    inpaintFullRes: false,
+                    inpaintFullResPadding: 32,
+                  },
+                  nextId
+                )
+              })
+            }
+          } else if (img2imgRole) {
+            const img2imgImage = images.find((img) => img.id === img2imgRole.imageId)
+            if (img2imgImage) {
+              exportImageAsBase64(img2imgImage.id).then((baseImageBase64) => {
+                generateImg2Img(baseImageBase64, 0.5, nextId)
+              })
+            }
+          } else {
+            // Default to txt2img
+            generateTxt2Img(nextId)
+          }
+        }
       } else if (message.phase === 'waiting') {
         // Initial waiting state, don't update
       } else if (message.error) {
-        updateGenerationFrame(activeGenerationFrameId, {
+        updateGenerationFrame(currentlyGeneratingFrameId, {
           isGenerating: false,
           error: message.error || 'Generation failed',
         })
         // Keep error frames visible longer
         timeoutId = setTimeout(() => {
-          removeGenerationFrame(activeGenerationFrameId)
-          setActiveGenerationFrameId(null)
+          removeGenerationFrame(currentlyGeneratingFrameId)
+          removeActiveGenerationFrameId(currentlyGeneratingFrameId)
+          removeFromGenerationQueue(currentlyGeneratingFrameId)
+          setCurrentlyGeneratingFrame(null)
+
+          // Start next in queue even after error
+          const nextId = getNextInQueue()
+          if (nextId) {
+            console.log('Starting next in queue after error:', nextId)
+            removeFromGenerationQueue(nextId)
+
+            // Determine generation type and start
+            const img2imgRole = activeImageRoles.find((r) => r.role === 'img2img_init')
+            const inpaintRole = activeImageRoles.find((r) => r.role === 'inpaint_image')
+
+            if (inpaintRole) {
+              const inpaintImage = images.find((img) => img.id === inpaintRole.imageId)
+              if (inpaintImage) {
+                exportImageAsBase64(inpaintImage.id).then((baseImageBase64) => {
+                  generateInpaint(
+                    {
+                      baseImage: baseImageBase64,
+                      maskImage: baseImageBase64,
+                      denoisingStrength: 0.75,
+                      maskBlur: 4,
+                      inpaintingFill: 'original',
+                      inpaintFullRes: false,
+                      inpaintFullResPadding: 32,
+                    },
+                    nextId
+                  )
+                })
+              }
+            } else if (img2imgRole) {
+              const img2imgImage = images.find((img) => img.id === img2imgRole.imageId)
+              if (img2imgImage) {
+                exportImageAsBase64(img2imgImage.id).then((baseImageBase64) => {
+                  generateImg2Img(baseImageBase64, 0.5, nextId)
+                })
+              }
+            } else {
+              generateTxt2Img(nextId)
+            }
+          }
         }, 3000)
       }
     })
 
     return () => {
       unsubscribe()
-      // Clear any pending timeout
       if (timeoutId) {
         clearTimeout(timeoutId)
       }
     }
   }, [
-    activeGenerationFrameId,
+    currentlyGeneratingFrameId,
     updateGenerationFrame,
     removeGenerationFrame,
-    setActiveGenerationFrameId,
+    removeActiveGenerationFrameId,
+    removeFromGenerationQueue,
+    setCurrentlyGeneratingFrame,
+    getNextInQueue,
+    activeImageRoles,
+    images,
+    exportImageAsBase64,
+    generateTxt2Img,
+    generateImg2Img,
+    generateInpaint,
   ])
 
   /**
@@ -117,8 +218,12 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
   useEffect(() => {
     if (!isLoading && generationFrames.length > 0) {
       generationFrames.forEach((frame) => {
-        // Only cleanup frames that aren't actively monitored
-        if (frame.isGenerating && frame.id !== activeGenerationFrameId) {
+        // Only cleanup frames that aren't actively monitored or currently generating
+        if (
+          frame.isGenerating &&
+          !activeGenerationFrameIds.has(frame.id) &&
+          frame.id !== currentlyGeneratingFrameId
+        ) {
           // Mark as orphaned frame error
           updateGenerationFrame(frame.id, {
             isGenerating: false,
@@ -131,7 +236,8 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
   }, [
     isLoading,
     generationFrames,
-    activeGenerationFrameId,
+    activeGenerationFrameIds,
+    currentlyGeneratingFrameId,
     updateGenerationFrame,
     removeGenerationFrame,
   ])
@@ -196,8 +302,9 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
     async (x: number, y: number) => {
       // Create a temporary generation frame (not a placeholder)
       const frameId = addGenerationFrame(x, y, width, height, false)
-      setActiveGenerationFrameId(frameId)
-      updateGenerationFrame(frameId, { isGenerating: true })
+
+      // Don't manage active frames or queue here - let the generation actions handle everything
+      // This prevents duplication and race conditions
 
       try {
         // Check for active image roles to determine generation mode
@@ -256,7 +363,6 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
       generateTxt2Img,
       generateImg2Img,
       generateInpaint,
-      setActiveGenerationFrameId,
     ]
   )
 
@@ -325,7 +431,8 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
     generationFrames,
     selectedFrameId,
     contextMenuFrameId,
-    activeGenerationFrameId,
+    activeGenerationFrameIds,
+    currentlyGeneratingFrameId,
 
     // Methods
     handleFrameSelect,
@@ -336,7 +443,7 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
     toggleFrameLock,
     clearFrameSelection,
     setFrameContextMenu,
-    setActiveGenerationFrameId,
+    addActiveGenerationFrameId,
 
     // Utilities
     isFrameDraggable,

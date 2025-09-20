@@ -1,4 +1,7 @@
+import { Maximize2, X, Lock, Unlock } from 'lucide-react'
 import { useState } from 'react'
+
+import { Icon } from '../../../components/common/Icon'
 import './ResizeArtboardDialog.css'
 
 export interface ResizeDialogProps {
@@ -57,11 +60,14 @@ export function ResizeArtboardDialog({
 
   return (
     <div className="resize-dialog-overlay" onPointerDown={onClose}>
-      <div className="resize-dialog" onPointerDown={(e) => e.stopPropagation()}>
+      <div className="resize-dialog glass-surface" onPointerDown={(e) => e.stopPropagation()}>
         <div className="resize-dialog-header">
-          <h3>Resize Artboard</h3>
-          <button className="resize-dialog-close" onClick={onClose}>
-            ×
+          <div className="resize-dialog-title">
+            <Icon icon={Maximize2} size="base" />
+            <span>Resize Artboard</span>
+          </div>
+          <button className="resize-dialog-close" onClick={onClose} title="Close">
+            <Icon icon={X} size="sm" />
           </button>
         </div>
 
@@ -99,7 +105,10 @@ export function ResizeArtboardDialog({
               checked={maintainAspectRatio}
               onChange={(e) => setMaintainAspectRatio(e.target.checked)}
             />
-            <label htmlFor="aspect-ratio">Maintain Aspect Ratio</label>
+            <label htmlFor="aspect-ratio">
+              <Icon icon={maintainAspectRatio ? Lock : Unlock} size="sm" />
+              <span>Maintain Aspect Ratio</span>
+            </label>
           </div>
 
           <div className="resize-dialog-presets">

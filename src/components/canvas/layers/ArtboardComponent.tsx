@@ -1,8 +1,7 @@
 import Konva from 'konva'
-import React, { useCallback, useMemo, useRef } from 'react'
+import React, { useCallback, useMemo, useRef, useEffect, useState } from 'react'
 import { Group, Rect } from 'react-konva'
 
-import { createSnapGuideScheduler } from '../../../features/canvas/utils/snapGuideScheduler'
 import { snappingManager } from '../../../services/canvas/SnappingManager'
 import type { SnapGuide } from '../../../services/canvas/SnappingManager'
 import { viewportCulling } from '../../../services/canvas/ViewportCullingService'
@@ -23,6 +22,8 @@ interface ArtboardComponentProps {
   onDragStart?: (layerId: string) => void
   onDragEnd?: () => void
   onLayerSelect?: (layerId: string) => void
+  isDraggingLayer?: boolean
+  draggingLayerId?: string | null
 }
 
 /**
@@ -40,12 +41,54 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
   onDragStart,
   onDragEnd,
   onLayerSelect,
+  isDraggingLayer = false,
+  draggingLayerId = null,
 }) => {
   const groupRef = useRef<Konva.Group>(null)
-  const snapSchedulerRef = useRef(createSnapGuideScheduler(onSnapGuidesChange))
+  // Store the latest callback in a ref to avoid stale closures
+  const onSnapGuidesChangeRef = useRef(onSnapGuidesChange)
+  onSnapGuidesChangeRef.current = onSnapGuidesChange
 
-  const { getLayerChildren, updateLayerDirect, selectedLayerIds, operationLoadingStates } =
-    useStore()
+  // State for drag hover effect
+  const [isDragHovering, setIsDragHovering] = useState(false)
+
+  // RAF ref for throttling snap guide updates
+  const rafRef = useRef<number | null>(null)
+  const pendingGuidesRef = useRef<SnapGuide[] | null>(null)
+
+  // Cleanup RAF on unmount
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current)
+      }
+    }
+  }, [])
+
+  // Throttled snap guide update function
+  const updateSnapGuidesThrottled = useCallback((guides: SnapGuide[]) => {
+    pendingGuidesRef.current = guides
+
+    if (!rafRef.current) {
+      rafRef.current = requestAnimationFrame(() => {
+        if (pendingGuidesRef.current !== null) {
+          onSnapGuidesChangeRef.current?.(pendingGuidesRef.current)
+          pendingGuidesRef.current = null
+        }
+        rafRef.current = null
+      })
+    }
+  }, [])
+
+  const {
+    getLayerChildren,
+    updateLayerDirect,
+    selectedLayerIds,
+    operationLoadingStates,
+    moveLayer,
+    getLayer,
+    layers, // Add layers to track changes
+  } = useStore()
 
   // Get artboard properties
   const {
@@ -61,8 +104,8 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
 
   const { width, height, backgroundColor, clipped } = artboardProps
 
-  // Get child layers
-  const children = useMemo(() => getLayerChildren(artboard.id), [artboard.id, getLayerChildren])
+  // Get child layers - include layers in dependencies to re-render when children change
+  const children = useMemo(() => getLayerChildren(artboard.id), [artboard.id, getLayerChildren, layers])
 
   // Check for active loading operations on this artboard
   const loadingOperation = useMemo(() => {
@@ -144,13 +187,6 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
     }
   }, [filters, cached, artboard.id, updateLayerDirect])
 
-  // Update snap scheduler callback when it changes
-  React.useEffect(() => {
-    if (snapSchedulerRef.current && onSnapGuidesChange) {
-      snapSchedulerRef.current.setOnGuideChange(onSnapGuidesChange)
-    }
-  }, [onSnapGuidesChange])
-
   // Handle drag start
   const handleDragStart = useCallback(() => {
     // Set current object for snapping manager
@@ -171,14 +207,10 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
       node.x(snapResult.x)
       node.y(snapResult.y)
 
-      // Update snap guides
-      if (snapResult.guides.length > 0) {
-        snapSchedulerRef.current.scheduleUpdate(snapResult.guides)
-      } else {
-        snapSchedulerRef.current.clear()
-      }
+      // Update snap guides with throttling
+      updateSnapGuidesThrottled(snapResult.guides)
     },
-    [artboard.artboardProps]
+    [artboard.artboardProps, updateSnapGuidesThrottled]
   )
 
   // Handle drag end
@@ -188,7 +220,15 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
 
       // Clear snapping state
       snappingManager.setCurrentObject(null)
-      snapSchedulerRef.current.clear()
+
+      // Cancel any pending RAF and clear guides immediately
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current)
+        rafRef.current = null
+      }
+      pendingGuidesRef.current = null
+      onSnapGuidesChangeRef.current?.([])
+
       onDragEnd?.()
 
       // Persist the snapped position
@@ -213,6 +253,136 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
       onContextMenu?.(e, artboard.id)
     },
     [artboard.id, onContextMenu]
+  )
+
+  // Handle drag enter on artboard background
+  const handleDragEnter = useCallback(
+    (e: Konva.KonvaEventObject<DragEvent>) => {
+      // Check if a layer is being dragged and it's not the artboard itself
+      if (isDraggingLayer && draggingLayerId && draggingLayerId !== artboard.id) {
+        const draggedLayer = getLayer(draggingLayerId)
+        // Prevent artboards from being dropped into other artboards
+        if (draggedLayer && draggedLayer.type !== 'artboard') {
+          setIsDragHovering(true)
+        }
+      }
+    },
+    [isDraggingLayer, draggingLayerId, artboard.id, getLayer]
+  )
+
+  // Handle drag leave from artboard background
+  const handleDragLeave = useCallback((e: Konva.KonvaEventObject<DragEvent>) => {
+    setIsDragHovering(false)
+  }, [])
+
+  // Handle drop on artboard background
+  const handleDrop = useCallback(
+    (e: Konva.KonvaEventObject<DragEvent>) => {
+      console.log('ArtboardComponent handleDrop called', {
+        draggingLayerId,
+        artboardId: artboard.id,
+        isDragHovering
+      })
+      setIsDragHovering(false)
+
+      if (!draggingLayerId || draggingLayerId === artboard.id) {
+        console.log('Drop cancelled: no draggingLayerId or same as artboard')
+        return
+      }
+
+      const draggedLayer = getLayer(draggingLayerId)
+      if (!draggedLayer || draggedLayer.type === 'artboard') {
+        console.log('Drop cancelled: layer not found or is artboard', draggedLayer)
+        return
+      }
+
+      // Check if the layer is already a child of this artboard
+      if (draggedLayer.parentId === artboard.id) {
+        console.log('Drop cancelled: layer already in this artboard')
+        return
+      }
+
+      // Move the layer into this artboard
+      console.log('Moving layer to artboard', draggingLayerId, artboard.id)
+
+      // Get the pointer position relative to the artboard Group
+      // The event target should be the Rect, whose parent is the artboard Group
+      const artboardGroup = e.target.getParent() // This should be the artboard Group
+
+      // Get pointer position relative to the artboard
+      let relativePos = artboardGroup?.getRelativePointerPosition()
+
+      if (!relativePos && groupRef.current) {
+        // Fallback: use our ref if available
+        relativePos = groupRef.current.getRelativePointerPosition()
+      }
+
+      if (!relativePos) {
+        // Second fallback: calculate using stage position and transform
+        const stage = e.target.getStage()
+        const pointerPos = stage?.getPointerPosition()
+
+        if (pointerPos && groupRef.current) {
+          // Get the absolute position of the artboard group
+          const absPos = groupRef.current.getAbsolutePosition()
+          relativePos = {
+            x: pointerPos.x - absPos.x,
+            y: pointerPos.y - absPos.y
+          }
+        }
+      }
+
+      if (relativePos) {
+        const relativeX = relativePos.x
+        const relativeY = relativePos.y
+
+        // Get layer dimensions based on layer type
+        let layerWidth = 0
+        let layerHeight = 0
+
+        if (draggedLayer.type === 'image' && draggedLayer.imageProps) {
+          layerWidth = draggedLayer.imageProps.width || 0
+          layerHeight = draggedLayer.imageProps.height || 0
+        } else if (draggedLayer.type === 'shape' && draggedLayer.shapeProps) {
+          layerWidth = draggedLayer.shapeProps.width || 0
+          layerHeight = draggedLayer.shapeProps.height || 0
+        } else if (draggedLayer.type === 'text' && draggedLayer.textProps) {
+          layerWidth = draggedLayer.textProps.width || 100
+          layerHeight = 50 // Default height for text
+        } else if (draggedLayer.type === 'artboard' && draggedLayer.artboardProps) {
+          layerWidth = draggedLayer.artboardProps.width || 0
+          layerHeight = draggedLayer.artboardProps.height || 0
+        }
+
+        // Center the layer at the drop point
+        const centeredX = relativeX - layerWidth / 2
+        const centeredY = relativeY - layerHeight / 2
+
+        // Move the layer and update its position to be relative to the artboard
+        moveLayer(draggingLayerId, artboard.id)
+        updateLayerDirect(draggingLayerId, {
+          x: centeredX,
+          y: centeredY
+        })
+      } else {
+        // Fallback if we can't get relative pointer position
+        console.log('Warning: Could not get relative pointer position, falling back to stage position')
+        const currentX = draggedLayer.x || 0
+        const currentY = draggedLayer.y || 0
+        const artboardX = artboard.x || 0
+        const artboardY = artboard.y || 0
+
+        const relativeX = currentX - artboardX
+        const relativeY = currentY - artboardY
+
+        moveLayer(draggingLayerId, artboard.id)
+        updateLayerDirect(draggingLayerId, {
+          x: relativeX,
+          y: relativeY
+        })
+      }
+    },
+    [draggingLayerId, artboard.id, artboard.x, artboard.y, getLayer, moveLayer, updateLayerDirect, isDragHovering]
   )
 
   // Handle context menu for child layers
@@ -265,14 +435,33 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
       onContextMenu={handleContextMenu}
       {...clipConfig}
     >
-      {/* Background rectangle */}
+      {/* Background rectangle - acts as drop target */}
       <Rect
         width={width}
         height={height}
         fill={backgroundColor}
         listening={true}
         onContextMenu={handleContextMenu}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        opacity={isDragHovering ? 0.8 : 1}
       />
+
+      {/* Drag hover indicator */}
+      {isDragHovering && (
+        <Rect
+          width={width}
+          height={height}
+          stroke="rgba(100, 108, 255, 0.6)"
+          strokeWidth={3}
+          strokeScaleEnabled={false}
+          listening={false}
+          fill="rgba(100, 108, 255, 0.05)"
+          cornerRadius={4}
+          dash={[10, 5]}
+        />
+      )}
 
       {/* Active artboard indicator - selection handled by MultiTransformer */}
       {isActive && (
@@ -339,6 +528,9 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
           onDragStart={onDragStart}
           onDragEnd={onDragEnd}
           onLayerSelect={onLayerSelect}
+          isDraggingLayer={isDraggingLayer}
+          draggingLayerId={draggingLayerId}
+          artboardId={artboard.id}
         />
       ))}
 

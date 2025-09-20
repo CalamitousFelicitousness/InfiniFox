@@ -68,7 +68,9 @@ export interface CanvasSlice {
   canvasSelectionMode: CanvasSelectionMode
   canvasViewport: CanvasViewport
   generationFrames: GenerationFrame[]
-  activeGenerationFrameId: string | null
+  activeGenerationFrameIds: Set<string>
+  generationQueue: string[]
+  currentlyGeneratingFrameId: string | null
 
   // Actions
   addImage: (image: ImageData) => void
@@ -139,7 +141,18 @@ export interface CanvasSlice {
   lockFrame: (id: string, locked: boolean) => void
   labelFrame: (id: string, label: string) => void
   convertPlaceholderToActive: (id: string) => void
-  setActiveGenerationFrameId: (id: string | null) => void
+  // Multiple active generation frame tracking
+  addActiveGenerationFrameId: (id: string) => void
+  removeActiveGenerationFrameId: (id: string) => void
+  clearActiveGenerationFrameIds: () => void
+  isActiveGenerationFrame: (id: string) => boolean
+  // Generation queue management
+  addToGenerationQueue: (id: string) => void
+  removeFromGenerationQueue: (id: string) => void
+  getNextInQueue: () => string | null
+  setCurrentlyGeneratingFrame: (id: string | null) => void
+  isCurrentlyGenerating: (id: string) => boolean
+  isQueued: (id: string) => boolean
 }
 
 export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
@@ -156,7 +169,9 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
     position: { x: 0, y: 0 },
   },
   generationFrames: [],
-  activeGenerationFrameId: null,
+  activeGenerationFrameIds: new Set(),
+  generationQueue: [],
+  currentlyGeneratingFrameId: null,
 
   // Actions
   addImage: (image: ImageData) => {
@@ -1042,7 +1057,60 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
     }))
   },
 
-  setActiveGenerationFrameId: (id: string | null) => {
-    set({ activeGenerationFrameId: id })
+  // Multiple active generation frame tracking
+  addActiveGenerationFrameId: (id: string) => {
+    set((state) => ({
+      activeGenerationFrameIds: new Set([...state.activeGenerationFrameIds, id]),
+    }))
+  },
+
+  removeActiveGenerationFrameId: (id: string) => {
+    set((state) => {
+      const newIds = new Set(state.activeGenerationFrameIds)
+      newIds.delete(id)
+      return { activeGenerationFrameIds: newIds }
+    })
+  },
+
+  clearActiveGenerationFrameIds: () => {
+    set({ activeGenerationFrameIds: new Set() })
+  },
+
+  isActiveGenerationFrame: (id: string) => {
+    return get().activeGenerationFrameIds.has(id)
+  },
+
+  // Generation queue management
+  addToGenerationQueue: (id: string) => {
+    set((state) => {
+      if (!state.generationQueue.includes(id)) {
+        return { generationQueue: [...state.generationQueue, id] }
+      }
+      return state
+    })
+  },
+
+  removeFromGenerationQueue: (id: string) => {
+    set((state) => ({
+      generationQueue: state.generationQueue.filter((qId) => qId !== id),
+    }))
+  },
+
+  getNextInQueue: () => {
+    const queue = get().generationQueue
+    return queue.length > 0 ? queue[0] : null
+  },
+
+  setCurrentlyGeneratingFrame: (id: string | null) => {
+    set({ currentlyGeneratingFrameId: id })
+  },
+
+  isCurrentlyGenerating: (id: string) => {
+    return get().currentlyGeneratingFrameId === id
+  },
+
+  isQueued: (id: string) => {
+    const state = get()
+    return state.generationQueue.includes(id) && state.currentlyGeneratingFrameId !== id
   },
 })

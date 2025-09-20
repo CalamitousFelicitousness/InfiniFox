@@ -4,192 +4,284 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--color-background-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  animation: fadeIn var(--duration-md) var(--ease-out);
 }
 
 .resize-dialog {
-  background: var(--color-surface-primary);
-  border: 1px solid var(--color-border-primary);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xl);
-  backdrop-filter: blur(10px);
   width: 420px;
   max-width: 90vw;
+  animation: slideUp var(--duration-md) var(--ease-out);
 }
 
+/* Header styles aligned with floating panel pattern */
 .resize-dialog-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-md);
-  border-bottom: 1px solid var(--color-border);
+  padding: var(--spacing-3);
+  border-bottom: 1px solid var(--color-border-secondary);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
-.resize-dialog-header h3 {
-  margin: 0;
-  font-size: var(--font-size-lg);
+.resize-dialog-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
-  color: var(--color-text);
+  color: var(--color-text-primary);
 }
 
 .resize-dialog-close {
-  background: none;
+  background: transparent;
   border: none;
-  font-size: 24px;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
   cursor: pointer;
-  padding: 0;
-  width: 32px;
-  height: 32px;
+  padding: var(--spacing-1);
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-sm);
-  transition: background-color var(--transition-fast);
+  transition: all var(--transition-fast);
 }
 
 .resize-dialog-close:hover {
   background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+  transform: scale(1.1);
 }
 
+.resize-dialog-close:active {
+  transform: scale(0.95);
+}
+
+/* Content styles */
 .resize-dialog-content {
-  padding: var(--spacing-md);
+  padding: var(--spacing-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
 }
 
+/* Input groups */
 .resize-dialog-inputs {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-md);
+  gap: var(--spacing-3);
 }
 
 .resize-dialog-input-group {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-1);
 }
 
 .resize-dialog-input-group label {
   font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
 }
 
 .resize-dialog-input-group input {
-  padding: var(--spacing-sm);
-  border: 1px solid var(--color-border);
+  padding: var(--spacing-2) var(--spacing-3);
+  border: 1px solid var(--color-border-primary);
   border-radius: var(--radius-sm);
-  background: var(--color-background);
-  color: var(--color-text);
+  background: var(--color-surface-secondary);
+  color: var(--color-text-primary);
   font-size: var(--font-size-base);
+  transition: all var(--transition-fast);
+}
+
+.resize-dialog-input-group input:hover {
+  border-color: var(--color-border-hover);
+  background: var(--color-surface-hover);
 }
 
 .resize-dialog-input-group input:focus {
   outline: none;
-  border-color: var(--color-primary);
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.2);
+  background: var(--color-surface-elevated);
 }
 
+/* Checkbox styling */
 .resize-dialog-checkbox {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-2);
+  border-radius: var(--radius-sm);
+  transition: background-color var(--transition-fast);
+}
+
+.resize-dialog-checkbox:hover {
+  background: var(--color-surface-hover);
 }
 
 .resize-dialog-checkbox input[type='checkbox'] {
   width: 18px;
   height: 18px;
+  margin-right: var(--spacing-2);
   cursor: pointer;
+  accent-color: var(--color-primary-500);
 }
 
 .resize-dialog-checkbox label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
   font-size: var(--font-size-sm);
-  color: var(--color-text);
+  color: var(--color-text-primary);
   cursor: pointer;
+  user-select: none;
 }
 
+/* Presets section */
 .resize-dialog-presets {
-  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-3);
+  border-top: 1px solid var(--color-border-secondary);
 }
 
 .resize-dialog-presets h4 {
-  margin: 0 0 var(--spacing-sm) 0;
+  margin: 0 0 var(--spacing-2) 0;
   font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-muted);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .resize-dialog-preset-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: var(--spacing-sm);
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: var(--spacing-2);
 }
 
 .resize-dialog-preset {
-  padding: var(--spacing-sm);
-  border: 1px solid var(--color-border);
+  padding: var(--spacing-2);
+  border: 1px solid var(--color-border-primary);
   border-radius: var(--radius-sm);
-  background: var(--color-background);
+  background: var(--color-surface-disabled);
   cursor: pointer;
   transition: all var(--transition-fast);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  align-items: center;
+  gap: var(--spacing-1);
+  min-height: 60px;
+  justify-content: center;
 }
 
 .resize-dialog-preset:hover {
   background: var(--color-surface-hover);
-  border-color: var(--color-primary);
+  border-color: var(--color-primary-400);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.resize-dialog-preset:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .resize-dialog-preset-name {
   font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
 }
 
 .resize-dialog-preset-size {
   font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
 }
 
+/* Footer styles */
 .resize-dialog-footer {
   display: flex;
   justify-content: flex-end;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-md);
-  border-top: 1px solid var(--color-border);
+  gap: var(--spacing-2);
+  padding: var(--spacing-3);
+  border-top: 1px solid var(--color-border-secondary);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .resize-dialog-cancel,
 .resize-dialog-apply {
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-2) var(--spacing-3);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
   transition: all var(--transition-fast);
+  min-width: 80px;
 }
 
 .resize-dialog-cancel {
-  background: var(--color-surface-primary);
-  border: 1px solid var(--color-border);
-  color: var(--color-text);
+  background: var(--color-surface-disabled);
+  border: 1px solid var(--color-border-primary);
+  color: var(--color-text-secondary);
 }
 
 .resize-dialog-cancel:hover {
   background: var(--color-surface-hover);
+  border-color: var(--color-border-hover);
+  color: var(--color-text-primary);
+  transform: translateY(-1px);
+}
+
+.resize-dialog-cancel:active {
+  transform: translateY(0);
 }
 
 .resize-dialog-apply {
-  background: var(--color-primary);
+  background: var(--color-primary-500);
   border: none;
   color: white;
+  box-shadow: 0 2px 4px rgba(100, 108, 255, 0.3);
 }
 
 .resize-dialog-apply:hover {
-  background: var(--color-primary-hover);
+  background: var(--color-primary-400);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(100, 108, 255, 0.4);
+}
+
+.resize-dialog-apply:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(100, 108, 255, 0.3);
+}
+
+.resize-dialog-apply:focus-visible,
+.resize-dialog-cancel:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }

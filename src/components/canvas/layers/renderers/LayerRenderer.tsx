@@ -2,7 +2,6 @@ import Konva from 'konva'
 import React, { useCallback, useRef, useState, useEffect, useMemo } from 'react'
 import { Group, Rect, Image as KonvaImage } from 'react-konva'
 
-import { createSnapGuideScheduler } from '../../../../features/canvas/utils/snapGuideScheduler'
 import { snappingManager } from '../../../../services/canvas/SnappingManager'
 import type { SnapGuide } from '../../../../services/canvas/SnappingManager'
 import { viewportCulling } from '../../../../services/canvas/ViewportCullingService'
@@ -34,8 +33,53 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
   onLayerSelect,
 }) => {
   const nodeRef = useRef<Konva.Node>(null)
-  const snapSchedulerRef = useRef(createSnapGuideScheduler(onSnapGuidesChange))
-  const { getLayerChildren, updateLayerDirect, selectedLayerIds, selectLayer } = useStore()
+  // Store the latest callback in a ref to avoid stale closures
+  const onSnapGuidesChangeRef = useRef(onSnapGuidesChange)
+  onSnapGuidesChangeRef.current = onSnapGuidesChange
+
+  // RAF ref for throttling snap guide updates
+  const rafRef = useRef<number | null>(null)
+  const pendingGuidesRef = useRef<SnapGuide[] | null>(null)
+
+  // Ref for tracking drop targets during drag
+  const previousDropTargetRef = useRef<Konva.Node | null>(null)
+
+  // Cleanup RAF on unmount
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current)
+      }
+    }
+  }, [])
+
+  // Throttled snap guide update function
+  const updateSnapGuidesThrottled = useCallback((guides: SnapGuide[]) => {
+    // Don't update if guides haven't changed
+    if (JSON.stringify(pendingGuidesRef.current) === JSON.stringify(guides)) {
+      return
+    }
+
+    pendingGuidesRef.current = guides
+
+    if (!rafRef.current) {
+      rafRef.current = requestAnimationFrame(() => {
+        if (pendingGuidesRef.current !== null && onSnapGuidesChangeRef.current) {
+          onSnapGuidesChangeRef.current(pendingGuidesRef.current)
+          pendingGuidesRef.current = null
+        }
+        rafRef.current = null
+      })
+    }
+  }, [])
+  const {
+    getLayerChildren,
+    updateLayerDirect,
+    selectedLayerIds,
+    selectLayer,
+    getLayer,
+    moveLayer,
+  } = useStore()
 
   // Image state - only used for image layers
   const [image, setImage] = useState<HTMLImageElement | null>(null)
@@ -164,29 +208,24 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
     loadImage()
   }, [layer.type, layer.id, layer.imageProps])
 
-  // Update snap scheduler callback when it changes
-  useEffect(() => {
-    if (snapSchedulerRef.current && onSnapGuidesChange) {
-      snapSchedulerRef.current.setOnGuideChange(onSnapGuidesChange)
-    }
-  }, [onSnapGuidesChange])
-
   // Handle drag start for layer
   const handleDragStart = useCallback(
     (e: Konva.KonvaEventObject<DragEvent>) => {
       e.cancelBubble = true // Stop propagation to parent artboard
       // Set current object for snapping manager
       snappingManager.setCurrentObject(layer.id)
+      console.log('LayerRenderer: Starting drag for layer', layer.id)
       onDragStart?.(layer.id)
     },
     [layer.id, onDragStart]
   )
 
-  // Handle drag move with snapping
+  // Handle drag move with snapping and drop target detection
   const handleDragMove = useCallback(
     (e: Konva.KonvaEventObject<DragEvent>) => {
       e.cancelBubble = true
       const node = e.target as Konva.Node
+      const stage = node.getStage()
 
       // Get dimensions based on layer type
       let width = 0
@@ -206,33 +245,235 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
       node.x(snapResult.x)
       node.y(snapResult.y)
 
-      // Update snap guides
-      if (snapResult.guides.length > 0) {
-        snapSchedulerRef.current.scheduleUpdate(snapResult.guides)
-      } else {
-        snapSchedulerRef.current.clear()
+      // Update snap guides with throttling
+      updateSnapGuidesThrottled(snapResult.guides)
+
+      // Detect drop targets (artboards) for image layers
+      if (stage && layer.type === 'image') {
+        const pos = stage.getPointerPosition()
+        if (pos) {
+          // Find what's under the pointer
+          const shape = stage.getIntersection(pos)
+
+          if (shape && shape !== node) {
+            // Check if the shape belongs to an artboard by checking its parent group
+            let parent: any = shape.getParent()
+            // Navigate up to find the artboard group
+            while (parent && parent.className !== 'Group') {
+              parent = parent.getParent()
+            }
+
+            if (parent && parent.id()) {
+              const parentId = parent.id()
+              // Check if this is an artboard
+              const potentialArtboard = getLayer(parentId)
+              if (
+                potentialArtboard &&
+                potentialArtboard.type === 'artboard' &&
+                parentId !== layer.parentId
+              ) {
+                // Find the Rect child of the artboard Group that has the drag handlers
+                const rectChildren = parent.find('Rect')
+                if (rectChildren && rectChildren.length > 0) {
+                  const dropTarget = rectChildren[0]
+
+                  // Check if we're over a different target
+                  if (previousDropTargetRef.current && dropTarget !== previousDropTargetRef.current) {
+                    // Fire dragleave on previous target
+                    previousDropTargetRef.current.fire('dragleave', { evt: e.evt }, true)
+                  }
+
+                  // Fire dragenter if it's a new target
+                  if (dropTarget !== previousDropTargetRef.current) {
+                    dropTarget.fire('dragenter', { evt: e.evt }, true)
+                    previousDropTargetRef.current = dropTarget
+                  }
+                }
+              } else if (previousDropTargetRef.current) {
+                // Not over a valid artboard, clear previous
+                previousDropTargetRef.current.fire('dragleave', { evt: e.evt }, true)
+                previousDropTargetRef.current = null
+              }
+            } else if (previousDropTargetRef.current) {
+              // No valid parent, clear previous
+              previousDropTargetRef.current.fire('dragleave', { evt: e.evt }, true)
+              previousDropTargetRef.current = null
+            }
+          } else if (previousDropTargetRef.current) {
+            // No shape under pointer or it's the dragged node itself, clear previous
+            previousDropTargetRef.current.fire('dragleave', { evt: e.evt }, true)
+            previousDropTargetRef.current = null
+          }
+        }
       }
     },
-    [layer]
+    [layer, updateSnapGuidesThrottled, getLayer]
   )
 
   // Handle drag end for layer
   const handleDragEnd = useCallback(
     (e: Konva.KonvaEventObject<DragEvent>) => {
+      console.log('LayerRenderer: handleDragEnd called for layer', layer.id)
       e.cancelBubble = true // Stop propagation to parent artboard
       const node = e.target
+      const stage = node.getStage()
 
       // Clear snapping state
       snappingManager.setCurrentObject(null)
-      snapSchedulerRef.current.clear()
+
+      // Cancel any pending RAF and clear guides immediately
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current)
+        rafRef.current = null
+      }
+      pendingGuidesRef.current = null
+      onSnapGuidesChangeRef.current?.([])
+
+      // Track if we successfully drop on an artboard
+      let droppedOnArtboard = false
+
+      // Check for drop on artboard
+      console.log('Checking for drop, layer type:', layer.type, 'stage:', !!stage)
+      if (stage && layer.type === 'image') {
+        const pos = stage.getPointerPosition()
+        console.log('Pointer position:', pos)
+        if (pos) {
+          // Find all groups in the stage (potential artboards)
+          const allGroups = stage.find('Group')
+          console.log('Found groups in stage:', allGroups.length)
+
+          // Check if the pointer is over any artboard
+          let targetArtboard = null
+          for (const group of allGroups) {
+            const groupId = group.id()
+            if (groupId) {
+              const potentialArtboard = getLayer(groupId)
+              if (potentialArtboard && potentialArtboard.type === 'artboard') {
+                // Check if the pointer is within this artboard's bounds
+                const absPos = group.getAbsolutePosition()
+                const width = potentialArtboard.artboardProps?.width || 1024
+                const height = potentialArtboard.artboardProps?.height || 1024
+
+                console.log('Checking artboard bounds:', {
+                  id: groupId,
+                  absPos,
+                  width,
+                  height,
+                  pointerPos: pos
+                })
+
+                if (
+                  pos.x >= absPos.x &&
+                  pos.x <= absPos.x + width &&
+                  pos.y >= absPos.y &&
+                  pos.y <= absPos.y + height &&
+                  groupId !== layer.parentId
+                ) {
+                  targetArtboard = group
+                  console.log('Found target artboard:', groupId)
+                  break
+                }
+              }
+            }
+          }
+
+          if (targetArtboard) {
+            // Find the Rect child of the artboard Group that has the drop handler
+            const rectChildren = targetArtboard.find('Rect')
+            console.log('Found rect children:', rectChildren?.length)
+            if (rectChildren && rectChildren.length > 0) {
+              // Fire drop event on the first Rect (the background rect with drop handler)
+              const dropTarget = rectChildren[0]
+              console.log('Firing drop event on rect', dropTarget)
+              dropTarget.fire('drop', { evt: e.evt, target: dropTarget }, true)
+              droppedOnArtboard = true
+            }
+          }
+
+          // Old approach as fallback
+          const shape = stage.getIntersection(pos)
+          console.log('Shape under pointer (fallback):', shape, 'shape className:', shape?.className, 'shape id:', shape?.id())
+
+          if (shape) {
+            // Check if the shape is an artboard background Rect
+            if (shape.className === 'Rect') {
+              // Check if its parent is a Group with an artboard ID
+              const parent = shape.getParent()
+              console.log('Rect parent:', parent, 'parent id:', parent?.id(), 'parent className:', parent?.className)
+
+              if (parent && parent.className === 'Group' && parent.id()) {
+                const parentId = parent.id()
+                const potentialArtboard = getLayer(parentId)
+                console.log('Found potential artboard:', potentialArtboard)
+
+                if (
+                  potentialArtboard &&
+                  potentialArtboard.type === 'artboard' &&
+                  parentId !== layer.parentId
+                ) {
+                  console.log('Firing drop event on artboard rect')
+                  shape.fire('drop', { evt: e.evt, target: shape }, true)
+                }
+              }
+            } else {
+              // Try to navigate up to find an artboard group
+              let parent: any = shape.getParent()
+              console.log('Initial parent:', parent, 'className:', parent?.className)
+              while (parent && parent.className !== 'Group') {
+                parent = parent.getParent()
+                console.log('Traversing up, parent:', parent, 'className:', parent?.className)
+              }
+
+              if (parent && parent.id()) {
+                console.log('Found parent with ID:', parent.id())
+                const parentId = parent.id()
+                const potentialArtboard = getLayer(parentId)
+                console.log('Checking drop target:', {
+                  parentId,
+                  potentialArtboard,
+                  layerParentId: layer.parentId,
+                  layerId: layer.id
+                })
+
+                // Check if we're dropping on an artboard that's not our current parent
+                if (
+                  potentialArtboard &&
+                  potentialArtboard.type === 'artboard' &&
+                  parentId !== layer.parentId
+                ) {
+                  // Find the Rect child of the artboard Group that has the drop handler
+                  const rectChildren = parent.find('Rect')
+                  console.log('Found rect children:', rectChildren?.length)
+                  if (rectChildren && rectChildren.length > 0) {
+                    // Fire drop event on the first Rect (the background rect with drop handler)
+                    const dropTarget = rectChildren[0]
+                    console.log('Firing drop event on rect', dropTarget)
+                    dropTarget.fire('drop', { evt: e.evt, target: dropTarget }, true)
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Clear previous drop target reference
+      previousDropTargetRef.current = null
+
       onDragEnd?.()
 
-      updateLayerDirect(layer.id, {
-        x: node.x(),
-        y: node.y(),
-      })
+      // Update position after drop ONLY if the layer wasn't dropped on an artboard
+      // (If it was dropped onto an artboard, the artboard handler will set the correct position)
+      if (!droppedOnArtboard) {
+        updateLayerDirect(layer.id, {
+          x: node.x(),
+          y: node.y(),
+        })
+      } else {
+        console.log('Layer was dropped on artboard, skipping position update in handleDragEnd')
+      }
     },
-    [layer.id, updateLayerDirect, onDragEnd]
+    [layer.id, layer.type, layer.parentId, updateLayerDirect, onDragEnd, getLayer]
   )
 
   // Handle context menu
@@ -372,6 +613,9 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
               onDragStart={onDragStart}
               onDragEnd={onDragEnd}
               onLayerSelect={onLayerSelect}
+              isDraggingLayer={isDraggingLayer}
+              draggingLayerId={draggingLayerId}
+              artboardId={artboardId}
             />
           ))}
         </Group>

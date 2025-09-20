@@ -4,199 +4,279 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--color-background-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  animation: fadeIn var(--duration-md) var(--ease-out);
 }
 
 .background-picker {
-  background: var(--color-surface-primary);
-  border: 1px solid var(--color-border-primary);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xl);
-  backdrop-filter: blur(10px);
   width: 360px;
   max-width: 90vw;
+  animation: slideUp var(--duration-md) var(--ease-out);
 }
 
+/* Header styles aligned with floating panel pattern */
 .background-picker-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-md);
-  border-bottom: 1px solid var(--color-border);
+  padding: var(--spacing-3);
+  border-bottom: 1px solid var(--color-border-secondary);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
-.background-picker-header h3 {
-  margin: 0;
-  font-size: var(--font-size-lg);
+.background-picker-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
-  color: var(--color-text);
+  color: var(--color-text-primary);
 }
 
 .background-picker-close {
-  background: none;
+  background: transparent;
   border: none;
-  font-size: 24px;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
   cursor: pointer;
-  padding: 0;
-  width: 32px;
-  height: 32px;
+  padding: var(--spacing-1);
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-sm);
-  transition: background-color var(--transition-fast);
+  transition: all var(--transition-fast);
 }
 
 .background-picker-close:hover {
   background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+  transform: scale(1.1);
 }
 
+.background-picker-close:active {
+  transform: scale(0.95);
+}
+
+/* Content styles */
 .background-picker-content {
-  padding: var(--spacing-md);
+  padding: var(--spacing-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
 }
 
+/* Preview section */
 .background-picker-preview {
-  margin-bottom: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
 }
 
 .background-picker-preview-label {
   font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-  margin-bottom: var(--spacing-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .background-picker-preview-color {
   width: 100%;
   height: 60px;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
+  border: 2px solid var(--color-border-primary);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* Presets section */
 .background-picker-presets {
-  margin-bottom: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
 }
 
 .background-picker-presets-label {
   font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-  margin-bottom: var(--spacing-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .background-picker-color-grid {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
-  gap: var(--spacing-xs);
+  gap: var(--spacing-1);
 }
 
 .background-picker-color-swatch {
   width: 28px;
   height: 28px;
+  border: 1px solid var(--color-border-primary);
   border-radius: var(--radius-sm);
-  border: 2px solid transparent;
   cursor: pointer;
   transition: all var(--transition-fast);
   position: relative;
+  overflow: hidden;
 }
 
 .background-picker-color-swatch:hover {
-  transform: scale(1.1);
+  transform: scale(1.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  z-index: 1;
+}
+
+.background-picker-color-swatch:active {
+  transform: scale(1.05);
 }
 
 .background-picker-color-swatch.selected {
-  border-color: var(--color-primary);
+  border: 2px solid var(--color-primary-500);
+  box-shadow: 0 0 0 2px var(--color-primary-500), 0 2px 8px rgba(100, 108, 255, 0.4);
+  transform: scale(1.1);
 }
 
 .background-picker-color-swatch.selected::after {
-  content: '';
+  content: '✓';
   position: absolute;
-  inset: -4px;
-  border: 2px solid var(--color-primary);
-  border-radius: var(--radius-sm);
-  pointer-events: none;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
+/* Custom color section */
 .background-picker-custom {
-  margin-top: var(--spacing-md);
-  padding-top: var(--spacing-md);
-  border-top: 1px solid var(--color-border);
-}
-
-.background-picker-custom label {
-  display: block;
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-  margin-bottom: var(--spacing-xs);
-}
-
-.background-picker-custom-inputs {
   display: flex;
-  gap: var(--spacing-sm);
+  flex-direction: column;
+  gap: var(--spacing-2);
+  padding-top: var(--spacing-3);
+  border-top: 1px solid var(--color-border-secondary);
 }
 
-.background-picker-custom-inputs input[type='text'] {
-  flex: 1;
-  padding: var(--spacing-sm);
-  border: 1px solid var(--color-border);
+.background-picker-custom-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.background-picker-custom-input {
+  padding: var(--spacing-2) var(--spacing-3);
+  border: 1px solid var(--color-border-primary);
   border-radius: var(--radius-sm);
-  background: var(--color-background);
-  color: var(--color-text);
+  background: var(--color-surface-secondary);
+  color: var(--color-text-primary);
   font-size: var(--font-size-base);
-  font-family: var(--font-mono);
+  font-family: var(--font-family-mono);
+  transition: all var(--transition-fast);
 }
 
-.background-picker-custom-inputs input[type='text']:focus {
+.background-picker-custom-input:hover {
+  border-color: var(--color-border-hover);
+  background: var(--color-surface-hover);
+}
+
+.background-picker-custom-input:focus {
   outline: none;
-  border-color: var(--color-primary);
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.2);
+  background: var(--color-surface-elevated);
 }
 
-.background-picker-custom-inputs input[type='color'] {
-  width: 40px;
-  height: 36px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  padding: 2px;
+.background-picker-custom-input::placeholder {
+  color: var(--color-text-tertiary);
 }
 
+/* Footer styles */
 .background-picker-footer {
   display: flex;
   justify-content: flex-end;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-md);
-  border-top: 1px solid var(--color-border);
+  gap: var(--spacing-2);
+  padding: var(--spacing-3);
+  border-top: 1px solid var(--color-border-secondary);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .background-picker-cancel,
 .background-picker-apply {
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: var(--spacing-2) var(--spacing-3);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
   transition: all var(--transition-fast);
+  min-width: 80px;
 }
 
 .background-picker-cancel {
-  background: var(--color-surface-primary);
-  border: 1px solid var(--color-border);
-  color: var(--color-text);
+  background: var(--color-surface-disabled);
+  border: 1px solid var(--color-border-primary);
+  color: var(--color-text-secondary);
 }
 
 .background-picker-cancel:hover {
   background: var(--color-surface-hover);
+  border-color: var(--color-border-hover);
+  color: var(--color-text-primary);
+  transform: translateY(-1px);
+}
+
+.background-picker-cancel:active {
+  transform: translateY(0);
 }
 
 .background-picker-apply {
-  background: var(--color-primary);
+  background: var(--color-primary-500);
   border: none;
   color: white;
+  box-shadow: 0 2px 4px rgba(100, 108, 255, 0.3);
 }
 
 .background-picker-apply:hover {
-  background: var(--color-primary-hover);
+  background: var(--color-primary-400);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(100, 108, 255, 0.4);
+}
+
+.background-picker-apply:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(100, 108, 255, 0.3);
+}
+
+.background-picker-apply:focus-visible,
+.background-picker-cancel:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }

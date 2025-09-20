@@ -1,4 +1,7 @@
+import { Palette, X } from 'lucide-react'
 import { useState } from 'react'
+
+import { Icon } from '../../../components/common/Icon'
 import './ArtboardBackgroundPicker.css'
 
 export interface BackgroundPickerProps {
@@ -70,11 +73,14 @@ export function ArtboardBackgroundPicker({
 
   return (
     <div className="background-picker-overlay" onPointerDown={onClose}>
-      <div className="background-picker" onPointerDown={(e) => e.stopPropagation()}>
+      <div className="background-picker glass-surface" onPointerDown={(e) => e.stopPropagation()}>
         <div className="background-picker-header">
-          <h3>Artboard Background</h3>
-          <button className="background-picker-close" onClick={onClose}>
-            ×
+          <div className="background-picker-title">
+            <Icon icon={Palette} size="base" />
+            <span>Artboard Background</span>
+          </div>
+          <button className="background-picker-close" onClick={onClose} title="Close">
+            <Icon icon={X} size="sm" />
           </button>
         </div>
 

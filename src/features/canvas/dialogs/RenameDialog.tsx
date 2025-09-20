@@ -1,4 +1,7 @@
+import { Edit2, X } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
+
+import { Icon } from '../../../components/common/Icon'
 import './RenameDialog.css'
 
 export interface RenameDialogProps {
@@ -33,17 +36,21 @@ export function RenameDialog({ currentName, onRename, onClose }: RenameDialogPro
 
   return (
     <div className="rename-dialog-overlay" onPointerDown={onClose}>
-      <div className="rename-dialog" onPointerDown={(e) => e.stopPropagation()}>
+      <div className="rename-dialog glass-surface" onPointerDown={(e) => e.stopPropagation()}>
         <div className="rename-dialog-header">
-          <h3>Rename</h3>
-          <button className="rename-dialog-close" onClick={onClose}>
-            ×
+          <div className="rename-dialog-title">
+            <Icon icon={Edit2} size="base" />
+            <span>Rename</span>
+          </div>
+          <button className="rename-dialog-close" onClick={onClose} title="Close">
+            <Icon icon={X} size="sm" />
           </button>
         </div>
 
         <div className="rename-dialog-content">
           <input
             ref={inputRef}
+            className="rename-dialog-input"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}

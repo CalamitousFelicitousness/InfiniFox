@@ -1,4 +1,7 @@
+import { Layout, X } from 'lucide-react'
 import React, { useState } from 'react'
+
+import { Icon } from '../../../components/common/Icon'
 import '../../../themes/styles/components/menus.css'
 import './AutoArrangeDialog.css'
 
@@ -38,15 +41,23 @@ export const AutoArrangeDialog: React.FC<AutoArrangeDialogProps> = ({
   }
 
   return (
-    <div className="dialog-overlay" onPointerDown={onCancel}>
+    <div className="auto-arrange-dialog-overlay" onPointerDown={onCancel}>
       <div
-        className="dialog auto-arrange-dialog"
+        className="auto-arrange-dialog glass-surface"
         onPointerDown={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
       >
-        <h3 className="dialog-title">Auto-arrange Children</h3>
+        <div className="auto-arrange-dialog-header">
+          <div className="auto-arrange-dialog-title">
+            <Icon icon={Layout} size="base" />
+            <span>Auto-arrange Children</span>
+          </div>
+          <button className="auto-arrange-dialog-close" onClick={onCancel} title="Close">
+            <Icon icon={X} size="sm" />
+          </button>
+        </div>
 
-        <div className="dialog-content">
+        <div className="auto-arrange-dialog-content">
           <div className="form-group">
             <label>Direction</label>
             <div className="radio-group">
@@ -109,11 +120,11 @@ export const AutoArrangeDialog: React.FC<AutoArrangeDialogProps> = ({
           )}
         </div>
 
-        <div className="dialog-actions">
-          <button className="button button-secondary" onClick={onCancel}>
+        <div className="auto-arrange-dialog-footer">
+          <button className="auto-arrange-dialog-cancel" onClick={onCancel}>
             Cancel
           </button>
-          <button className="button button-primary" onClick={handleConfirm}>
+          <button className="auto-arrange-dialog-apply" onClick={handleConfirm}>
             Apply
           </button>
         </div>

@@ -427,8 +427,21 @@ export function Canvas() {
   const { konvaImages, getImageBorderColor } = images_
 
   // Get artboards and root layers for rendering
+  // Note: getRootLayers() filters out layers that have a parentId
   const artboards = useMemo(() => (USE_LAYER_SYSTEM ? getArtboards() : []), [layers, layerOrder])
-  const rootLayers = useMemo(() => (USE_LAYER_SYSTEM ? getRootLayers() : []), [layers, layerOrder])
+  const rootLayers = useMemo(() => {
+    if (!USE_LAYER_SYSTEM) return []
+    const allRootLayers = getRootLayers()
+    // Double-check that we're only getting layers without parents
+    const filtered = allRootLayers.filter(layer => !layer.parentId)
+    if (filtered.length !== allRootLayers.length) {
+      console.warn('getRootLayers returned layers with parents!', {
+        all: allRootLayers.map(l => ({ id: l.id, parentId: l.parentId })),
+        filtered: filtered.map(l => ({ id: l.id, parentId: l.parentId }))
+      })
+    }
+    return filtered
+  }, [layers, layerOrder])
 
   // State for minimap image URLs
   const [layerImageUrls, setLayerImageUrls] = useState<Record<string, string>>({})
@@ -491,15 +504,16 @@ export function Canvas() {
       }> = []
 
       // Collect all image layers from root and artboards
-      const collectImageLayers = (layers: ReturnType<typeof getRootLayers>) => {
+      const collectImageLayers = (layers: ReturnType<typeof getRootLayers>, parentOffset = { x: 0, y: 0 }) => {
         layers.forEach((layer) => {
           if (layer.type === 'image' && layer.imageProps) {
             const src = layerImageUrls[layer.id] || ''
             if (src) {
+              // Calculate absolute position by adding parent offset
               imageLayers.push({
                 id: layer.id,
-                x: layer.x,
-                y: layer.y,
+                x: layer.x + parentOffset.x,
+                y: layer.y + parentOffset.y,
                 src,
                 width: layer.imageProps.width,
                 height: layer.imageProps.height,
@@ -507,25 +521,31 @@ export function Canvas() {
               })
             }
           } else if (layer.type === 'group' && layer.children) {
-            // Recursively collect from groups
+            // Recursively collect from groups, adding this group's position to offset
             const children = layer.children
               .map((childId) => useStore.getState().getLayer(childId))
               .filter(Boolean) as ReturnType<typeof getRootLayers>
-            collectImageLayers(children)
+            collectImageLayers(children, {
+              x: parentOffset.x + layer.x,
+              y: parentOffset.y + layer.y
+            })
           }
         })
       }
 
-      // Collect from root layers
+      // Collect from root layers (no offset needed)
       collectImageLayers(rootLayers)
 
-      // Collect from artboards
+      // Collect from artboards (with artboard position as offset)
       artboards.forEach((artboard) => {
         if (artboard.children) {
           const children = artboard.children
             .map((childId) => useStore.getState().getLayer(childId))
             .filter(Boolean) as ReturnType<typeof getRootLayers>
-          collectImageLayers(children)
+          collectImageLayers(children, {
+            x: artboard.x,
+            y: artboard.y
+          })
         }
       })
 
@@ -633,6 +653,7 @@ export function Canvas() {
                   frames={frames.generationFrames || []}
                   selectedFrameId={frames.selectedFrameId}
                   contextMenuFrameId={frames.contextMenuFrameId}
+                  currentlyGeneratingFrameId={frames.currentlyGeneratingFrameId}
                   currentTool={tools.currentTool}
                   onFrameSelect={frames.handleFrameSelect}
                   onFrameDragEnd={frames.handleFrameDragEnd}
@@ -653,7 +674,31 @@ export function Canvas() {
                   getFrameFillColor={frames.getFrameFillColor}
                 />
 
-                {/* Render root layers (images not in artboards) */}
+                {/* Render artboards first (so they appear below images) */}
+                {artboards.map((artboard) => (
+                  <ArtboardComponent
+                    key={artboard.id}
+                    artboard={artboard}
+                    isActive={activeArtboardId === artboard.id}
+                    scale={viewport.scale}
+                    viewport={{
+                      x: -viewport.position.x / viewport.scale,
+                      y: -viewport.position.y / viewport.scale,
+                      width: stageSize.width,
+                      height: stageSize.height,
+                    }}
+                    onSelect={setActiveArtboard}
+                    onContextMenu={handleLayerContextMenu}
+                    onSnapGuidesChange={setSnapGuides}
+                    onDragStart={(layerId: string) => setActiveDragId(layerId)}
+                    onDragEnd={() => setActiveDragId(null)}
+                    onLayerSelect={handleLayerSelect}
+                    isDraggingLayer={!!activeDragId}
+                    draggingLayerId={activeDragId}
+                  />
+                ))}
+
+                {/* Render root layers (images not in artboards) - rendered after artboards so they appear on top */}
                 {rootLayers
                   .filter((layer) => layer.type !== 'artboard')
                   .map((layer) => (
@@ -673,30 +718,10 @@ export function Canvas() {
                       onDragStart={(layerId: string) => setActiveDragId(layerId)}
                       onDragEnd={() => setActiveDragId(null)}
                       onLayerSelect={handleLayerSelect}
+                      isDraggingLayer={!!activeDragId}
+                      draggingLayerId={activeDragId}
                     />
                   ))}
-
-                {/* Render artboards */}
-                {artboards.map((artboard) => (
-                  <ArtboardComponent
-                    key={artboard.id}
-                    artboard={artboard}
-                    isActive={activeArtboardId === artboard.id}
-                    scale={viewport.scale}
-                    viewport={{
-                      x: -viewport.position.x / viewport.scale,
-                      y: -viewport.position.y / viewport.scale,
-                      width: stageSize.width,
-                      height: stageSize.height,
-                    }}
-                    onSelect={setActiveArtboard}
-                    onContextMenu={handleLayerContextMenu}
-                    onSnapGuidesChange={setSnapGuides}
-                    onDragStart={(layerId: string) => setActiveDragId(layerId)}
-                    onDragEnd={() => setActiveDragId(null)}
-                    onLayerSelect={handleLayerSelect}
-                  />
-                ))}
               </KonvaLayer>
             </>
           ) : (
@@ -717,6 +742,7 @@ export function Canvas() {
                 frames={frames.generationFrames || []}
                 selectedFrameId={frames.selectedFrameId}
                 contextMenuFrameId={frames.contextMenuFrameId}
+                currentlyGeneratingFrameId={frames.currentlyGeneratingFrameId}
                 currentTool={tools.currentTool}
                 onFrameSelect={frames.handleFrameSelect}
                 onFrameDragEnd={frames.handleFrameDragEnd}
