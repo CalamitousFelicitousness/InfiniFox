@@ -222,6 +222,7 @@ export interface LayerSystemSlice {
   layerOrder: string[] // Root layer IDs in order
   activeArtboardId?: string | null
   selectedLayerIds: Set<string>
+  lastSelectedLayerId?: string | null // Track last selected for range selection
   lastPersistedAt?: number
   operationLoadingStates: Map<string, boolean> // Track loading states for operations
 
@@ -252,8 +253,9 @@ export interface LayerSystemSlice {
   ungroupLayers: (groupId: string) => void
 
   // Selection operations
-  selectLayer: (layerId: string, addToSelection?: boolean) => void
+  selectLayer: (layerId: string, addToSelection?: boolean, rangeSelect?: boolean) => void
   selectLayers: (layerIds: string[]) => void
+  selectLayerRange: (fromId: string, toId: string, addToSelection?: boolean) => void
   deselectLayer: (layerId: string) => void
   deselectAllLayers: () => void
 
@@ -335,6 +337,7 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
   layerOrder: [],
   activeArtboardId: null,
   selectedLayerIds: new Set(),
+  lastSelectedLayerId: null,
   lastPersistedAt: 0,
   operationLoadingStates: new Map(),
 
@@ -849,30 +852,99 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
   },
 
   // Selection operations
-  selectLayer: (layerId: string, addToSelection = false) => {
+  selectLayer: (layerId: string, addToSelection = false, rangeSelect = false) => {
+    const state = get() as LayerSystemSlice
+
+    // Handle range selection
+    if (rangeSelect && state.lastSelectedLayerId) {
+      state.selectLayerRange(state.lastSelectedLayerId, layerId, addToSelection)
+      return
+    }
+
     set((state) => {
       const newSelectedIds = addToSelection ? new Set(state.selectedLayerIds) : new Set<string>()
-
       newSelectedIds.add(layerId)
 
-      return { selectedLayerIds: newSelectedIds }
+      return {
+        selectedLayerIds: newSelectedIds,
+        lastSelectedLayerId: layerId // Track last selected for range selection
+      }
     })
   },
 
   selectLayers: (layerIds: string[]) => {
-    set({ selectedLayerIds: new Set(layerIds) })
+    set({
+      selectedLayerIds: new Set(layerIds),
+      lastSelectedLayerId: layerIds.length > 0 ? layerIds[layerIds.length - 1] : null
+    })
+  },
+
+  selectLayerRange: (fromId: string, toId: string, addToSelection = false) => {
+    const state = get() as LayerSystemSlice
+
+    // Helper function to recursively get all layers in visual order
+    const getAllLayersInOrder = (): string[] => {
+      const result: string[] = []
+
+      const addLayerAndChildren = (layerId: string) => {
+        result.push(layerId)
+        const layer = state.layers.get(layerId)
+        if (layer?.childIds) {
+          layer.childIds.forEach(childId => addLayerAndChildren(childId))
+        }
+      }
+
+      // Start with root layers in order
+      state.layerOrder.forEach(rootId => addLayerAndChildren(rootId))
+      return result
+    }
+
+    // Get all layers in visual order
+    const allLayers = getAllLayersInOrder()
+    const fromIndex = allLayers.indexOf(fromId)
+    const toIndex = allLayers.indexOf(toId)
+
+    if (fromIndex === -1 || toIndex === -1) {
+      // One of the layers wasn't found, just select the target
+      state.selectLayer(toId, addToSelection, false)
+      return
+    }
+
+    // Get the range of layers to select
+    const startIndex = Math.min(fromIndex, toIndex)
+    const endIndex = Math.max(fromIndex, toIndex)
+    const layersToSelect = allLayers.slice(startIndex, endIndex + 1)
+
+    // Update selection
+    set((state) => {
+      const newSelectedIds = addToSelection
+        ? new Set([...state.selectedLayerIds, ...layersToSelect])
+        : new Set(layersToSelect)
+
+      return {
+        selectedLayerIds: newSelectedIds,
+        lastSelectedLayerId: toId
+      }
+    })
   },
 
   deselectLayer: (layerId: string) => {
     set((state) => {
       const newSelectedIds = new Set(state.selectedLayerIds)
       newSelectedIds.delete(layerId)
-      return { selectedLayerIds: newSelectedIds }
+      return {
+        selectedLayerIds: newSelectedIds,
+        // Clear last selected if it was the deselected layer
+        lastSelectedLayerId: state.lastSelectedLayerId === layerId ? null : state.lastSelectedLayerId
+      }
     })
   },
 
   deselectAllLayers: () => {
-    set({ selectedLayerIds: new Set() })
+    set({
+      selectedLayerIds: new Set(),
+      lastSelectedLayerId: null
+    })
   },
 
   // Visibility operations

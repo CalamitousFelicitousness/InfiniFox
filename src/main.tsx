@@ -26,6 +26,7 @@ import './themes/styles/components/toggles.css'
 import './themes/styles/components/toolbars.css'
 import './themes/styles/components/headers.css'
 import './themes/styles/components/canvas.css'
+import './themes/styles/components/selection.css'
 
 // Root element
 const container = document.getElementById('app')

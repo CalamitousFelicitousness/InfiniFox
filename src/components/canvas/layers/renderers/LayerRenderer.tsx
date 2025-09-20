@@ -7,6 +7,7 @@ import type { SnapGuide } from '../../../../services/canvas/SnappingManager'
 import { viewportCulling } from '../../../../services/canvas/ViewportCullingService'
 import type { LayerNode, BlendMode } from '../../../../store/slices/layerSystemSlice'
 import { useStore } from '../../../../store/store'
+import { getSelectionGlowStyles } from '../../../../utils/selectionStyles'
 
 interface LayerRendererProps {
   layer: LayerNode
@@ -16,7 +17,10 @@ interface LayerRendererProps {
   onSnapGuidesChange?: (guides: SnapGuide[]) => void
   onDragStart?: (layerId: string) => void
   onDragEnd?: () => void
-  onLayerSelect?: (layerId: string) => void
+  onLayerSelect?: (layerId: string, addToSelection?: boolean, rangeSelect?: boolean) => void
+  isDraggingLayer?: boolean
+  draggingLayerId?: string | null
+  artboardId?: string
 }
 
 /**
@@ -492,11 +496,14 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
   const handleClick = useCallback(
     (e: Konva.KonvaEventObject<MouseEvent>) => {
       e.cancelBubble = true
+      // Check for modifier keys
+      const addToSelection = e.evt.ctrlKey || e.evt.metaKey
+      const rangeSelect = e.evt.shiftKey
       // Use passed handler or default to store's selectLayer
       if (onLayerSelect) {
-        onLayerSelect(layer.id)
+        onLayerSelect(layer.id, addToSelection, rangeSelect)
       } else {
-        selectLayer(layer.id, e.evt.shiftKey || e.evt.ctrlKey)
+        selectLayer(layer.id, addToSelection, rangeSelect)
       }
     },
     [layer.id, onLayerSelect, selectLayer]
@@ -659,24 +666,20 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
             pixelPerfect={levelOfDetail === 'high'}
           />
           {/* Selection glow effect only - MultiTransformer handles the frame */}
-          {isSelected && parentScale >= 0.5 && (
-            <Rect
-              x={layer.x}
-              y={layer.y}
-              width={layer.imageProps.width * (layer.scaleX || 1)}
-              height={layer.imageProps.height * (layer.scaleY || 1)}
-              rotation={layer.rotation}
-              stroke="transparent"
-              strokeWidth={0}
-              fill="transparent"
-              listening={false}
-              shadowColor="rgba(100, 108, 255, 0.5)"
-              shadowBlur={parentScale >= 0.75 ? 15 : 8}
-              shadowOpacity={0.4}
-              shadowOffsetX={0}
-              shadowOffsetY={0}
-            />
-          )}
+          {isSelected && parentScale >= 0.5 && (() => {
+            const glowStyles = getSelectionGlowStyles('image', false, parentScale)
+            return (
+              <Rect
+                x={layer.x}
+                y={layer.y}
+                width={layer.imageProps.width * (layer.scaleX || 1)}
+                height={layer.imageProps.height * (layer.scaleY || 1)}
+                rotation={layer.rotation}
+                {...glowStyles}
+                listening={false}
+              />
+            )
+          })()}
         </>
       )
     }

@@ -4,7 +4,7 @@ import React, { useRef, useEffect, useMemo, useState } from 'react'
 import { Layer as KonvaLayer } from 'react-konva'
 
 import { ArtboardComponent } from '../../components/canvas/layers/ArtboardComponent'
-import { LayerPanel } from '../../components/canvas/layers/LayerPanel'
+import { FloatingLayerPanel } from '../../components/canvas/layers/FloatingLayerPanel'
 import { LayerTransformer } from '../../components/canvas/layers/LayerTransformer'
 import { LayerRenderer } from '../../components/canvas/layers/renderers/LayerRenderer'
 import { StatusBar } from '../../components/layout/StatusBar'
@@ -68,7 +68,7 @@ export function Canvas() {
   // Snapping state
   const [snapGuides, setSnapGuides] = React.useState<SnapGuide[]>([])
   const [gridEnabled, setGridEnabled] = React.useState(false)
-  const [showLayerPanel] = useState(USE_LAYER_SYSTEM)
+  const [showLayerPanel, setShowLayerPanel] = useState(USE_LAYER_SYSTEM)
   const [activeDragId, setActiveDragId] = React.useState<string | null>(null)
 
   // Dialog state for artboard operations
@@ -392,8 +392,8 @@ export function Canvas() {
   }
 
   // Handle layer selection
-  const handleLayerSelect = (layerId: string) => {
-    selectLayer(layerId, false)
+  const handleLayerSelect = (layerId: string, addToSelection: boolean = false, rangeSelect: boolean = false) => {
+    selectLayer(layerId, addToSelection, rangeSelect)
   }
 
   // Handle layer double click
@@ -580,15 +580,6 @@ export function Canvas() {
 
   return (
     <div className="canvas-workspace">
-      {/* Layer Panel - New Addition */}
-      {USE_LAYER_SYSTEM && showLayerPanel && (
-        <LayerPanel
-          className="canvas-layer-panel"
-          onLayerSelect={handleLayerSelect}
-          onLayerDoubleClick={handleLayerDoubleClick}
-        />
-      )}
-
       <div className={containerClasses} ref={containerRef}>
         {/* Canvas Toolbar */}
         <CanvasToolbar
@@ -687,7 +678,10 @@ export function Canvas() {
                       width: stageSize.width,
                       height: stageSize.height,
                     }}
-                    onSelect={setActiveArtboard}
+                    onSelect={(artboardId, addToSelection, rangeSelect) => {
+                      setActiveArtboard(artboardId)
+                      selectLayer(artboardId, addToSelection || false, rangeSelect || false)
+                    }}
                     onContextMenu={handleLayerContextMenu}
                     onSnapGuidesChange={setSnapGuides}
                     onDragStart={(layerId: string) => setActiveDragId(layerId)}
@@ -1016,6 +1010,43 @@ export function Canvas() {
           currentTool={tools.currentTool}
           isSpacePanning={tools.isSpacePressed}
         />
+
+        {/* Floating Layer Panel */}
+        {showLayerPanel && (
+          <FloatingLayerPanel
+            onLayerSelect={(layerId) => {
+              const layer = getLayer(layerId)
+              if (layer) {
+                selectLayer(layerId)
+                // Focus on the layer
+                if (layer.type === 'artboard') {
+                  setActiveArtboard(layerId)
+                }
+              }
+            }}
+            onLayerDoubleClick={(layerId) => {
+              const layer = getLayer(layerId)
+              if (layer?.type === 'artboard') {
+                // Double-click to zoom to artboard
+                const stage = stageRef.current
+                if (stage && layer.artboardProps) {
+                  const padding = 50
+                  const targetScale = Math.min(
+                    (stageSize.width - padding * 2) / layer.artboardProps.width,
+                    (stageSize.height - padding * 2) / layer.artboardProps.height
+                  )
+
+                  viewport.setScale(targetScale)
+                  viewport.setPosition({
+                    x: (stageSize.width / 2) - (layer.x * targetScale) - (layer.artboardProps.width * targetScale / 2),
+                    y: (stageSize.height / 2) - (layer.y * targetScale) - (layer.artboardProps.height * targetScale / 2)
+                  })
+                }
+              }
+            }}
+            onClose={() => setShowLayerPanel(false)}
+          />
+        )}
       </div>
     </div>
   )

@@ -7,6 +7,7 @@ import type { SnapGuide } from '../../../services/canvas/SnappingManager'
 import { viewportCulling } from '../../../services/canvas/ViewportCullingService'
 import type { LayerNode } from '../../../store/slices/layerSystemSlice'
 import { useStore } from '../../../store/store'
+import { getSelectionBorderStyles, getSelectionGlowStyles, getDragHoverStyles } from '../../../utils/selectionStyles'
 
 import { ArtboardLoadingOverlay } from './ArtboardLoadingOverlay'
 import { LayerRenderer } from './renderers/LayerRenderer'
@@ -16,7 +17,7 @@ interface ArtboardComponentProps {
   isActive: boolean
   scale: number
   viewport?: { x: number; y: number; width: number; height: number }
-  onSelect?: (artboardId: string) => void
+  onSelect?: (artboardId: string, addToSelection?: boolean, rangeSelect?: boolean) => void
   onContextMenu?: (e: Konva.KonvaEventObject<PointerEvent>, artboardId: string) => void
   onSnapGuidesChange?: (guides: SnapGuide[]) => void
   onDragStart?: (layerId: string) => void
@@ -241,8 +242,11 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
   )
 
   // Handle click
-  const handleClick = useCallback(() => {
-    onSelect?.(artboard.id)
+  const handleClick = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
+    // Pass modifier key information for multi-selection
+    const addToSelection = e.evt.ctrlKey || e.evt.metaKey
+    const rangeSelect = e.evt.shiftKey
+    onSelect?.(artboard.id, addToSelection, rangeSelect)
   }, [artboard.id, onSelect])
 
   // Handle context menu for artboard itself
@@ -433,106 +437,88 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
       onDragEnd={handleDragEnd}
       onClick={handleClick}
       onContextMenu={handleContextMenu}
-      {...clipConfig}
     >
-      {/* Background rectangle - acts as drop target */}
-      <Rect
-        width={width}
-        height={height}
-        fill={backgroundColor}
-        listening={true}
-        onContextMenu={handleContextMenu}
-        onDragEnter={handleDragEnter}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        opacity={isDragHovering ? 0.8 : 1}
-      />
+      {/* Selection visualization - rendered outside clipped area */}
+      {selectedLayerIds.has(artboard.id) && (() => {
+        const borderStyles = getSelectionBorderStyles('artboard', isActive)
+        const glowStyles = getSelectionGlowStyles('artboard', isActive, scale)
 
-      {/* Drag hover indicator */}
-      {isDragHovering && (
+        return (
+          <>
+            {/* Shadow-based glow effect */}
+            <Rect
+              x={0}
+              y={0}
+              width={width}
+              height={height}
+              {...glowStyles}
+              strokeScaleEnabled={false}
+              listening={false}
+              shadowForStrokeEnabled={false}
+            />
+
+            {/* Main selection border */}
+            <Rect
+              x={0}
+              y={0}
+              width={width}
+              height={height}
+              {...borderStyles}
+              strokeScaleEnabled={false}
+              listening={false}
+            />
+          </>
+        )
+      })()}
+
+      {/* Clipped content group */}
+      <Group {...clipConfig}>
+        {/* Background rectangle - acts as drop target */}
         <Rect
           width={width}
           height={height}
-          stroke="rgba(100, 108, 255, 0.6)"
-          strokeWidth={3}
-          strokeScaleEnabled={false}
-          listening={false}
-          fill="rgba(100, 108, 255, 0.05)"
-          cornerRadius={4}
-          dash={[10, 5]}
+          fill={backgroundColor}
+          listening={true}
+          onContextMenu={handleContextMenu}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          opacity={isDragHovering ? 0.8 : 1}
         />
-      )}
 
-      {/* Active artboard indicator - selection handled by MultiTransformer */}
-      {isActive && (
-        <>
-          {/* Active artboard border */}
-          <Rect
-            width={width}
-            height={height}
-            stroke="rgba(100, 108, 255, 0.8)"
-            strokeWidth={2}
-            strokeScaleEnabled={false}
-            listening={false}
-            fill="transparent"
-            cornerRadius={4}
-          />
-          {/* Glow effect for active artboard */}
-          {scale >= 0.5 && (
+        {/* Drag hover indicator */}
+        {isDragHovering && (() => {
+          const hoverStyles = getDragHoverStyles()
+          return (
             <Rect
               width={width}
               height={height}
-              stroke="transparent"
-              strokeWidth={0}
+              {...hoverStyles}
               strokeScaleEnabled={false}
               listening={false}
-              fill="transparent"
-              cornerRadius={4}
-              shadowColor="rgba(100, 108, 255, 0.5)"
-              shadowBlur={scale >= 0.75 ? 20 : 10}
-              shadowOpacity={0.5}
-              shadowOffsetX={0}
-              shadowOffsetY={0}
+              dash={[10, 5]}
             />
-          )}
-        </>
-      )}
-      {/* Selected artboard glow - subtle indicator */}
-      {!isActive && selectedLayerIds.has(artboard.id) && scale >= 0.5 && (
-        <Rect
-          width={width}
-          height={height}
-          stroke="transparent"
-          strokeWidth={0}
-          strokeScaleEnabled={false}
-          listening={false}
-          fill="transparent"
-          cornerRadius={4}
-          shadowColor="rgba(100, 108, 255, 0.4)"
-          shadowBlur={10}
-          shadowOpacity={0.3}
-          shadowOffsetX={0}
-          shadowOffsetY={0}
-        />
-      )}
+          )
+        })()}
 
-      {/* Render child layers */}
-      {children.map((child) => (
-        <LayerRenderer
-          key={child.id}
-          layer={child}
-          parentScale={scale}
-          viewport={childViewport}
-          onContextMenu={handleLayerContextMenu}
-          onSnapGuidesChange={onSnapGuidesChange}
-          onDragStart={onDragStart}
-          onDragEnd={onDragEnd}
-          onLayerSelect={onLayerSelect}
-          isDraggingLayer={isDraggingLayer}
-          draggingLayerId={draggingLayerId}
-          artboardId={artboard.id}
-        />
-      ))}
+        {/* Render child layers */}
+        {children.map((child) => (
+          <LayerRenderer
+            key={child.id}
+            layer={child}
+            parentScale={scale}
+            viewport={childViewport}
+            onContextMenu={handleLayerContextMenu}
+            onSnapGuidesChange={onSnapGuidesChange}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            onLayerSelect={onLayerSelect}
+            isDraggingLayer={isDraggingLayer}
+            draggingLayerId={draggingLayerId}
+            artboardId={artboard.id}
+          />
+        ))}
+      </Group>
 
       {/* Artboard label */}
       {scale < 0.5 && ( // Only show label when zoomed out

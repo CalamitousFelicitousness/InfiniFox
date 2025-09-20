@@ -210,6 +210,12 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
         >
           <Trash2 size={16} />
         </button>
+        {/* Selection count indicator */}
+        {selectedLayerIds.size > 1 && (
+          <div className="layer-panel-selection-count">
+            {selectedLayerIds.size} selected
+          </div>
+        )}
       </div>
 
       {/* Layer tree */}

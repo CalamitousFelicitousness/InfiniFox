@@ -84,6 +84,7 @@ export function useCanvasEvents({
   const updateSelectionBox = useStore((state) => state.updateSelectionBox)
   const endSelectionBox = useStore((state) => state.endSelectionBox)
   const deselectAll = useStore((state) => state.deselectAll)
+  const deselectAllLayers = useStore((state) => state.deselectAllLayers)
 
   // Track if we're dragging a selection box
   const [isSelectionBoxDragging, setIsSelectionBoxDragging] = useState(false)
@@ -138,6 +139,13 @@ export function useCanvasEvents({
             if (onImageSelect) {
               onImageSelect(targetId)
             }
+          } else if (targetClassName === 'Rect' && !targetId) {
+            // Clicked on a rect without an ID (likely background)
+            // Deselect everything
+            if (!e.evt.ctrlKey && !e.evt.metaKey) {
+              deselectAll() // Deselect legacy images
+              deselectAllLayers() // Deselect layers
+            }
           } else if (targetId && targetId.startsWith('frame-')) {
             // Frame clicked
             const frameId = targetId.replace('frame-', '')
@@ -151,15 +159,16 @@ export function useCanvasEvents({
               return
             }
 
-            // Clicked on empty stage/layer - start selection box
+            // Clicked on empty stage/layer - deselect everything first
+            if (!e.evt.ctrlKey && !e.evt.metaKey) {
+              deselectAll() // Deselect legacy images
+              deselectAllLayers() // Deselect layers
+            }
+
+            // Then start selection box for drag selection
             const canvasPos = screenToCanvas(pointer)
             startSelectionBox(canvasPos.x, canvasPos.y)
             setIsSelectionBoxDragging(true)
-
-            // Also deselect all if not holding ctrl
-            if (!e.evt.ctrlKey && !e.evt.metaKey) {
-              deselectAll()
-            }
           } else {
             // Check if target is part of a transformer (handles are child shapes)
             let isTransformerElement = targetClassName === 'Transformer'
@@ -175,7 +184,8 @@ export function useCanvasEvents({
             // Only deselect if not clicking on transformer or its children
             if (!isTransformerElement) {
               if (!e.evt.ctrlKey && !e.evt.metaKey) {
-                deselectAll()
+                deselectAll() // Deselect legacy images
+                deselectAllLayers() // Deselect layers
               }
               if (onImageSelect) onImageSelect(null)
               if (onFrameSelect) onFrameSelect(null)
@@ -198,6 +208,7 @@ export function useCanvasEvents({
       onFrameSelect,
       startSelectionBox,
       deselectAll,
+      deselectAllLayers,
       screenToCanvas,
     ]
   )

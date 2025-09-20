@@ -1,0 +1,354 @@
+/**
+ * Floating Layer Panel Styles
+ * Extends shared floating-panel patterns
+ */
+
+/* ==========================================
+   Base Panel Styles - extends floating-panel
+   ========================================== */
+
+.floating-layer-panel {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface-primary);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--layer-toolbar, 100);
+  user-select: none;
+  overflow: hidden;
+  min-width: 250px;
+  max-width: 500px;
+  min-height: 120px;
+  max-height: 80vh;
+  touch-action: none;
+  transition: var(--transition-base);
+}
+
+/* ==========================================
+   Panel States
+   ========================================== */
+
+/* Dragging state */
+.floating-layer-panel.dragging {
+  cursor: grabbing;
+  opacity: 0.9;
+}
+
+/* Resizing state */
+.floating-layer-panel.resizing {
+  opacity: 0.95;
+  transition: none;
+}
+
+/* Minimized state */
+.floating-layer-panel.state-minimized {
+  width: auto !important;
+  height: auto !important;
+  min-width: 180px;
+}
+
+/* Collapsed state */
+.floating-layer-panel.state-collapsed {
+  min-height: 120px;
+}
+
+.floating-layer-panel.state-collapsed .floating-layer-panel-content {
+  max-height: 80px;
+  overflow: hidden;
+}
+
+/* ==========================================
+   Panel Header
+   ========================================== */
+
+.floating-layer-panel-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--color-surface-secondary);
+  border-bottom: 1px solid var(--color-border-secondary);
+  min-height: 40px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+
+.floating-layer-panel.state-minimized .floating-layer-panel-header {
+  border-bottom: none;
+}
+
+/* Drag handle - matching toolbar-grip */
+.panel-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-tertiary);
+  cursor: grab;
+  transition: var(--transition-base);
+  padding: 0 var(--spacing-1);
+}
+
+.panel-drag-handle:hover {
+  color: var(--color-text-secondary);
+}
+
+.floating-layer-panel.dragging .panel-drag-handle {
+  cursor: grabbing;
+  color: var(--color-text-primary);
+}
+
+/* Panel title */
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  flex: 1;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: var(--letter-spacing-normal);
+}
+
+.panel-title svg {
+  color: var(--color-primary-400);
+  flex-shrink: 0;
+}
+
+/* Panel controls */
+.panel-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+
+.panel-control-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: var(--transition-button);
+}
+
+.panel-control-btn:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-hover);
+}
+
+.panel-control-btn:active {
+  background: var(--color-surface-active);
+}
+
+.panel-control-btn.close:hover {
+  background: rgba(var(--color-danger-rgb), 0.1);
+  color: var(--color-danger-400);
+  border-color: rgba(var(--color-danger-rgb), 0.3);
+}
+
+/* ==========================================
+   Panel Content
+   ========================================== */
+
+.floating-layer-panel-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: max-height 0.3s ease;
+}
+
+.floating-layer-panel-content .layer-panel {
+  flex: 1;
+  border: none;
+  background: transparent;
+  min-width: unset;
+  max-width: unset;
+}
+
+/* Override layer panel toolbar for floating context */
+.floating-layer-panel-content .layer-panel-toolbar {
+  background: var(--color-surface-elevated);
+  border-bottom: 1px solid var(--color-border-secondary);
+  backdrop-filter: none;
+}
+
+/* Adjust layer tree for floating context */
+.floating-layer-panel-content .layer-panel-tree {
+  background: transparent;
+  scrollbar-width: thin;
+}
+
+.floating-layer-panel-content .layer-panel-tree::-webkit-scrollbar {
+  width: 6px;
+}
+
+.floating-layer-panel-content .layer-panel-tree::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.floating-layer-panel-content .layer-panel-tree::-webkit-scrollbar-thumb {
+  background: rgba(var(--color-border-rgb), 0.5);
+  border-radius: 3px;
+}
+
+.floating-layer-panel-content .layer-panel-tree::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--color-border-rgb), 0.7);
+}
+
+/* ==========================================
+   Resize Handle
+   ========================================== */
+
+.floating-layer-panel-resize {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  cursor: nwse-resize;
+  z-index: 10;
+}
+
+.floating-layer-panel-resize::before {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid var(--color-border-secondary);
+  border-bottom: 2px solid var(--color-border-secondary);
+  opacity: 0.5;
+  transition: var(--transition-opacity);
+}
+
+.floating-layer-panel-resize:hover::before {
+  opacity: 1;
+  border-color: var(--color-primary-400);
+}
+
+/* ==========================================
+   Animation Classes - Smooth entry animations
+   ========================================== */
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.floating-layer-panel {
+  animation: slideIn 0.3s ease;
+}
+
+/* ==========================================
+   Responsive Adjustments
+   ========================================== */
+
+/* Small screens */
+@media (max-width: 640px) {
+  .floating-layer-panel {
+    max-width: calc(100vw - var(--spacing-4));
+    max-height: 60vh;
+  }
+
+  .floating-layer-panel-header {
+    padding: var(--spacing-1-5) var(--spacing-2);
+  }
+
+  .panel-control-btn {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* Touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .floating-layer-panel-header {
+    min-height: 44px;
+  }
+
+  .panel-control-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .panel-drag-handle {
+    padding: 0 var(--spacing-2);
+  }
+}
+
+/* ==========================================
+   Dark Theme Adjustments
+   ========================================== */
+
+/* Theme adjustments are handled by CSS variables */
+
+/* ==========================================
+   Focus States
+   ========================================== */
+
+.floating-layer-panel:focus-within {
+  box-shadow: var(--shadow-toolbar-floating), 0 0 0 2px rgba(var(--color-primary-rgb), 0.3);
+}
+
+.panel-control-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-sm);
+}
+
+/* ==========================================
+   Loading State
+   ========================================== */
+
+.floating-layer-panel.loading .floating-layer-panel-content {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.floating-layer-panel.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid var(--color-primary-400);
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

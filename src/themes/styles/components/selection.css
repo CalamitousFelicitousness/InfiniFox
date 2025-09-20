@@ -1,0 +1,247 @@
+/**
+ * InfiniFox Selection Styles
+ * Unified selection effects for canvas elements using design tokens
+ * Shared by artboards, images, and other selectable elements
+ */
+
+/* ==========================================
+   CSS Variables for Selection
+   ========================================== */
+
+:root {
+  /* Selection-specific custom properties */
+  --selection-border-color: var(--color-primary-500);
+  --selection-border-color-active: var(--color-primary-400);
+  --selection-border-width: var(--border-width-base);
+  --selection-border-width-active: var(--border-width-medium);
+
+  /* Selection glow colors with proper opacity */
+  --selection-glow-color: var(--color-primary-500);
+  --selection-glow-color-rgb: 100, 108, 255; /* Primary-500 RGB values */
+
+  /* Selection glow intensities */
+  --selection-glow-blur-sm: 15;
+  --selection-glow-blur-base: 25;
+  --selection-glow-blur-lg: 40;
+  --selection-glow-blur-xl: 50;
+
+  /* Selection glow opacities */
+  --selection-glow-opacity-subtle: 0.3;
+  --selection-glow-opacity-base: 0.5;
+  --selection-glow-opacity-strong: 0.7;
+  --selection-glow-opacity-intense: 0.85;
+
+  /* Selection border opacities */
+  --selection-border-opacity-base: 0.85;
+  --selection-border-opacity-active: 1;
+}
+
+/* ==========================================
+   Base Selection Classes
+   ========================================== */
+
+/* Base selection container attributes for Konva elements */
+.canvas-selection {
+  /* These values will be read by JavaScript and applied to Konva elements */
+  --stroke: var(--selection-border-color);
+  --stroke-width: var(--selection-border-width);
+  --stroke-opacity: var(--selection-border-opacity-base);
+}
+
+.canvas-selection[data-active="true"] {
+  --stroke: var(--selection-border-color-active);
+  --stroke-width: var(--selection-border-width-active);
+  --stroke-opacity: var(--selection-border-opacity-active);
+}
+
+/* ==========================================
+   Selection Glow Effects
+   ========================================== */
+
+/* Base glow effect */
+.canvas-selection-glow {
+  --shadow-color: rgba(var(--selection-glow-color-rgb), var(--selection-glow-opacity-base));
+  --shadow-blur: var(--selection-glow-blur-base);
+  --shadow-opacity: var(--selection-glow-opacity-base);
+  --shadow-offset-x: 0;
+  --shadow-offset-y: 0;
+}
+
+/* Artboard selection - stronger, more prominent */
+.canvas-selection-glow--artboard {
+  --shadow-color: rgba(var(--selection-glow-color-rgb), var(--selection-glow-opacity-strong));
+  --shadow-blur: var(--selection-glow-blur-lg);
+  --shadow-opacity: var(--selection-glow-opacity-strong);
+}
+
+.canvas-selection-glow--artboard[data-active="true"] {
+  --shadow-color: rgba(var(--selection-glow-color-rgb), var(--selection-glow-opacity-intense));
+  --shadow-blur: var(--selection-glow-blur-xl);
+  --shadow-opacity: var(--selection-glow-opacity-intense);
+}
+
+/* Image selection - subtler effect */
+.canvas-selection-glow--image {
+  --shadow-color: rgba(var(--selection-glow-color-rgb), var(--selection-glow-opacity-subtle));
+  --shadow-blur: var(--selection-glow-blur-sm);
+  --shadow-opacity: var(--selection-glow-opacity-subtle);
+}
+
+.canvas-selection-glow--image[data-active="true"] {
+  --shadow-color: rgba(var(--selection-glow-color-rgb), var(--selection-glow-opacity-base));
+  --shadow-blur: var(--selection-glow-blur-base);
+  --shadow-opacity: var(--selection-glow-opacity-base);
+}
+
+/* Group selection */
+.canvas-selection-glow--group {
+  --shadow-color: rgba(var(--selection-glow-color-rgb), var(--selection-glow-opacity-base));
+  --shadow-blur: var(--selection-glow-blur-base);
+  --shadow-opacity: var(--selection-glow-opacity-base);
+}
+
+/* ==========================================
+   Selection Border Styles
+   ========================================== */
+
+.canvas-selection-border {
+  --stroke: rgba(var(--selection-glow-color-rgb), var(--selection-border-opacity-base));
+  --stroke-width: var(--selection-border-width);
+  --fill: transparent;
+  --listening: false;
+  --stroke-scale-enabled: false;
+}
+
+.canvas-selection-border--active {
+  --stroke: rgba(var(--selection-glow-color-rgb), var(--selection-border-opacity-active));
+  --stroke-width: var(--selection-border-width-active);
+}
+
+.canvas-selection-border--artboard {
+  --stroke: rgba(var(--selection-glow-color-rgb), var(--selection-border-opacity-base));
+  --stroke-width: var(--selection-border-width);
+}
+
+.canvas-selection-border--artboard[data-active="true"] {
+  --stroke: rgba(var(--selection-glow-color-rgb), var(--selection-border-opacity-active));
+  --stroke-width: var(--selection-border-width-active);
+}
+
+/* ==========================================
+   Zoom-based Adjustments
+   ========================================== */
+
+/* Hide selection effects at very low zoom levels */
+.canvas-selection-glow[data-zoom-level="low"] {
+  --shadow-blur: calc(var(--selection-glow-blur-sm) * 0.5);
+  --shadow-opacity: calc(var(--selection-glow-opacity-base) * 0.5);
+}
+
+.canvas-selection-glow[data-zoom-level="very-low"] {
+  display: none;
+}
+
+/* Enhance selection at high zoom levels */
+.canvas-selection-glow[data-zoom-level="high"] {
+  --shadow-blur: calc(var(--selection-glow-blur-base) * 1.2);
+}
+
+/* ==========================================
+   Drag Hover Effects
+   ========================================== */
+
+.canvas-selection-drag-hover {
+  --stroke: rgba(var(--selection-glow-color-rgb), 0.6);
+  --stroke-width: var(--border-width-thick);
+  --fill: rgba(var(--selection-glow-color-rgb), 0.05);
+  --stroke-dasharray: 10 5;
+}
+
+/* ==========================================
+   Multi-Selection Indicator
+   ========================================== */
+
+.canvas-selection--multi {
+  --stroke: var(--color-info-500);
+  --selection-glow-color-rgb: 33, 150, 243; /* Info color RGB */
+}
+
+/* ==========================================
+   Selection States
+   ========================================== */
+
+/* Locked element selection */
+.canvas-selection--locked {
+  --stroke: var(--color-warning-500);
+  --selection-glow-color-rgb: 255, 152, 0; /* Warning color RGB */
+  --stroke-dasharray: 5 5;
+}
+
+/* Error state selection */
+.canvas-selection--error {
+  --stroke: var(--color-error-500);
+  --selection-glow-color-rgb: 244, 67, 54; /* Error color RGB */
+}
+
+/* ==========================================
+   Animation Classes
+   ========================================== */
+
+@keyframes selection-pulse {
+  0%, 100% {
+    opacity: var(--selection-glow-opacity-base);
+  }
+  50% {
+    opacity: var(--selection-glow-opacity-strong);
+  }
+}
+
+.canvas-selection--animating {
+  animation: selection-pulse var(--duration-glacial) var(--easing-ease-in-out) infinite;
+}
+
+/* ==========================================
+   Accessibility
+   ========================================== */
+
+/* High contrast mode adjustments */
+@media (prefers-contrast: high) {
+  :root {
+    --selection-border-width: var(--border-width-medium);
+    --selection-border-width-active: var(--border-width-thick);
+    --selection-glow-opacity-base: 0.8;
+    --selection-glow-opacity-strong: 1;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .canvas-selection--animating {
+    animation: none;
+  }
+}
+
+/* ==========================================
+   Helper Classes for JavaScript
+   ========================================== */
+
+/* These data attributes help JavaScript apply the right values to Konva */
+[data-selection-type="artboard"] {
+  --selection-type: artboard;
+}
+
+[data-selection-type="image"] {
+  --selection-type: image;
+}
+
+[data-selection-type="group"] {
+  --selection-type: group;
+}
+
+[data-selection-active="true"] {
+  --selection-active: true;
+}
+
+[data-selection-active="false"] {
+  --selection-active: false;
+}
