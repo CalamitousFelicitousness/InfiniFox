@@ -2,12 +2,17 @@ import Konva from 'konva'
 import React, { useCallback, useMemo, useRef, useEffect, useState } from 'react'
 import { Group, Rect } from 'react-konva'
 
+import { CanvasTool } from '../../../features/canvas/hooks/useCanvasTools'
 import { snappingManager } from '../../../services/canvas/SnappingManager'
 import type { SnapGuide } from '../../../services/canvas/SnappingManager'
 import { viewportCulling } from '../../../services/canvas/ViewportCullingService'
 import type { LayerNode, SelectionContext } from '../../../store/slices/layerSystemSlice'
 import { useStore } from '../../../store/store'
-import { getSelectionBorderStyles, getSelectionGlowStyles, getDragHoverStyles } from '../../../utils/selectionStyles'
+import {
+  getSelectionBorderStyles,
+  getSelectionGlowStyles,
+  getDragHoverStyles,
+} from '../../../utils/selectionStyles'
 
 import { ArtboardLoadingOverlay } from './ArtboardLoadingOverlay'
 import { LayerRenderer } from './renderers/LayerRenderer'
@@ -15,9 +20,15 @@ import { LayerRenderer } from './renderers/LayerRenderer'
 interface ArtboardComponentProps {
   artboard: LayerNode
   isActive: boolean
+  currentTool?: CanvasTool
   scale: number
   viewport?: { x: number; y: number; width: number; height: number }
-  onSelect?: (artboardId: string, addToSelection?: boolean, rangeSelect?: boolean, context?: SelectionContext) => void
+  onSelect?: (
+    artboardId: string,
+    addToSelection?: boolean,
+    rangeSelect?: boolean,
+    context?: SelectionContext
+  ) => void
   onContextMenu?: (e: Konva.KonvaEventObject<PointerEvent>, artboardId: string) => void
   onSnapGuidesChange?: (guides: SnapGuide[]) => void
   onDragStart?: (layerId: string) => void
@@ -34,6 +45,7 @@ interface ArtboardComponentProps {
 export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
   artboard,
   isActive,
+  currentTool,
   scale,
   viewport,
   onSelect,
@@ -106,7 +118,10 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
   const { width, height, backgroundColor, clipped } = artboardProps
 
   // Get child layers - include layers in dependencies to re-render when children change
-  const children = useMemo(() => getLayerChildren(artboard.id), [artboard.id, getLayerChildren, layers])
+  const children = useMemo(
+    () => getLayerChildren(artboard.id),
+    [artboard.id, getLayerChildren, layers]
+  )
 
   // Check for active loading operations on this artboard
   const loadingOperation = useMemo(() => {
@@ -189,7 +204,18 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
   }, [filters, cached, artboard.id, updateLayerDirect])
 
   // Handle drag start
-  const handleDragStart = useCallback(() => {
+  const handleDragStart = useCallback((e: Konva.KonvaEventObject<DragEvent>) => {
+    const target = e.target
+
+    // Check if a child initiated the drag
+    // For nested Groups, Konva might trigger both drags
+    if (target.id() !== artboard.id) {
+      console.log('Artboard drag prevented - initiated by child:', target.id())
+      // Stop the artboard from dragging
+      e.target.stopDrag()
+      return
+    }
+
     // Set current object for snapping manager
     snappingManager.setCurrentObject(artboard.id)
     onDragStart?.(artboard.id)
@@ -198,6 +224,11 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
   // Handle drag move with snapping
   const handleDragMove = useCallback(
     (e: Konva.KonvaEventObject<DragEvent>) => {
+      // If the target is not the artboard itself, ignore
+      if (e.target.id() !== artboard.id) {
+        return
+      }
+
       const node = e.target as Konva.Group
       const { width = 800, height = 600 } = artboard.artboardProps || {}
 
@@ -211,12 +242,17 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
       // Update snap guides with throttling
       updateSnapGuidesThrottled(snapResult.guides)
     },
-    [artboard.artboardProps, updateSnapGuidesThrottled]
+    [artboard.id, artboard.artboardProps, updateSnapGuidesThrottled]
   )
 
   // Handle drag end
   const handleDragEnd = useCallback(
     (e: Konva.KonvaEventObject<DragEvent>) => {
+      // If the target is not the artboard itself, ignore
+      if (e.target.id() !== artboard.id) {
+        return
+      }
+
       const node = e.target as Konva.Group
 
       // Clear snapping state
@@ -242,12 +278,15 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
   )
 
   // Handle click
-  const handleClick = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
-    // Pass modifier key information for multi-selection
-    const addToSelection = e.evt.ctrlKey || e.evt.metaKey
-    const rangeSelect = e.evt.shiftKey
-    onSelect?.(artboard.id, addToSelection, rangeSelect, 'canvas')
-  }, [artboard.id, onSelect])
+  const handleClick = useCallback(
+    (e: Konva.KonvaEventObject<MouseEvent>) => {
+      // Pass modifier key information for multi-selection
+      const addToSelection = e.evt.ctrlKey || e.evt.metaKey
+      const rangeSelect = e.evt.shiftKey
+      onSelect?.(artboard.id, addToSelection, rangeSelect, 'canvas')
+    },
+    [artboard.id, onSelect]
+  )
 
   // Handle context menu for artboard itself
   const handleContextMenu = useCallback(
@@ -285,7 +324,7 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
       console.log('ArtboardComponent handleDrop called', {
         draggingLayerId,
         artboardId: artboard.id,
-        isDragHovering
+        isDragHovering,
       })
       setIsDragHovering(false)
 
@@ -331,7 +370,7 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
           const absPos = groupRef.current.getAbsolutePosition()
           relativePos = {
             x: pointerPos.x - absPos.x,
-            y: pointerPos.y - absPos.y
+            y: pointerPos.y - absPos.y,
           }
         }
       }
@@ -366,11 +405,13 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
         moveLayer(draggingLayerId, artboard.id)
         updateLayerDirect(draggingLayerId, {
           x: centeredX,
-          y: centeredY
+          y: centeredY,
         })
       } else {
         // Fallback if we can't get relative pointer position
-        console.log('Warning: Could not get relative pointer position, falling back to stage position')
+        console.log(
+          'Warning: Could not get relative pointer position, falling back to stage position'
+        )
         const currentX = draggedLayer.x || 0
         const currentY = draggedLayer.y || 0
         const artboardX = artboard.x || 0
@@ -382,11 +423,20 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
         moveLayer(draggingLayerId, artboard.id)
         updateLayerDirect(draggingLayerId, {
           x: relativeX,
-          y: relativeY
+          y: relativeY,
         })
       }
     },
-    [draggingLayerId, artboard.id, artboard.x, artboard.y, getLayer, moveLayer, updateLayerDirect, isDragHovering]
+    [
+      draggingLayerId,
+      artboard.id,
+      artboard.x,
+      artboard.y,
+      getLayer,
+      moveLayer,
+      updateLayerDirect,
+      isDragHovering,
+    ]
   )
 
   // Handle context menu for child layers
@@ -423,6 +473,9 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
       }
     : {}
 
+  // Check if we're in SELECT mode
+  const isSelectTool = currentTool === CanvasTool.SELECT
+
   return (
     <Group
       ref={groupRef}
@@ -431,7 +484,7 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
       y={y}
       opacity={opacity}
       visible={visible}
-      draggable={!locked}
+      draggable={!locked && isSelectTool}
       onDragStart={handleDragStart}
       onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}
@@ -439,37 +492,38 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
       onContextMenu={handleContextMenu}
     >
       {/* Selection visualization - rendered outside clipped area */}
-      {selectedLayerIds.has(artboard.id) && (() => {
-        const borderStyles = getSelectionBorderStyles('artboard', isActive)
-        const glowStyles = getSelectionGlowStyles('artboard', isActive, scale)
+      {selectedLayerIds.has(artboard.id) &&
+        (() => {
+          const borderStyles = getSelectionBorderStyles('artboard', isActive)
+          const glowStyles = getSelectionGlowStyles('artboard', isActive, scale)
 
-        return (
-          <>
-            {/* Shadow-based glow effect */}
-            <Rect
-              x={0}
-              y={0}
-              width={width}
-              height={height}
-              {...glowStyles}
-              strokeScaleEnabled={false}
-              listening={false}
-              shadowForStrokeEnabled={false}
-            />
+          return (
+            <>
+              {/* Shadow-based glow effect */}
+              <Rect
+                x={0}
+                y={0}
+                width={width}
+                height={height}
+                {...glowStyles}
+                strokeScaleEnabled={false}
+                listening={false}
+                shadowForStrokeEnabled={false}
+              />
 
-            {/* Main selection border */}
-            <Rect
-              x={0}
-              y={0}
-              width={width}
-              height={height}
-              {...borderStyles}
-              strokeScaleEnabled={false}
-              listening={false}
-            />
-          </>
-        )
-      })()}
+              {/* Main selection border */}
+              <Rect
+                x={0}
+                y={0}
+                width={width}
+                height={height}
+                {...borderStyles}
+                strokeScaleEnabled={false}
+                listening={false}
+              />
+            </>
+          )
+        })()}
 
       {/* Clipped content group */}
       <Group {...clipConfig}>
@@ -487,25 +541,27 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
         />
 
         {/* Drag hover indicator */}
-        {isDragHovering && (() => {
-          const hoverStyles = getDragHoverStyles()
-          return (
-            <Rect
-              width={width}
-              height={height}
-              {...hoverStyles}
-              strokeScaleEnabled={false}
-              listening={false}
-              dash={[10, 5]}
-            />
-          )
-        })()}
+        {isDragHovering &&
+          (() => {
+            const hoverStyles = getDragHoverStyles()
+            return (
+              <Rect
+                width={width}
+                height={height}
+                {...hoverStyles}
+                strokeScaleEnabled={false}
+                listening={false}
+                dash={[10, 5]}
+              />
+            )
+          })()}
 
         {/* Render child layers */}
         {children.map((child) => (
           <LayerRenderer
             key={child.id}
             layer={child}
+            currentTool={currentTool}
             parentScale={scale}
             viewport={childViewport}
             onContextMenu={handleLayerContextMenu}

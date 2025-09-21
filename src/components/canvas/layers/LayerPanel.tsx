@@ -14,6 +14,7 @@ import {
   Trash2,
   Copy,
   FolderPlus,
+  Brush,
 } from 'lucide-react'
 import React, { useCallback, useState, useRef } from 'react'
 
@@ -60,6 +61,8 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
     addArtboard,
     addLayer,
     moveLayer,
+    createNewDrawingLayer,
+    activeArtboardId,
   } = useStore()
 
   const [expandedLayers, setExpandedLayers] = useState<Set<string>>(new Set())
@@ -146,6 +149,11 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
     }
   }, [selectedLayerIds, groupLayers, addLayer, selectLayer])
 
+  const handleNewDrawingLayer = useCallback(() => {
+    // Create drawing layer in the active artboard if there is one
+    createNewDrawingLayer(activeArtboardId)
+  }, [createNewDrawingLayer, activeArtboardId])
+
   const handleDelete = useCallback(() => {
     selectedLayerIds.forEach((id) => deleteLayer(id))
     deselectAllLayers()
@@ -223,72 +231,73 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
       <div className={`layer-panel ${className || ''}`}>
         {/* Toolbar */}
         <div className="layer-panel-toolbar">
-        <button className="layer-panel-tool" onClick={handleNewArtboard} title="New Artboard">
-          <Square size={16} />
-        </button>
-        <button className="layer-panel-tool" onClick={handleNewGroup} title="New Group">
-          <FolderPlus size={16} />
-        </button>
-        <button
-          className="layer-panel-tool"
-          onClick={handleDuplicate}
-          disabled={selectedLayerIds.size === 0}
-          title="Duplicate"
-        >
-          <Copy size={16} />
-        </button>
-        <button
-          className="layer-panel-tool"
-          onClick={handleDelete}
-          disabled={selectedLayerIds.size === 0}
-          title="Delete"
-        >
-          <Trash2 size={16} />
-        </button>
-        {/* Selection count indicator */}
-        {selectedLayerIds.size > 1 && (
-          <div className="layer-panel-selection-count">
-            {selectedLayerIds.size} selected
-          </div>
-        )}
-      </div>
+          <button className="layer-panel-tool" onClick={handleNewArtboard} title="New Artboard">
+            <Square size={16} />
+          </button>
+          <button className="layer-panel-tool" onClick={handleNewGroup} title="New Group">
+            <FolderPlus size={16} />
+          </button>
+          <button className="layer-panel-tool" onClick={handleNewDrawingLayer} title="New Drawing Layer">
+            <Brush size={16} />
+          </button>
+          <button
+            className="layer-panel-tool"
+            onClick={handleDuplicate}
+            disabled={selectedLayerIds.size === 0}
+            title="Duplicate"
+          >
+            <Copy size={16} />
+          </button>
+          <button
+            className="layer-panel-tool"
+            onClick={handleDelete}
+            disabled={selectedLayerIds.size === 0}
+            title="Delete"
+          >
+            <Trash2 size={16} />
+          </button>
+          {/* Selection count indicator */}
+          {selectedLayerIds.size > 1 && (
+            <div className="layer-panel-selection-count">{selectedLayerIds.size} selected</div>
+          )}
+        </div>
 
-      {/* Layer tree */}
-      <div className="layer-panel-tree">
-        {rootLayers.length === 0 ? (
-          <div className="layer-panel-empty">
-            <Layers size={48} />
-            <p>No layers</p>
-            <button onClick={handleNewArtboard}>Create Artboard</button>
-          </div>
-        ) : (
-          rootLayers.map((layer) => (
-            <LayerTreeItem
-              key={layer.id}
-              layer={layer}
-              depth={0}
-              isSelected={selectedLayerIds.has(layer.id)}
-              isExpanded={expandedLayers.has(layer.id)}
-              isRenaming={renamingLayerId === layer.id}
-              isDragging={draggedLayerId === layer.id}
-              isDropTarget={dropTargetId === layer.id}
-              dropPosition={dropTargetId === layer.id ? dropPosition : null}
-              onSelect={handleSelect}
-              onDoubleClick={onLayerDoubleClick}
-              onToggleExpanded={toggleExpanded}
-              onToggleVisibility={toggleLayerVisibility}
-              onToggleLock={toggleLayerLock}
-              onStartRename={setRenamingLayerId}
-              onRename={handleRename}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-              onDragEnd={handleDragEnd}
-            />
-          ))
-        )}
+        {/* Layer tree */}
+        <div className="layer-panel-tree">
+          {rootLayers.length === 0 ? (
+            <div className="layer-panel-empty">
+              <Layers size={48} />
+              <p>No layers</p>
+              <button onClick={handleNewArtboard}>Create Artboard</button>
+            </div>
+          ) : (
+            rootLayers.map((layer) => (
+              <LayerTreeItem
+                key={layer.id}
+                layer={layer}
+                depth={0}
+                isSelected={selectedLayerIds.has(layer.id)}
+                isExpanded={expandedLayers.has(layer.id)}
+                isRenaming={renamingLayerId === layer.id}
+                isDragging={draggedLayerId === layer.id}
+                isDropTarget={dropTargetId === layer.id}
+                dropPosition={dropTargetId === layer.id ? dropPosition : null}
+                onSelect={handleSelect}
+                onDoubleClick={onLayerDoubleClick}
+                onToggleExpanded={toggleExpanded}
+                onToggleVisibility={toggleLayerVisibility}
+                onToggleLock={toggleLayerLock}
+                onStartRename={setRenamingLayerId}
+                onRename={handleRename}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                onDragEnd={handleDragEnd}
+              />
+            ))
+          )}
+        </div>
       </div>
-    </div>
     </LayerPanelContext.Provider>
   )
 }

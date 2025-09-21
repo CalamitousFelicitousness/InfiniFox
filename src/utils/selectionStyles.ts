@@ -38,7 +38,7 @@ export function getSelectionBorderStyles(
   return {
     stroke: `rgba(${primaryRgb}, ${borderOpacity})`,
     strokeWidth: borderWidth,
-    fill: 'transparent'
+    fill: 'transparent',
   }
 }
 
@@ -77,7 +77,8 @@ export function getSelectionGlowStyles(
 
     case 'group':
       shadowBlur = parseFloat(root.getPropertyValue('--selection-glow-blur-base').trim()) || 25
-      shadowOpacity = parseFloat(root.getPropertyValue('--selection-glow-opacity-base').trim()) || 0.5
+      shadowOpacity =
+        parseFloat(root.getPropertyValue('--selection-glow-opacity-base').trim()) || 0.5
       break
 
     default:
@@ -91,7 +92,7 @@ export function getSelectionGlowStyles(
     return {
       stroke: 'transparent',
       strokeWidth: 0,
-      fill: 'transparent'
+      fill: 'transparent',
     }
   } else if (scale < 0.5) {
     // Low zoom - reduce glow
@@ -110,7 +111,7 @@ export function getSelectionGlowStyles(
     shadowBlur,
     shadowOpacity,
     shadowOffsetX: 0,
-    shadowOffsetY: 0
+    shadowOffsetY: 0,
   }
 }
 
@@ -124,7 +125,7 @@ export function getDragHoverStyles(): SelectionStyles {
   return {
     stroke: `rgba(${primaryRgb}, 0.6)`,
     strokeWidth: 3,
-    fill: `rgba(${primaryRgb}, 0.05)`
+    fill: `rgba(${primaryRgb}, 0.05)`,
   }
 }
 

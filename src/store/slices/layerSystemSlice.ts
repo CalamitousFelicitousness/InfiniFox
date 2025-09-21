@@ -77,6 +77,7 @@ export interface ShapeLayerProps {
 export interface DrawingLayerProps {
   strokes: Array<{
     points: number[]
+    outline?: number[][]
     color: string
     strokeWidth: number
     opacity: number
@@ -255,7 +256,12 @@ export interface LayerSystemSlice {
   ungroupLayers: (groupId: string) => void
 
   // Selection operations
-  selectLayer: (layerId: string, addToSelection?: boolean, rangeSelect?: boolean, context?: SelectionContext) => void
+  selectLayer: (
+    layerId: string,
+    addToSelection?: boolean,
+    rangeSelect?: boolean,
+    context?: SelectionContext
+  ) => void
   selectLayers: (layerIds: string[]) => void
   selectLayerRange: (fromId: string, toId: string, addToSelection?: boolean) => void
   selectLayerRangeSpatial: (fromId: string, toId: string, addToSelection?: boolean) => void
@@ -533,6 +539,16 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
       const layer = newLayers.get(layerId)
 
       if (layer) {
+        // Handle drawingProps specially to merge strokes array
+        if (updates.drawingProps && layer.drawingProps) {
+          updates = {
+            ...updates,
+            drawingProps: {
+              ...layer.drawingProps,
+              ...updates.drawingProps
+            }
+          }
+        }
         Object.assign(layer, updates, { updatedAt: Date.now() })
       }
 
@@ -856,7 +872,12 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
   },
 
   // Selection operations
-  selectLayer: (layerId: string, addToSelection = false, rangeSelect = false, context: SelectionContext = 'menu') => {
+  selectLayer: (
+    layerId: string,
+    addToSelection = false,
+    rangeSelect = false,
+    context: SelectionContext = 'menu'
+  ) => {
     const state = get() as LayerSystemSlice
 
     // Handle range selection based on context
@@ -878,7 +899,7 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
 
       return {
         selectedLayerIds: newSelectedIds,
-        lastSelectedLayerId: layerId // Track last selected for range selection
+        lastSelectedLayerId: layerId, // Track last selected for range selection
       }
     })
   },
@@ -886,13 +907,12 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
   selectLayers: (layerIds: string[]) => {
     set({
       selectedLayerIds: new Set(layerIds),
-      lastSelectedLayerId: layerIds.length > 0 ? layerIds[layerIds.length - 1] : null
+      lastSelectedLayerId: layerIds.length > 0 ? layerIds[layerIds.length - 1] : null,
     })
   },
 
   selectLayerRange: (fromId: string, toId: string, addToSelection = false) => {
     const state = get() as LayerSystemSlice
-
 
     // Helper function to recursively get all layers in visual order
     const getAllLayersInOrder = (): string[] => {
@@ -902,12 +922,12 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
         result.push(layerId)
         const layer = state.layers.get(layerId)
         if (layer?.childIds) {
-          layer.childIds.forEach(childId => addLayerAndChildren(childId))
+          layer.childIds.forEach((childId) => addLayerAndChildren(childId))
         }
       }
 
       // Start with root layers in order
-      state.layerOrder.forEach(rootId => addLayerAndChildren(rootId))
+      state.layerOrder.forEach((rootId) => addLayerAndChildren(rootId))
       return result
     }
 
@@ -916,7 +936,6 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
 
     const fromIndex = allLayers.indexOf(fromId)
     const toIndex = allLayers.indexOf(toId)
-
 
     if (fromIndex === -1 || toIndex === -1) {
       // One of the layers wasn't found, just select the target
@@ -929,18 +948,16 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
     const endIndex = Math.max(fromIndex, toIndex)
     const layersToSelect = allLayers.slice(startIndex, endIndex + 1)
 
-
     // Update selection
     set((state) => {
       const newSelectedIds = addToSelection
         ? new Set([...state.selectedLayerIds, ...layersToSelect])
         : new Set(layersToSelect)
 
-
       // Log the actual state update
       const result = {
         selectedLayerIds: newSelectedIds,
-        lastSelectedLayerId: toId
+        lastSelectedLayerId: toId,
       }
 
       return result
@@ -965,7 +982,7 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
       x: Math.min(fromBounds.x, toBounds.x),
       y: Math.min(fromBounds.y, toBounds.y),
       width: 0, // Will be calculated
-      height: 0 // Will be calculated
+      height: 0, // Will be calculated
     }
 
     const maxX = Math.max(fromBounds.x + fromBounds.width, toBounds.x + toBounds.width)
@@ -984,7 +1001,7 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
 
       return {
         selectedLayerIds: newSelectedIds,
-        lastSelectedLayerId: toId
+        lastSelectedLayerId: toId,
       }
     })
   },
@@ -1024,7 +1041,8 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
       return {
         selectedLayerIds: newSelectedIds,
         // Clear last selected if it was the deselected layer
-        lastSelectedLayerId: state.lastSelectedLayerId === layerId ? null : state.lastSelectedLayerId
+        lastSelectedLayerId:
+          state.lastSelectedLayerId === layerId ? null : state.lastSelectedLayerId,
       }
     })
   },
@@ -1032,7 +1050,7 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
   deselectAllLayers: () => {
     set({
       selectedLayerIds: new Set(),
-      lastSelectedLayerId: null
+      lastSelectedLayerId: null,
     })
   },
 

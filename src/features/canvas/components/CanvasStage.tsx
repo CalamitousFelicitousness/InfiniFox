@@ -110,25 +110,33 @@ export const CanvasStage = forwardRef<Konva.Stage, CanvasStageProps>(
 CanvasStage.displayName = 'CanvasStage'
 
 /**
- * Hook to calculate stage dimensions based on container and sidebar
+ * Hook to calculate stage dimensions based on actual container size
  */
-export function useStageSize(sidebarWidth: number = 400) {
+export function useStageSize(containerRef: React.RefObject<HTMLDivElement>) {
   const [stageSize, setStageSize] = React.useState({
-    width: window.innerWidth - sidebarWidth,
+    width: window.innerWidth - 400,
     height: window.innerHeight,
   })
 
   React.useEffect(() => {
-    const handleResize = () => {
-      setStageSize({
-        width: window.innerWidth - sidebarWidth,
-        height: window.innerHeight,
-      })
-    }
+    if (!containerRef.current) return
 
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [sidebarWidth])
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect
+        setStageSize({
+          width: Math.floor(width),
+          height: Math.floor(height),
+        })
+      }
+    })
+
+    resizeObserver.observe(containerRef.current)
+
+    return () => {
+      resizeObserver.disconnect()
+    }
+  }, [containerRef])
 
   return stageSize
 }

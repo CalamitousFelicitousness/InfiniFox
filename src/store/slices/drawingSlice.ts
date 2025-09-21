@@ -1,6 +1,6 @@
 import type { StateCreator } from 'zustand'
 
-import type { LayerNode } from './layerSystemSlice'
+import type { LayerNode, LayerSystemSlice } from './layerSystemSlice'
 
 export interface DrawingStroke {
   id: string
@@ -56,7 +56,7 @@ export interface DrawingActions {
   // Stroke management
   startDrawingStroke: (stroke: Omit<DrawingStroke, 'id' | 'timestamp'>) => void
   updateCurrentStroke: (points: number[], outline?: number[][]) => void
-  endDrawingStroke: () => void
+  endDrawingStroke: (targetArtboardId?: string | null) => void
   clearDrawingStrokes: () => void
   removeDrawingStroke: (strokeId: string) => void
 
@@ -65,6 +65,7 @@ export interface DrawingActions {
   setDrawingLayerOpacity: (opacity: number) => void
   setUseLayerSystem: (use: boolean) => void
   setCurrentDrawingLayerId: (layerId: string | null) => void
+  createNewDrawingLayer: (targetArtboardId?: string | null) => void
 
   // Export/Import
   exportDrawing: () => string // Export as data URL
@@ -72,12 +73,21 @@ export interface DrawingActions {
 
   // Layer system integration
   convertStrokeToLayer: (stroke: DrawingStroke) => LayerNode | null
+  addStrokeToLayer: (stroke: DrawingStroke, layerId: string) => void
   finalizeDrawingLayer: () => void
 }
 
 export type DrawingSlice = DrawingState & DrawingActions
 
-export const createDrawingSlice: StateCreator<DrawingSlice, [], [], DrawingSlice> = (set, get) => ({
+// The slice needs access to LayerSystemSlice for layer operations
+type StoreWithLayerSystem = DrawingSlice & LayerSystemSlice
+
+export const createDrawingSlice: StateCreator<
+  StoreWithLayerSystem,
+  [],
+  [],
+  DrawingSlice
+> = (set, get) => ({
   // Initial state
   isDrawingMode: false,
   isDrawingActive: false,
@@ -134,25 +144,93 @@ export const createDrawingSlice: StateCreator<DrawingSlice, [], [], DrawingSlice
     })
   },
 
-  endDrawingStroke: () => {
-    const state = get() as DrawingSlice & {
-      activeArtboardId?: string
-      addLayer?: (layer: LayerNode, parentId?: string) => string
-    }
+  endDrawingStroke: (targetArtboardId?: string | null) => {
+    const state = get()
     const { currentStroke, drawingStrokes, useLayerSystem } = state
+    let currentDrawingLayerId = state.currentDrawingLayerId // Get fresh value
     if (!currentStroke) return
 
     // If layer system is enabled and we have access to layer functions
-    if (useLayerSystem && state.activeArtboardId && state.addLayer) {
-      // Convert stroke to layer and add to active artboard
-      const strokeLayer = get().convertStrokeToLayer(currentStroke)
-      if (strokeLayer) {
-        state.addLayer(strokeLayer, state.activeArtboardId)
+    if (useLayerSystem && state.addLayer) {
+      // Check if we have a current drawing layer AND it still exists
+      if (currentDrawingLayerId && state.getLayer) {
+        const existingLayer = state.getLayer(currentDrawingLayerId)
+
+        // If the layer was deleted, clear the ID
+        if (!existingLayer) {
+          currentDrawingLayerId = null
+          set({ currentDrawingLayerId: null })
+        }
       }
+
+      // Now check if we have a valid current drawing layer
+      if (currentDrawingLayerId && state.getLayer && state.updateLayer) {
+        const existingLayer = state.getLayer(currentDrawingLayerId)
+
+        // If drawing on an artboard, we need to adjust the stroke coordinates
+        let adjustedStroke = currentStroke
+        if (targetArtboardId) {
+          const artboard = state.getLayer(targetArtboardId)
+          if (artboard) {
+            const artboardX = artboard.x || 0
+            const artboardY = artboard.y || 0
+
+            // Adjust stroke points to be relative to artboard
+            const adjustedPoints = []
+            for (let i = 0; i < currentStroke.points.length; i += 2) {
+              adjustedPoints.push(currentStroke.points[i] - artboardX)
+              adjustedPoints.push(currentStroke.points[i + 1] - artboardY)
+            }
+
+            // Adjust outline if it exists
+            let adjustedOutline = currentStroke.outline
+            if (currentStroke.outline && currentStroke.outline.length > 0) {
+              adjustedOutline = currentStroke.outline.map(point => [
+                point[0] - artboardX,
+                point[1] - artboardY
+              ])
+            }
+
+            adjustedStroke = {
+              ...currentStroke,
+              points: adjustedPoints,
+              outline: adjustedOutline
+            }
+          }
+        }
+
+        // Add stroke to existing layer
+        get().addStrokeToLayer(adjustedStroke, currentDrawingLayerId)
+      } else {
+        // Create new layer for first stroke
+        const strokeLayer = get().convertStrokeToLayer(currentStroke)
+        if (strokeLayer) {
+          // If drawing on an artboard, adjust coordinates to be relative to the artboard
+          if (targetArtboardId) {
+            const artboard = state.getLayer(targetArtboardId)
+            if (artboard) {
+              const artboardX = artboard.x || 0
+              const artboardY = artboard.y || 0
+
+              // Adjust stroke position to be relative to artboard
+              strokeLayer.x = (strokeLayer.x || 0) - artboardX
+              strokeLayer.y = (strokeLayer.y || 0) - artboardY
+            }
+          }
+
+          // Add to target artboard or root and set as current
+          // Cast strokeLayer to Partial since addLayer expects Partial<LayerNode>
+          const newLayerId = state.addLayer(strokeLayer as Partial<LayerNode>, targetArtboardId || undefined)
+          set({ currentDrawingLayerId: newLayerId })
+        }
+      }
+
       // Don't accumulate strokes in flat system when using layers
+      // IMPORTANT: Don't clear currentDrawingLayerId here!
       set({
         currentStroke: null,
         isDrawingActive: false,
+        // Keep currentDrawingLayerId as is
       })
     } else {
       // Legacy flat system - accumulate strokes
@@ -187,6 +265,56 @@ export const createDrawingSlice: StateCreator<DrawingSlice, [], [], DrawingSlice
   importDrawing: (_dataUrl) => {
     // This will be implemented to import a drawing from a data URL
     console.warn('Import drawing not yet implemented')
+  },
+
+  addStrokeToLayer: (stroke: DrawingStroke, layerId: string) => {
+    const state = get()
+
+    if (!state.getLayer || !state.updateLayer) return
+
+    const layer = state.getLayer(layerId)
+    if (!layer || layer.type !== 'drawing' || !layer.drawingProps) return
+
+    // Get current layer position
+    const layerX = layer.x || 0
+    const layerY = layer.y || 0
+
+    // Simply adjust the new stroke to be relative to current layer position
+    // No need to recalculate bounds or move the layer
+    const adjustedPoints = []
+    for (let i = 0; i < stroke.points.length; i += 2) {
+      adjustedPoints.push(stroke.points[i] - layerX)
+      adjustedPoints.push(stroke.points[i + 1] - layerY)
+    }
+
+    let adjustedOutline = undefined
+    if (stroke.outline && stroke.outline.length > 0) {
+      adjustedOutline = stroke.outline.map(point => [
+        point[0] - layerX,
+        point[1] - layerY
+      ])
+    }
+
+    // Add new stroke to layer
+    const newStroke = {
+      points: adjustedPoints,
+      outline: adjustedOutline,
+      color: stroke.color,
+      strokeWidth: stroke.strokeWidth,
+      opacity: stroke.opacity,
+    }
+
+    // Update layer with combined strokes - keep layer position unchanged
+    state.updateLayer(layerId, {
+      drawingProps: {
+        strokes: [...layer.drawingProps.strokes, newStroke]
+      }
+    })
+  },
+
+  createNewDrawingLayer: (targetArtboardId?: string | null) => {
+    // Clear current drawing layer ID so next stroke creates a new layer
+    set({ currentDrawingLayerId: null })
   },
 
   convertStrokeToLayer: (stroke: DrawingStroke): LayerNode | null => {
@@ -227,6 +355,22 @@ export const createDrawingSlice: StateCreator<DrawingSlice, [], [], DrawingSlice
     maxX += padding
     maxY += padding
 
+    // Adjust stroke points to be relative to the layer position
+    const adjustedPoints = []
+    for (let i = 0; i < stroke.points.length; i += 2) {
+      adjustedPoints.push(stroke.points[i] - minX)
+      adjustedPoints.push(stroke.points[i + 1] - minY)
+    }
+
+    // Adjust outline if it exists
+    let adjustedOutline = undefined
+    if (stroke.outline && stroke.outline.length > 0) {
+      adjustedOutline = stroke.outline.map(point => [
+        point[0] - minX,
+        point[1] - minY
+      ])
+    }
+
     // Create drawing layer node
     const layer: LayerNode = {
       id: strokeId,
@@ -240,7 +384,8 @@ export const createDrawingSlice: StateCreator<DrawingSlice, [], [], DrawingSlice
       drawingProps: {
         strokes: [
           {
-            points: stroke.points,
+            points: adjustedPoints,
+            outline: adjustedOutline,
             color: stroke.color,
             strokeWidth: stroke.strokeWidth,
             opacity: stroke.opacity,
@@ -255,10 +400,7 @@ export const createDrawingSlice: StateCreator<DrawingSlice, [], [], DrawingSlice
   },
 
   finalizeDrawingLayer: () => {
-    const state = get() as DrawingSlice & {
-      activeArtboardId?: string
-      addLayer?: (layer: Partial<LayerNode>, parentId?: string) => string
-    }
+    const state = get()
     const { drawingStrokes, useLayerSystem } = state
 
     if (!useLayerSystem || drawingStrokes.length === 0) return

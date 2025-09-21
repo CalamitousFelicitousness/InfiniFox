@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { Layers, ChevronUp, ChevronDown, X, Maximize2, Minimize2, GripVertical } from 'lucide-react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 
 import LayerPanel from './LayerPanel'
 import './FloatingLayerPanel.css'
@@ -103,17 +103,20 @@ export const FloatingLayerPanel: React.FC<FloatingLayerPanelProps> = ({
   }, [size])
 
   // Handle dragging - matching CanvasToolbar implementation
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    const target = e.target as HTMLElement
-    if (!target.closest('.panel-drag-handle')) return
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      const target = e.target as HTMLElement
+      if (!target.closest('.panel-drag-handle')) return
 
-    setIsDragging(true)
-    setDragOffset({
-      x: e.clientX - position.x,
-      y: e.clientY - position.y,
-    })
-    e.preventDefault()
-  }, [position])
+      setIsDragging(true)
+      setDragOffset({
+        x: e.clientX - position.x,
+        y: e.clientY - position.y,
+      })
+      e.preventDefault()
+    },
+    [position]
+  )
 
   // Handle dragging with document-level events - matching CanvasToolbar
   useEffect(() => {
@@ -238,19 +241,11 @@ export const FloatingLayerPanel: React.FC<FloatingLayerPanelProps> = ({
         <div className="panel-controls">
           {/* Minimize/Maximize button */}
           {panelState !== 'minimized' ? (
-            <button
-              className="panel-control-btn"
-              onClick={minimize}
-              title="Minimize"
-            >
+            <button className="panel-control-btn" onClick={minimize} title="Minimize">
               <Minimize2 size={14} />
             </button>
           ) : (
-            <button
-              className="panel-control-btn"
-              onClick={maximize}
-              title="Maximize"
-            >
+            <button className="panel-control-btn" onClick={maximize} title="Maximize">
               <Maximize2 size={14} />
             </button>
           )}
@@ -262,21 +257,13 @@ export const FloatingLayerPanel: React.FC<FloatingLayerPanelProps> = ({
               onClick={togglePanelState}
               title={panelState === 'expanded' ? 'Collapse' : 'Expand'}
             >
-              {panelState === 'expanded' ? (
-                <ChevronUp size={14} />
-              ) : (
-                <ChevronDown size={14} />
-              )}
+              {panelState === 'expanded' ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
           )}
 
           {/* Close button */}
           {onClose && (
-            <button
-              className="panel-control-btn close"
-              onClick={onClose}
-              title="Close"
-            >
+            <button className="panel-control-btn close" onClick={onClose} title="Close">
               <X size={14} />
             </button>
           )}
@@ -286,19 +273,13 @@ export const FloatingLayerPanel: React.FC<FloatingLayerPanelProps> = ({
       {/* Panel content */}
       {panelState !== 'minimized' && (
         <div className="floating-layer-panel-content">
-          <LayerPanel
-            onLayerSelect={onLayerSelect}
-            onLayerDoubleClick={onLayerDoubleClick}
-          />
+          <LayerPanel onLayerSelect={onLayerSelect} onLayerDoubleClick={onLayerDoubleClick} />
         </div>
       )}
 
       {/* Resize handle */}
       {panelState === 'expanded' && (
-        <div
-          className="floating-layer-panel-resize"
-          onMouseDown={handleResizeStart}
-        />
+        <div className="floating-layer-panel-resize" onMouseDown={handleResizeStart} />
       )}
     </div>
   )

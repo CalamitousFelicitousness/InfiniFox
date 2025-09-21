@@ -1,5 +1,5 @@
 import Konva from 'konva'
-import React, { useRef, useEffect, useMemo, useState } from 'react'
+import React, { useRef, useEffect, useMemo, useState, useCallback } from 'react'
 // Store and utilities
 import { Layer as KonvaLayer } from 'react-konva'
 
@@ -134,12 +134,42 @@ export function Canvas() {
   // Initialize all hooks
   const tools = useCanvasTools()
   const viewport = useViewport(stageRef)
-  const stageSize = useStageSize(showLayerPanel ? 650 : 400) // Adjust for layer panel width
+  const stageSize = useStageSize(containerRef) // Use actual container dimensions
+
+  // Function to detect which artboard is at a given canvas position
+  const getArtboardAtPoint = useCallback(
+    (x: number, y: number) => {
+      const artboards = getArtboards()
+
+      // Check each artboard to see if the point is inside it
+      for (const artboard of artboards) {
+        if (artboard.artboardProps) {
+          const { width, height } = artboard.artboardProps
+          const artboardX = artboard.x || 0
+          const artboardY = artboard.y || 0
+
+          // Check if point is within artboard bounds
+          if (
+            x >= artboardX &&
+            x <= artboardX + width &&
+            y >= artboardY &&
+            y <= artboardY + height
+          ) {
+            return artboard.id
+          }
+        }
+      }
+
+      return null // Not on any artboard
+    },
+    [getArtboards]
+  )
 
   const drawing = useDrawingSystem({
     currentTool: tools.currentTool,
     scale: viewport.scale,
     position: viewport.position,
+    getArtboardAtPoint,
   })
 
   const images_ = useImageManagement({
@@ -177,9 +207,9 @@ export function Canvas() {
     scale: viewport.scale,
     position: viewport.position,
     isPanning: viewport.isPanning,
-    onDrawingPointerDown: drawing.handlePointerDown,
-    onDrawingPointerMove: drawing.handlePointerMove,
-    onDrawingPointerUp: drawing.handlePointerUp,
+    onDrawingPointerDown: drawing.processPointerDown,
+    onDrawingPointerMove: drawing.processPointerMove,
+    onDrawingPointerUp: drawing.processPointerUp,
     onImageSelect: images_.handleImageSelect,
     onFrameSelect: frames.setSelectedFrameId,
     onViewportDragStart: viewport.handleStageDragStart,
@@ -392,7 +422,12 @@ export function Canvas() {
   }
 
   // Handle layer selection
-  const handleLayerSelect = (layerId: string, addToSelection: boolean = false, rangeSelect: boolean = false, context: 'canvas' | 'menu' = 'canvas') => {
+  const handleLayerSelect = (
+    layerId: string,
+    addToSelection: boolean = false,
+    rangeSelect: boolean = false,
+    context: 'canvas' | 'menu' = 'canvas'
+  ) => {
     selectLayer(layerId, addToSelection, rangeSelect, context)
   }
 
@@ -433,11 +468,11 @@ export function Canvas() {
     if (!USE_LAYER_SYSTEM) return []
     const allRootLayers = getRootLayers()
     // Double-check that we're only getting layers without parents
-    const filtered = allRootLayers.filter(layer => !layer.parentId)
+    const filtered = allRootLayers.filter((layer) => !layer.parentId)
     if (filtered.length !== allRootLayers.length) {
       console.warn('getRootLayers returned layers with parents!', {
-        all: allRootLayers.map(l => ({ id: l.id, parentId: l.parentId })),
-        filtered: filtered.map(l => ({ id: l.id, parentId: l.parentId }))
+        all: allRootLayers.map((l) => ({ id: l.id, parentId: l.parentId })),
+        filtered: filtered.map((l) => ({ id: l.id, parentId: l.parentId })),
       })
     }
     return filtered
@@ -504,7 +539,10 @@ export function Canvas() {
       }> = []
 
       // Collect all image layers from root and artboards
-      const collectImageLayers = (layers: ReturnType<typeof getRootLayers>, parentOffset = { x: 0, y: 0 }) => {
+      const collectImageLayers = (
+        layers: ReturnType<typeof getRootLayers>,
+        parentOffset = { x: 0, y: 0 }
+      ) => {
         layers.forEach((layer) => {
           if (layer.type === 'image' && layer.imageProps) {
             const src = layerImageUrls[layer.id] || ''
@@ -527,7 +565,7 @@ export function Canvas() {
               .filter(Boolean) as ReturnType<typeof getRootLayers>
             collectImageLayers(children, {
               x: parentOffset.x + layer.x,
-              y: parentOffset.y + layer.y
+              y: parentOffset.y + layer.y,
             })
           }
         })
@@ -544,7 +582,7 @@ export function Canvas() {
             .filter(Boolean) as ReturnType<typeof getRootLayers>
           collectImageLayers(children, {
             x: artboard.x,
-            y: artboard.y
+            y: artboard.y,
           })
         }
       })
@@ -671,6 +709,7 @@ export function Canvas() {
                     key={artboard.id}
                     artboard={artboard}
                     isActive={activeArtboardId === artboard.id}
+                    currentTool={tools.currentTool}
                     scale={viewport.scale}
                     viewport={{
                       x: -viewport.position.x / viewport.scale,
@@ -680,7 +719,12 @@ export function Canvas() {
                     }}
                     onSelect={(artboardId, addToSelection, rangeSelect, context) => {
                       setActiveArtboard(artboardId)
-                      selectLayer(artboardId, addToSelection || false, rangeSelect || false, context || 'canvas')
+                      selectLayer(
+                        artboardId,
+                        addToSelection || false,
+                        rangeSelect || false,
+                        context || 'canvas'
+                      )
                     }}
                     onContextMenu={handleLayerContextMenu}
                     onSnapGuidesChange={setSnapGuides}
@@ -699,6 +743,7 @@ export function Canvas() {
                     <LayerRenderer
                       key={layer.id}
                       layer={layer}
+                      currentTool={tools.currentTool}
                       parentScale={viewport.scale}
                       viewport={{
                         x: -viewport.position.x / viewport.scale,
@@ -804,10 +849,10 @@ export function Canvas() {
             {/* Snap Guide Layer */}
             <SnapGuideLayer guides={snapGuides} scale={viewport.scale} />
 
-            {/* Drawing Layer */}
+            {/* Drawing Layer - only show current stroke when using layer system */}
             <DrawingLayer
               currentTool={tools.currentTool}
-              drawingStrokes={drawing.drawingStrokes}
+              drawingStrokes={USE_LAYER_SYSTEM ? [] : drawing.drawingStrokes}
               currentStroke={drawing.currentStroke}
               showCursor={drawing.showDrawingCursor}
               cursorPos={drawing.cursorPos}
@@ -1038,8 +1083,14 @@ export function Canvas() {
 
                   viewport.setScale(targetScale)
                   viewport.setPosition({
-                    x: (stageSize.width / 2) - (layer.x * targetScale) - (layer.artboardProps.width * targetScale / 2),
-                    y: (stageSize.height / 2) - (layer.y * targetScale) - (layer.artboardProps.height * targetScale / 2)
+                    x:
+                      stageSize.width / 2 -
+                      layer.x * targetScale -
+                      (layer.artboardProps.width * targetScale) / 2,
+                    y:
+                      stageSize.height / 2 -
+                      layer.y * targetScale -
+                      (layer.artboardProps.height * targetScale) / 2,
                   })
                 }
               }

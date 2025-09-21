@@ -1,23 +1,34 @@
 import Konva from 'konva'
 import React, { useCallback, useRef, useState, useEffect, useMemo } from 'react'
-import { Group, Rect, Image as KonvaImage } from 'react-konva'
+import { Group, Rect, Image as KonvaImage, Line } from 'react-konva'
 
+import { CanvasTool } from '../../../../features/canvas/hooks/useCanvasTools'
 import { snappingManager } from '../../../../services/canvas/SnappingManager'
 import type { SnapGuide } from '../../../../services/canvas/SnappingManager'
 import { viewportCulling } from '../../../../services/canvas/ViewportCullingService'
-import type { LayerNode, BlendMode, SelectionContext } from '../../../../store/slices/layerSystemSlice'
+import type {
+  LayerNode,
+  BlendMode,
+  SelectionContext,
+} from '../../../../store/slices/layerSystemSlice'
 import { useStore } from '../../../../store/store'
 import { getSelectionGlowStyles } from '../../../../utils/selectionStyles'
 
 interface LayerRendererProps {
   layer: LayerNode
+  currentTool?: CanvasTool
   parentScale: number
   onContextMenu?: (e: Konva.KonvaEventObject<PointerEvent>, layerId: string) => void
   viewport?: { x: number; y: number; width: number; height: number; scale: number }
   onSnapGuidesChange?: (guides: SnapGuide[]) => void
   onDragStart?: (layerId: string) => void
   onDragEnd?: () => void
-  onLayerSelect?: (layerId: string, addToSelection?: boolean, rangeSelect?: boolean, context?: SelectionContext) => void
+  onLayerSelect?: (
+    layerId: string,
+    addToSelection?: boolean,
+    rangeSelect?: boolean,
+    context?: SelectionContext
+  ) => void
   isDraggingLayer?: boolean
   draggingLayerId?: string | null
   artboardId?: string
@@ -28,6 +39,7 @@ interface LayerRendererProps {
  */
 export const LayerRenderer: React.FC<LayerRendererProps> = ({
   layer,
+  currentTool,
   parentScale,
   onContextMenu,
   viewport,
@@ -215,13 +227,14 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
   // Handle drag start for layer
   const handleDragStart = useCallback(
     (e: Konva.KonvaEventObject<DragEvent>) => {
+      console.log('Layer drag start:', layer.id, 'type:', layer.type)
       e.cancelBubble = true // Stop propagation to parent artboard
+
       // Set current object for snapping manager
       snappingManager.setCurrentObject(layer.id)
-      console.log('LayerRenderer: Starting drag for layer', layer.id)
       onDragStart?.(layer.id)
     },
-    [layer.id, onDragStart]
+    [layer.id, layer.type, onDragStart]
   )
 
   // Handle drag move with snapping and drop target detection
@@ -240,6 +253,11 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
       } else if (layer.type === 'shape' && layer.shapeProps) {
         width = layer.shapeProps.width || 100
         height = layer.shapeProps.height || 100
+      } else if (layer.type === 'drawing' && layer.drawingProps) {
+        // Calculate bounds for drawing layer
+        const bounds = getDrawingBounds(layer.drawingProps)
+        width = bounds.width
+        height = bounds.height
       }
 
       // Get snapped position
@@ -252,8 +270,8 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
       // Update snap guides with throttling
       updateSnapGuidesThrottled(snapResult.guides)
 
-      // Detect drop targets (artboards) for image layers
-      if (stage && layer.type === 'image') {
+      // Detect drop targets (artboards) for image and drawing layers
+      if (stage && (layer.type === 'image' || layer.type === 'drawing')) {
         const pos = stage.getPointerPosition()
         if (pos) {
           // Find what's under the pointer
@@ -282,7 +300,10 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
                   const dropTarget = rectChildren[0]
 
                   // Check if we're over a different target
-                  if (previousDropTargetRef.current && dropTarget !== previousDropTargetRef.current) {
+                  if (
+                    previousDropTargetRef.current &&
+                    dropTarget !== previousDropTargetRef.current
+                  ) {
                     // Fire dragleave on previous target
                     previousDropTargetRef.current.fire('dragleave', { evt: e.evt }, true)
                   }
@@ -317,7 +338,6 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
   // Handle drag end for layer
   const handleDragEnd = useCallback(
     (e: Konva.KonvaEventObject<DragEvent>) => {
-      console.log('LayerRenderer: handleDragEnd called for layer', layer.id)
       e.cancelBubble = true // Stop propagation to parent artboard
       const node = e.target
       const stage = node.getStage()
@@ -338,7 +358,7 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
 
       // Check for drop on artboard
       console.log('Checking for drop, layer type:', layer.type, 'stage:', !!stage)
-      if (stage && layer.type === 'image') {
+      if (stage && (layer.type === 'image' || layer.type === 'drawing')) {
         const pos = stage.getPointerPosition()
         console.log('Pointer position:', pos)
         if (pos) {
@@ -363,7 +383,7 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
                   absPos,
                   width,
                   height,
-                  pointerPos: pos
+                  pointerPos: pos,
                 })
 
                 if (
@@ -396,14 +416,28 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
 
           // Old approach as fallback
           const shape = stage.getIntersection(pos)
-          console.log('Shape under pointer (fallback):', shape, 'shape className:', shape?.className, 'shape id:', shape?.id())
+          console.log(
+            'Shape under pointer (fallback):',
+            shape,
+            'shape className:',
+            shape?.className,
+            'shape id:',
+            shape?.id()
+          )
 
           if (shape) {
             // Check if the shape is an artboard background Rect
             if (shape.className === 'Rect') {
               // Check if its parent is a Group with an artboard ID
               const parent = shape.getParent()
-              console.log('Rect parent:', parent, 'parent id:', parent?.id(), 'parent className:', parent?.className)
+              console.log(
+                'Rect parent:',
+                parent,
+                'parent id:',
+                parent?.id(),
+                'parent className:',
+                parent?.className
+              )
 
               if (parent && parent.className === 'Group' && parent.id()) {
                 const parentId = parent.id()
@@ -436,7 +470,7 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
                   parentId,
                   potentialArtboard,
                   layerParentId: layer.parentId,
-                  layerId: layer.id
+                  layerId: layer.id,
                 })
 
                 // Check if we're dropping on an artboard that's not our current parent
@@ -517,6 +551,7 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
     [layer.type, layer.id, getLayerChildren]
   )
 
+
   // Calculate group bounds for selection rendering (must be before any returns for React hooks rule)
   const groupBounds = useMemo(() => {
     if (layer.type !== 'group' || !isSelected || children.length === 0) return null
@@ -557,6 +592,37 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
     }
   }, [layer.type, children, isSelected])
 
+  // Helper function to get bounds of drawing strokes
+  const getDrawingBounds = (drawingProps: NonNullable<LayerNode['drawingProps']>) => {
+    let minX = Infinity,
+      minY = Infinity
+    let maxX = -Infinity,
+      maxY = -Infinity
+
+    drawingProps.strokes.forEach((stroke) => {
+      for (let i = 0; i < stroke.points.length; i += 2) {
+        const x = stroke.points[i]
+        const y = stroke.points[i + 1]
+        minX = Math.min(minX, x)
+        minY = Math.min(minY, y)
+        maxX = Math.max(maxX, x)
+        maxY = Math.max(maxY, y)
+      }
+    })
+
+    // Add padding for stroke width
+    const padding = Math.max(...drawingProps.strokes.map((s) => s.strokeWidth)) / 2
+
+    const bounds = {
+      x: minX - padding,
+      y: minY - padding,
+      width: maxX - minX + padding * 2,
+      height: maxY - minY + padding * 2,
+    }
+
+    return bounds
+  }
+
   // Apply blend mode
   const blendMode = layer.blendMode || 'normal'
   const globalCompositeOperation = getKonvaBlendMode(blendMode)
@@ -585,7 +651,7 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
           scaleY={layer.scaleY}
           opacity={layer.opacity}
           visible={layer.visible}
-          draggable={!layer.locked}
+          draggable={!layer.locked && currentTool === CanvasTool.SELECT}
           onDragStart={handleDragStart}
           onDragMove={handleDragMove}
           onDragEnd={handleDragEnd}
@@ -613,6 +679,7 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
             <LayerRenderer
               key={child.id}
               layer={child}
+              currentTool={currentTool}
               parentScale={parentScale}
               onContextMenu={onContextMenu}
               viewport={viewport}
@@ -654,7 +721,7 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
             scaleY={layer.scaleY}
             opacity={layer.opacity}
             visible={layer.visible}
-            draggable={!layer.locked}
+            draggable={!layer.locked && currentTool === CanvasTool.SELECT}
             onDragStart={handleDragStart}
             onDragMove={handleDragMove}
             onDragEnd={handleDragEnd}
@@ -666,20 +733,22 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
             pixelPerfect={levelOfDetail === 'high'}
           />
           {/* Selection glow effect only - MultiTransformer handles the frame */}
-          {isSelected && parentScale >= 0.5 && (() => {
-            const glowStyles = getSelectionGlowStyles('image', false, parentScale)
-            return (
-              <Rect
-                x={layer.x}
-                y={layer.y}
-                width={layer.imageProps.width * (layer.scaleX || 1)}
-                height={layer.imageProps.height * (layer.scaleY || 1)}
-                rotation={layer.rotation}
-                {...glowStyles}
-                listening={false}
-              />
-            )
-          })()}
+          {isSelected &&
+            parentScale >= 0.5 &&
+            (() => {
+              const glowStyles = getSelectionGlowStyles('image', false, parentScale)
+              return (
+                <Rect
+                  x={layer.x}
+                  y={layer.y}
+                  width={layer.imageProps.width * (layer.scaleX || 1)}
+                  height={layer.imageProps.height * (layer.scaleY || 1)}
+                  rotation={layer.rotation}
+                  {...glowStyles}
+                  listening={false}
+                />
+              )
+            })()}
         </>
       )
     }
@@ -692,9 +761,90 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
       // TODO: Implement shape layer rendering
       return null
 
-    case 'drawing':
-      // TODO: Implement drawing layer rendering
-      return null
+    case 'drawing': {
+      if (!layer.drawingProps) return null
+
+      const drawingBounds = getDrawingBounds(layer.drawingProps)
+
+      // Render drawing layer - same approach as image layer
+      return (
+        <Group
+          ref={nodeRef}
+          id={layer.id}
+          x={layer.x}
+          y={layer.y}
+          rotation={layer.rotation}
+          scaleX={layer.scaleX}
+          scaleY={layer.scaleY}
+          opacity={layer.opacity}
+          visible={layer.visible}
+          draggable={!layer.locked && currentTool === CanvasTool.SELECT}
+          onDragStart={handleDragStart}
+          onDragMove={handleDragMove}
+          onDragEnd={handleDragEnd}
+          onClick={handleClick}
+          onContextMenu={handleContextMenu}
+        >
+            {/* Invisible hit area for selection and dragging */}
+            <Rect
+              x={drawingBounds.x}
+              y={drawingBounds.y}
+              width={drawingBounds.width}
+              height={drawingBounds.height}
+              fill="transparent"
+              listening={true}
+            />
+
+            {/* Render each stroke */}
+            {layer.drawingProps.strokes.map((stroke, index) => {
+              // If we have an outline from PerfectFreehand, render as filled polygon
+              if (stroke.outline && stroke.outline.length > 0) {
+                const flatPoints = stroke.outline.flat()
+                return (
+                  <Line
+                    key={`${layer.id}-stroke-${index}`}
+                    points={flatPoints}
+                    fill={stroke.color}
+                    closed={true}
+                    opacity={stroke.opacity}
+                    listening={false}
+                  />
+                )
+              }
+              // Fallback to regular line if no outline
+              return (
+                <Line
+                  key={`${layer.id}-stroke-${index}`}
+                  points={stroke.points}
+                  stroke={stroke.color}
+                  strokeWidth={stroke.strokeWidth}
+                  tension={0.5}
+                  lineCap="round"
+                  lineJoin="round"
+                  opacity={stroke.opacity}
+                  listening={false}
+                />
+              )
+            })}
+
+            {/* Selection indicator */}
+            {selectedLayerIds.has(layer.id) && (
+              <Rect
+                x={drawingBounds.x}
+                y={drawingBounds.y}
+                width={drawingBounds.width}
+                height={drawingBounds.height}
+                stroke="#646cff"
+                strokeWidth={2 / parentScale}
+                strokeScaleEnabled={false}
+                fill="transparent"
+                listening={false}
+                dash={[5, 5]}
+              />
+            )}
+          </Group>
+      )
+    }
 
     default:
       return null

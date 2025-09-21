@@ -20,13 +20,19 @@ interface DrawingSystemProps {
   currentTool: CanvasTool
   scale: number
   position: Position
+  getArtboardAtPoint?: (x: number, y: number) => string | null
 }
 
 /**
  * Hook for managing the drawing system including brush services,
  * stroke management, and drawing event handlers
  */
-export function useDrawingSystem({ currentTool, scale, position }: DrawingSystemProps) {
+export function useDrawingSystem({
+  currentTool,
+  scale,
+  position,
+  getArtboardAtPoint,
+}: DrawingSystemProps) {
   const {
     // Drawing state from store
     isDrawingActive,
@@ -50,6 +56,7 @@ export function useDrawingSystem({ currentTool, scale, position }: DrawingSystem
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 })
   const [showDrawingCursor, setShowDrawingCursor] = useState(false)
   const [currentPressure, setCurrentPressure] = useState(0.5)
+  const [currentArtboardId, setCurrentArtboardId] = useState<string | null>(null)
 
   // Refs for drawing services
   const perfectFreehandRef = useRef<PerfectFreehandService | null>(null)
@@ -137,6 +144,10 @@ export function useDrawingSystem({ currentTool, scale, position }: DrawingSystem
         return false
       }
 
+      // Detect which artboard we're drawing on (if any)
+      const artboardId = getArtboardAtPoint ? getArtboardAtPoint(canvasX, canvasY) : null
+      setCurrentArtboardId(artboardId)
+
       // Initialize lazy brush
       if (lazyBrushRef.current) {
         lazyBrushRef.current.initializePositions({ x: canvasX, y: canvasY })
@@ -165,7 +176,15 @@ export function useDrawingSystem({ currentTool, scale, position }: DrawingSystem
       setDrawingActive(true)
       return true // Indicates drawing was started
     },
-    [currentTool, brushColor, brushOpacity, brushSize, startDrawingStroke, setDrawingActive]
+    [
+      currentTool,
+      brushColor,
+      brushOpacity,
+      brushSize,
+      startDrawingStroke,
+      setDrawingActive,
+      getArtboardAtPoint,
+    ]
   )
 
   /**
@@ -239,8 +258,9 @@ export function useDrawingSystem({ currentTool, scale, position }: DrawingSystem
 
     // Clear stroke points reference
     strokePointsRef.current = []
-    endDrawingStroke()
+    endDrawingStroke(currentArtboardId)
     setDrawingActive(false)
+    setCurrentArtboardId(null) // Clear artboard ID after stroke ends
 
     return true // Indicates drawing was ended
   }, [
@@ -250,6 +270,7 @@ export function useDrawingSystem({ currentTool, scale, position }: DrawingSystem
     updateCurrentStroke,
     endDrawingStroke,
     setDrawingActive,
+    currentArtboardId,
   ])
 
   /**
@@ -290,7 +311,7 @@ export function useDrawingSystem({ currentTool, scale, position }: DrawingSystem
 
       return handleDrawingPointerDown(canvasCoords.x, canvasCoords.y, pressure)
     },
-    [screenToCanvas, handleDrawingPointerDown]
+    [screenToCanvas, handleDrawingPointerDown, currentTool]
   )
 
   const processPointerMove = useCallback(
@@ -330,6 +351,7 @@ export function useDrawingSystem({ currentTool, scale, position }: DrawingSystem
     brushSize,
     brushColor,
     brushOpacity,
+    currentArtboardId,
 
     // Event handlers
     processPointerDown,
