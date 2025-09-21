@@ -146,6 +146,179 @@ export class LayerExportService {
   }
 
   /**
+   * Export a single layer as base64 string for AI generation
+   */
+  static async exportLayerAsBase64(
+    layerId: string,
+    format: 'png' | 'jpeg' = 'png',
+    quality: number = 0.92
+  ): Promise<string | null> {
+    const { getLayer, getLayerBounds } = useStore.getState()
+    const layer = getLayer(layerId)
+
+    if (!layer || !layer.visible) {
+      console.error('Layer not found or not visible:', layerId)
+      return null
+    }
+
+    const bounds = getLayerBounds(layerId)
+    if (!bounds) {
+      console.error('Could not get layer bounds:', layerId)
+      return null
+    }
+
+    // Create temporary stage
+    const tempContainer = document.createElement('div')
+    tempContainer.style.position = 'absolute'
+    tempContainer.style.left = '-9999px'
+    document.body.appendChild(tempContainer)
+
+    try {
+      const stage = new Konva.Stage({
+        container: tempContainer,
+        width: bounds.width,
+        height: bounds.height,
+      })
+
+      const konvaLayer = new Konva.Layer()
+      stage.add(konvaLayer)
+
+      // Add white background for JPEG or if layer needs it
+      if (format === 'jpeg' || layer.type === 'drawing') {
+        const bg = new Konva.Rect({
+          width: bounds.width,
+          height: bounds.height,
+          fill: '#ffffff',
+        })
+        konvaLayer.add(bg)
+      }
+
+      // Render the layer at origin (0,0)
+      await this.addLayerToKonva(layer, konvaLayer, -bounds.x, -bounds.y)
+
+      // Export to data URL
+      const dataURL = stage.toDataURL({
+        mimeType: format === 'jpeg' ? 'image/jpeg' : 'image/png',
+        quality,
+        pixelRatio: 1,
+      })
+
+      // Extract base64 part (remove data:image/png;base64, prefix)
+      const base64 = dataURL.split(',')[1]
+      return base64
+    } finally {
+      document.body.removeChild(tempContainer)
+    }
+  }
+
+  /**
+   * Export multiple layers as composite base64 for AI generation
+   */
+  static async exportLayersAsComposite(
+    layerIds: string[],
+    format: 'png' | 'jpeg' = 'png',
+    quality: number = 0.92,
+    targetWidth?: number,
+    targetHeight?: number
+  ): Promise<{ base64: string; width: number; height: number } | null> {
+    const { getLayer, getLayerBounds } = useStore.getState()
+
+    // Calculate bounding box of all layers
+    let minX = Infinity,
+      minY = Infinity
+    let maxX = -Infinity,
+      maxY = -Infinity
+
+    for (const layerId of layerIds) {
+      const layer = getLayer(layerId)
+      if (!layer || !layer.visible) continue
+
+      const bounds = getLayerBounds(layerId)
+      if (bounds) {
+        minX = Math.min(minX, bounds.x)
+        minY = Math.min(minY, bounds.y)
+        maxX = Math.max(maxX, bounds.x + bounds.width)
+        maxY = Math.max(maxY, bounds.y + bounds.height)
+      }
+    }
+
+    if (!isFinite(minX) || !isFinite(minY)) {
+      console.error('No valid layers to export')
+      return null
+    }
+
+    const sourceWidth = maxX - minX
+    const sourceHeight = maxY - minY
+
+    // Use target dimensions if provided, otherwise use source
+    const finalWidth = targetWidth || sourceWidth
+    const finalHeight = targetHeight || sourceHeight
+
+    // Calculate scale if resizing
+    const scaleX = finalWidth / sourceWidth
+    const scaleY = finalHeight / sourceHeight
+    const scale = Math.min(scaleX, scaleY) // Maintain aspect ratio
+
+    const tempContainer = document.createElement('div')
+    tempContainer.style.position = 'absolute'
+    tempContainer.style.left = '-9999px'
+    document.body.appendChild(tempContainer)
+
+    try {
+      const stage = new Konva.Stage({
+        container: tempContainer,
+        width: finalWidth,
+        height: finalHeight,
+      })
+
+      const konvaLayer = new Konva.Layer()
+      stage.add(konvaLayer)
+
+      // Add white background for JPEG
+      if (format === 'jpeg') {
+        const bg = new Konva.Rect({
+          width: finalWidth,
+          height: finalHeight,
+          fill: '#ffffff',
+        })
+        konvaLayer.add(bg)
+      }
+
+      // Create a group to apply scaling if needed
+      const group = new Konva.Group({
+        scaleX: scale,
+        scaleY: scale,
+      })
+      konvaLayer.add(group)
+
+      // Add each layer to the group
+      for (const layerId of layerIds) {
+        const layer = getLayer(layerId)
+        if (layer && layer.visible) {
+          await this.addLayerToKonva(layer, group, -minX, -minY)
+        }
+      }
+
+      // Export to data URL
+      const dataURL = stage.toDataURL({
+        mimeType: format === 'jpeg' ? 'image/jpeg' : 'image/png',
+        quality,
+        pixelRatio: 1,
+      })
+
+      // Extract base64
+      const base64 = dataURL.split(',')[1]
+      return {
+        base64,
+        width: finalWidth,
+        height: finalHeight,
+      }
+    } finally {
+      document.body.removeChild(tempContainer)
+    }
+  }
+
+  /**
    * Download blob as file
    */
   static downloadBlob(blob: Blob, filename: string): void {
@@ -318,7 +491,144 @@ export class LayerExportService {
         break
       }
 
-      // TODO: Handle other layer types
+      case 'drawing': {
+        if (layer.drawingProps) {
+          const drawGroup = new Konva.Group({
+            x: layer.x + offsetX,
+            y: layer.y + offsetY,
+            rotation: layer.rotation,
+            scaleX: layer.scaleX,
+            scaleY: layer.scaleY,
+            opacity: layer.opacity,
+          })
+
+          // Render each stroke
+          layer.drawingProps.strokes.forEach((stroke) => {
+            const line = new Konva.Line({
+              points: stroke.points,
+              stroke: stroke.color,
+              strokeWidth: stroke.strokeWidth,
+              opacity: stroke.opacity,
+              lineCap: 'round',
+              lineJoin: 'round',
+              tension: 0.5,
+            })
+            drawGroup.add(line)
+          })
+
+          konvaParent.add(drawGroup)
+
+          if (layer.filters && layer.filters.length > 0) {
+            this.applyFilters(drawGroup, layer.filters)
+          }
+        }
+        break
+      }
+
+      case 'group': {
+        const group = new Konva.Group({
+          x: layer.x + offsetX,
+          y: layer.y + offsetY,
+          rotation: layer.rotation,
+          scaleX: layer.scaleX,
+          scaleY: layer.scaleY,
+          opacity: layer.opacity,
+        })
+        konvaParent.add(group)
+
+        // Recursively add children
+        const { getLayerChildren } = useStore.getState()
+        const children = getLayerChildren(layer.id)
+        for (const child of children) {
+          await this.addLayerToKonva(child, group, 0, 0) // No additional offset for children
+        }
+
+        if (layer.filters && layer.filters.length > 0) {
+          this.applyFilters(group, layer.filters)
+        }
+        break
+      }
+
+      case 'text': {
+        if (layer.textProps) {
+          const text = new Konva.Text({
+            x: layer.x + offsetX,
+            y: layer.y + offsetY,
+            text: layer.textProps.text,
+            fontSize: layer.textProps.fontSize,
+            fontFamily: layer.textProps.fontFamily,
+            fontStyle: layer.textProps.fontStyle,
+            fill: layer.textProps.fill,
+            rotation: layer.rotation,
+            scaleX: layer.scaleX,
+            scaleY: layer.scaleY,
+            opacity: layer.opacity,
+          })
+          konvaParent.add(text)
+
+          if (layer.filters && layer.filters.length > 0) {
+            this.applyFilters(text, layer.filters)
+          }
+        }
+        break
+      }
+
+      case 'shape': {
+        if (layer.shapeProps) {
+          let shape: Konva.Shape | null = null
+
+          switch (layer.shapeProps.type) {
+            case 'rectangle':
+              shape = new Konva.Rect({
+                x: layer.x + offsetX,
+                y: layer.y + offsetY,
+                width: layer.shapeProps.width,
+                height: layer.shapeProps.height,
+                fill: layer.shapeProps.fill,
+                stroke: layer.shapeProps.stroke,
+                strokeWidth: layer.shapeProps.strokeWidth,
+                rotation: layer.rotation,
+                scaleX: layer.scaleX,
+                scaleY: layer.scaleY,
+                opacity: layer.opacity,
+              })
+              break
+            case 'ellipse':
+              shape = new Konva.Ellipse({
+                x: layer.x + offsetX + layer.shapeProps.width / 2,
+                y: layer.y + offsetY + layer.shapeProps.height / 2,
+                radiusX: layer.shapeProps.width / 2,
+                radiusY: layer.shapeProps.height / 2,
+                fill: layer.shapeProps.fill,
+                stroke: layer.shapeProps.stroke,
+                strokeWidth: layer.shapeProps.strokeWidth,
+                rotation: layer.rotation,
+                scaleX: layer.scaleX,
+                scaleY: layer.scaleY,
+                opacity: layer.opacity,
+              })
+              break
+          }
+
+          if (shape) {
+            konvaParent.add(shape)
+            if (layer.filters && layer.filters.length > 0) {
+              this.applyFilters(shape, layer.filters)
+            }
+          }
+        }
+        break
+      }
+
+      // Artboards are not directly rendered, just their children
+      case 'artboard': {
+        const { getLayerChildren } = useStore.getState()
+        const children = getLayerChildren(layer.id)
+        for (const child of children) {
+          await this.addLayerToKonva(child, konvaParent, layer.x + offsetX, layer.y + offsetY)
+        }
+        break
+      }
     }
   }
 

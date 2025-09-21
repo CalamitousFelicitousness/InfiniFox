@@ -12,7 +12,7 @@ import {
   MoveImageCommand,
   useHistoryStore,
 } from '../historyStore'
-import type { ImageData, ImageRole, CanvasSelectionMode, SliceCreator } from '../types'
+import type { ImageData, ImageRole, LayerRole, CanvasSelectionMode, SliceCreator } from '../types'
 
 // Store reference will be set after store creation to avoid circular dependency
 type StoreRef = {
@@ -65,6 +65,7 @@ export interface CanvasSlice {
   // State
   images: ImageData[]
   activeImageRoles: ImageRole[]
+  activeLayerRoles: LayerRole[]
   canvasSelectionMode: CanvasSelectionMode
   canvasViewport: CanvasViewport
   generationFrames: GenerationFrame[]
@@ -114,6 +115,14 @@ export interface CanvasSlice {
   ) => void
   getImageRole: (imageId: string) => string | null
   clearImageRoles: () => void
+  // Layer role functions
+  setLayerRole: (
+    layerId: string,
+    role: 'img2img_init' | 'inpaint_image' | 'controlnet' | null
+  ) => void
+  getLayerRole: (layerId: string) => string | null
+  clearLayerRoles: () => void
+  clearAllRoles: () => void
   setImageAsInput: (src: string) => void
   startCanvasSelection: (
     mode: 'img2img_init' | 'inpaint_image' | 'controlnet',
@@ -159,6 +168,7 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
   // Initial state
   images: [],
   activeImageRoles: [],
+  activeLayerRoles: [],
   canvasSelectionMode: {
     active: false,
     mode: null,
@@ -455,6 +465,47 @@ export const createCanvasSlice: SliceCreator<CanvasSlice> = (set, get) => ({
         images,
       }
     })
+  },
+
+  // Layer role functions
+  setLayerRole: (layerId: string, role: 'img2img_init' | 'inpaint_image' | 'controlnet' | null) => {
+    set((state) => {
+      let newRoles = [...state.activeLayerRoles]
+
+      if (role) {
+        // Check if another layer already has this role
+        const existingRole = newRoles.find((r) => r.role === role)
+        if (existingRole && existingRole.layerId !== layerId) {
+          console.log(`Transferring ${role} role from layer ${existingRole.layerId} to ${layerId}`)
+        }
+
+        // Remove any existing layer with this same role (only one layer per role)
+        newRoles = newRoles.filter((r) => r.role !== role)
+        // Remove any existing role for this specific layer
+        newRoles = newRoles.filter((r) => r.layerId !== layerId)
+        // Add the new role
+        newRoles.push({ layerId, role })
+      } else {
+        // Remove role from this layer (clearing role)
+        newRoles = newRoles.filter((r) => r.layerId !== layerId)
+      }
+
+      return { activeLayerRoles: newRoles }
+    })
+  },
+
+  getLayerRole: (layerId: string) => {
+    const role = get().activeLayerRoles.find((r) => r.layerId === layerId)
+    return role ? role.role : null
+  },
+
+  clearLayerRoles: () => {
+    set({ activeLayerRoles: [] })
+  },
+
+  clearAllRoles: () => {
+    get().clearImageRoles()
+    get().clearLayerRoles()
   },
 
   setImageAsInput: (src: string) => {

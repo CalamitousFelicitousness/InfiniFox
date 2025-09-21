@@ -545,8 +545,8 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
             ...updates,
             drawingProps: {
               ...layer.drawingProps,
-              ...updates.drawingProps
-            }
+              ...updates.drawingProps,
+            },
           }
         }
         Object.assign(layer, updates, { updatedAt: Date.now() })

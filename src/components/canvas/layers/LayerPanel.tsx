@@ -237,7 +237,11 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
           <button className="layer-panel-tool" onClick={handleNewGroup} title="New Group">
             <FolderPlus size={16} />
           </button>
-          <button className="layer-panel-tool" onClick={handleNewDrawingLayer} title="New Drawing Layer">
+          <button
+            className="layer-panel-tool"
+            onClick={handleNewDrawingLayer}
+            title="New Drawing Layer"
+          >
             <Brush size={16} />
           </button>
           <button

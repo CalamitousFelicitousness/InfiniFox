@@ -82,12 +82,10 @@ export type DrawingSlice = DrawingState & DrawingActions
 // The slice needs access to LayerSystemSlice for layer operations
 type StoreWithLayerSystem = DrawingSlice & LayerSystemSlice
 
-export const createDrawingSlice: StateCreator<
-  StoreWithLayerSystem,
-  [],
-  [],
-  DrawingSlice
-> = (set, get) => ({
+export const createDrawingSlice: StateCreator<StoreWithLayerSystem, [], [], DrawingSlice> = (
+  set,
+  get
+) => ({
   // Initial state
   isDrawingMode: false,
   isDrawingActive: false,
@@ -185,16 +183,16 @@ export const createDrawingSlice: StateCreator<
             // Adjust outline if it exists
             let adjustedOutline = currentStroke.outline
             if (currentStroke.outline && currentStroke.outline.length > 0) {
-              adjustedOutline = currentStroke.outline.map(point => [
+              adjustedOutline = currentStroke.outline.map((point) => [
                 point[0] - artboardX,
-                point[1] - artboardY
+                point[1] - artboardY,
               ])
             }
 
             adjustedStroke = {
               ...currentStroke,
               points: adjustedPoints,
-              outline: adjustedOutline
+              outline: adjustedOutline,
             }
           }
         }
@@ -220,7 +218,10 @@ export const createDrawingSlice: StateCreator<
 
           // Add to target artboard or root and set as current
           // Cast strokeLayer to Partial since addLayer expects Partial<LayerNode>
-          const newLayerId = state.addLayer(strokeLayer as Partial<LayerNode>, targetArtboardId || undefined)
+          const newLayerId = state.addLayer(
+            strokeLayer as Partial<LayerNode>,
+            targetArtboardId || undefined
+          )
           set({ currentDrawingLayerId: newLayerId })
         }
       }
@@ -289,10 +290,7 @@ export const createDrawingSlice: StateCreator<
 
     let adjustedOutline = undefined
     if (stroke.outline && stroke.outline.length > 0) {
-      adjustedOutline = stroke.outline.map(point => [
-        point[0] - layerX,
-        point[1] - layerY
-      ])
+      adjustedOutline = stroke.outline.map((point) => [point[0] - layerX, point[1] - layerY])
     }
 
     // Add new stroke to layer
@@ -307,8 +305,8 @@ export const createDrawingSlice: StateCreator<
     // Update layer with combined strokes - keep layer position unchanged
     state.updateLayer(layerId, {
       drawingProps: {
-        strokes: [...layer.drawingProps.strokes, newStroke]
-      }
+        strokes: [...layer.drawingProps.strokes, newStroke],
+      },
     })
   },
 
@@ -365,10 +363,7 @@ export const createDrawingSlice: StateCreator<
     // Adjust outline if it exists
     let adjustedOutline = undefined
     if (stroke.outline && stroke.outline.length > 0) {
-      adjustedOutline = stroke.outline.map(point => [
-        point[0] - minX,
-        point[1] - minY
-      ])
+      adjustedOutline = stroke.outline.map((point) => [point[0] - minX, point[1] - minY])
     }
 
     // Create drawing layer node

@@ -1,4 +1,5 @@
 import { sdnextApi } from '../../api/sdnextApi'
+import { LayerExportService } from '../../services/layers/LayerExportService'
 import { progressService } from '../../services/progress/ProgressService'
 import { imageStorage } from '../../services/storage/UnifiedImageStorageService'
 import { useQueueStore } from '../queueStore'
@@ -10,6 +11,18 @@ export interface GenerationActionsSlice {
   generateInFrame: (frameId: string) => Promise<void>
   generateImg2Img: (baseImage: string, denoisingStrength: number, frameId?: string) => Promise<void>
   generateInpaint: (params: InpaintParams, frameId?: string) => Promise<void>
+  // Layer-aware generation methods
+  generateFromLayer: (
+    layerId: string,
+    mode: 'txt2img' | 'img2img',
+    denoisingStrength?: number
+  ) => Promise<void>
+  generateFromSelection: (
+    layerIds: string[],
+    mode: 'txt2img' | 'img2img',
+    denoisingStrength?: number
+  ) => Promise<void>
+  inpaintFromLayer: (layerId: string, maskLayerId?: string) => Promise<void>
   loadImagesFromStorage: () => Promise<void>
   updateStorageStats: () => Promise<void>
 }
@@ -765,6 +778,163 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       // Don't force complete on error
       progressService.stopPolling(false)
       set({ isLoading: false })
+    }
+  },
+
+  /**
+   * Generate from a single layer using it as input
+   */
+  generateFromLayer: async (
+    layerId: string,
+    mode: 'txt2img' | 'img2img',
+    denoisingStrength: number = 0.75
+  ) => {
+    const { getLayer, prompt } = get()
+
+    const layer = getLayer(layerId)
+    if (!layer) {
+      alert('Layer not found')
+      return
+    }
+
+    if (!prompt) {
+      alert('Please enter a prompt.')
+      return
+    }
+
+    try {
+      // Export layer as base64
+      const base64 = await LayerExportService.exportLayerAsBase64(layerId)
+      if (!base64) {
+        alert('Failed to export layer')
+        return
+      }
+
+      if (mode === 'txt2img') {
+        // For txt2img, we just generate at the layer position
+        await get().generateTxt2Img()
+      } else {
+        // For img2img, use the layer as input
+        await get().generateImg2Img(base64, denoisingStrength)
+      }
+    } catch (error) {
+      console.error('Failed to generate from layer:', error)
+      alert('Failed to generate from layer')
+    }
+  },
+
+  /**
+   * Generate from multiple selected layers as composite
+   */
+  generateFromSelection: async (
+    layerIds: string[],
+    mode: 'txt2img' | 'img2img',
+    denoisingStrength: number = 0.75
+  ) => {
+    const { prompt, width, height } = get()
+
+    if (!layerIds.length) {
+      alert('No layers selected')
+      return
+    }
+
+    if (!prompt) {
+      alert('Please enter a prompt.')
+      return
+    }
+
+    try {
+      // Export layers as composite with generation dimensions
+      const result = await LayerExportService.exportLayersAsComposite(
+        layerIds,
+        'png',
+        0.92,
+        width,
+        height
+      )
+
+      if (!result) {
+        alert('Failed to export layers')
+        return
+      }
+
+      if (mode === 'txt2img') {
+        // For txt2img, just generate at canvas center
+        await get().generateTxt2Img()
+      } else {
+        // For img2img, use the composite as input
+        await get().generateImg2Img(result.base64, denoisingStrength)
+      }
+    } catch (error) {
+      console.error('Failed to generate from selection:', error)
+      alert('Failed to generate from selection')
+    }
+  },
+
+  /**
+   * Inpaint using a layer as base and optionally another layer as mask
+   */
+  inpaintFromLayer: async (layerId: string, maskLayerId?: string) => {
+    const { getLayer, prompt, width, height } = get()
+
+    const layer = getLayer(layerId)
+    if (!layer) {
+      alert('Base layer not found')
+      return
+    }
+
+    if (!prompt) {
+      alert('Please enter a prompt.')
+      return
+    }
+
+    try {
+      // Export base layer
+      const baseImage = await LayerExportService.exportLayerAsBase64(layerId)
+      if (!baseImage) {
+        alert('Failed to export base layer')
+        return
+      }
+
+      // Export mask layer if provided
+      let maskImage = ''
+      if (maskLayerId) {
+        const mask = await LayerExportService.exportLayerAsBase64(maskLayerId, 'png')
+        if (mask) {
+          maskImage = mask
+        }
+      }
+
+      // If no mask provided, create a default mask (all white = inpaint everywhere)
+      if (!maskImage) {
+        // Create a simple white mask
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        if (ctx) {
+          ctx.fillStyle = 'white'
+          ctx.fillRect(0, 0, width, height)
+          const dataUrl = canvas.toDataURL('image/png')
+          maskImage = dataUrl.split(',')[1]
+        }
+      }
+
+      // Call inpaint with the exported images
+      const params: InpaintParams = {
+        baseImage,
+        maskImage,
+        denoisingStrength: 0.75,
+        maskBlur: 4,
+        inpaintingFill: 'original',
+        inpaintFullRes: true,
+        inpaintFullResPadding: 32,
+      }
+
+      await get().generateInpaint(params)
+    } catch (error) {
+      console.error('Failed to inpaint from layer:', error)
+      alert('Failed to inpaint from layer')
     }
   },
 

@@ -204,22 +204,25 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
   }, [filters, cached, artboard.id, updateLayerDirect])
 
   // Handle drag start
-  const handleDragStart = useCallback((e: Konva.KonvaEventObject<DragEvent>) => {
-    const target = e.target
+  const handleDragStart = useCallback(
+    (e: Konva.KonvaEventObject<DragEvent>) => {
+      const target = e.target
 
-    // Check if a child initiated the drag
-    // For nested Groups, Konva might trigger both drags
-    if (target.id() !== artboard.id) {
-      console.log('Artboard drag prevented - initiated by child:', target.id())
-      // Stop the artboard from dragging
-      e.target.stopDrag()
-      return
-    }
+      // Check if a child initiated the drag
+      // For nested Groups, Konva might trigger both drags
+      if (target.id() !== artboard.id) {
+        console.log('Artboard drag prevented - initiated by child:', target.id())
+        // Stop the artboard from dragging
+        e.target.stopDrag()
+        return
+      }
 
-    // Set current object for snapping manager
-    snappingManager.setCurrentObject(artboard.id)
-    onDragStart?.(artboard.id)
-  }, [artboard.id, onDragStart])
+      // Set current object for snapping manager
+      snappingManager.setCurrentObject(artboard.id)
+      onDragStart?.(artboard.id)
+    },
+    [artboard.id, onDragStart]
+  )
 
   // Handle drag move with snapping
   const handleDragMove = useCallback(

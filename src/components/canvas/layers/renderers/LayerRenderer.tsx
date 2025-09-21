@@ -95,6 +95,7 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
     selectLayer,
     getLayer,
     moveLayer,
+    activeLayerRoles,
   } = useStore()
 
   // Image state - only used for image layers
@@ -545,12 +546,26 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
 
   const isSelected = selectedLayerIds.has(layer.id)
 
+  // Check if this layer has a role
+  const layerRole = useMemo(() => {
+    const role = activeLayerRoles.find((r) => r.layerId === layer.id)?.role || null
+    return role
+  }, [activeLayerRoles, layer.id])
+
+  // Get border color based on role
+  const getBorderColor = useCallback(() => {
+    if (layerRole === 'img2img_init') return '#4ade80' // Green
+    if (layerRole === 'inpaint_image') return '#fbbf24' // Yellow/amber
+    if (layerRole === 'controlnet') return '#3b82f6' // Blue
+    if (isSelected) return '#646cff' // Selection blue
+    return 'transparent'
+  }, [layerRole, isSelected])
+
   // Get children for group layers (must be before any returns for React hooks rule)
   const children = useMemo(
     () => (layer.type === 'group' ? getLayerChildren(layer.id) : []),
     [layer.type, layer.id, getLayerChildren]
   )
-
 
   // Calculate group bounds for selection rendering (must be before any returns for React hooks rule)
   const groupBounds = useMemo(() => {
@@ -707,49 +722,48 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
       }
 
       return (
-        <>
+        <Group
+          ref={nodeRef}
+          id={layer.id}
+          x={layer.x}
+          y={layer.y}
+          rotation={layer.rotation}
+          scaleX={layer.scaleX}
+          scaleY={layer.scaleY}
+          opacity={layer.opacity}
+          visible={layer.visible}
+          draggable={!layer.locked && currentTool === CanvasTool.SELECT}
+          onDragStart={handleDragStart}
+          onDragMove={handleDragMove}
+          onDragEnd={handleDragEnd}
+          onContextMenu={handleContextMenu}
+          onClick={handleClick}
+        >
           <KonvaImage
-            ref={nodeRef}
-            id={layer.id}
             image={image}
-            x={layer.x}
-            y={layer.y}
+            x={0}
+            y={0}
             width={layer.imageProps.width}
             height={layer.imageProps.height}
-            rotation={layer.rotation}
-            scaleX={layer.scaleX}
-            scaleY={layer.scaleY}
-            opacity={layer.opacity}
-            visible={layer.visible}
-            draggable={!layer.locked && currentTool === CanvasTool.SELECT}
-            onDragStart={handleDragStart}
-            onDragMove={handleDragMove}
-            onDragEnd={handleDragEnd}
-            onContextMenu={handleContextMenu}
-            onClick={handleClick}
             globalCompositeOperation={globalCompositeOperation}
             // Reduce image quality for performance when zoomed out
             imageSmoothingEnabled={shouldRenderHighQuality}
             pixelPerfect={levelOfDetail === 'high'}
           />
-          {/* Selection glow effect only - MultiTransformer handles the frame */}
-          {isSelected &&
-            parentScale >= 0.5 &&
-            (() => {
-              const glowStyles = getSelectionGlowStyles('image', false, parentScale)
-              return (
-                <Rect
-                  x={layer.x}
-                  y={layer.y}
-                  width={layer.imageProps.width * (layer.scaleX || 1)}
-                  height={layer.imageProps.height * (layer.scaleY || 1)}
-                  rotation={layer.rotation}
-                  {...glowStyles}
-                  listening={false}
-                />
-              )
-            })()}
-        </>
+          {/* Selection/role border rendered on top */}
+          {(isSelected || layerRole) && (
+            <Rect
+              x={0}
+              y={0}
+              width={layer.imageProps.width}
+              height={layer.imageProps.height}
+              stroke={getBorderColor()}
+              strokeWidth={layerRole ? 3 : 2}
+              fill="transparent"
+              listening={false}
+            />
+          )}
+        </Group>
       )
     }
 
@@ -785,64 +799,67 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
           onClick={handleClick}
           onContextMenu={handleContextMenu}
         >
-            {/* Invisible hit area for selection and dragging */}
+          {/* Invisible hit area for selection and dragging */}
+          <Rect
+            x={drawingBounds.x}
+            y={drawingBounds.y}
+            width={drawingBounds.width}
+            height={drawingBounds.height}
+            fill="transparent"
+            listening={true}
+          />
+
+          {/* Render each stroke */}
+          {layer.drawingProps.strokes.map((stroke, index) => {
+            // If we have an outline from PerfectFreehand, render as filled polygon
+            if (stroke.outline && stroke.outline.length > 0) {
+              const flatPoints = stroke.outline.flat()
+              return (
+                <Line
+                  key={`${layer.id}-stroke-${index}`}
+                  points={flatPoints}
+                  fill={stroke.color}
+                  closed={true}
+                  opacity={stroke.opacity}
+                  listening={false}
+                />
+              )
+            }
+            // Fallback to regular line if no outline
+            return (
+              <Line
+                key={`${layer.id}-stroke-${index}`}
+                points={stroke.points}
+                stroke={stroke.color}
+                strokeWidth={stroke.strokeWidth}
+                tension={0.5}
+                lineCap="round"
+                lineJoin="round"
+                opacity={stroke.opacity}
+                listening={false}
+              />
+            )
+          })}
+
+          {/* Selection indicator with role-based coloring */}
+          {(selectedLayerIds.has(layer.id) || layerRole) && (
             <Rect
               x={drawingBounds.x}
               y={drawingBounds.y}
               width={drawingBounds.width}
               height={drawingBounds.height}
+              stroke={getBorderColor()}
+              strokeWidth={layerRole ? 3 / parentScale : 2 / parentScale}
+              strokeScaleEnabled={false}
               fill="transparent"
-              listening={true}
+              listening={false}
+              dash={[5, 5]}
+              shadowBlur={layerRole ? 15 : 0}
+              shadowColor={getBorderColor()}
+              shadowOpacity={layerRole ? 0.6 : 0}
             />
-
-            {/* Render each stroke */}
-            {layer.drawingProps.strokes.map((stroke, index) => {
-              // If we have an outline from PerfectFreehand, render as filled polygon
-              if (stroke.outline && stroke.outline.length > 0) {
-                const flatPoints = stroke.outline.flat()
-                return (
-                  <Line
-                    key={`${layer.id}-stroke-${index}`}
-                    points={flatPoints}
-                    fill={stroke.color}
-                    closed={true}
-                    opacity={stroke.opacity}
-                    listening={false}
-                  />
-                )
-              }
-              // Fallback to regular line if no outline
-              return (
-                <Line
-                  key={`${layer.id}-stroke-${index}`}
-                  points={stroke.points}
-                  stroke={stroke.color}
-                  strokeWidth={stroke.strokeWidth}
-                  tension={0.5}
-                  lineCap="round"
-                  lineJoin="round"
-                  opacity={stroke.opacity}
-                  listening={false}
-                />
-              )
-            })}
-
-            {/* Selection indicator */}
-            {selectedLayerIds.has(layer.id) && (
-              <Rect
-                x={drawingBounds.x}
-                y={drawingBounds.y}
-                width={drawingBounds.width}
-                height={drawingBounds.height}
-                stroke="#646cff"
-                strokeWidth={2 / parentScale}
-                strokeScaleEnabled={false}
-                fill="transparent"
-                listening={false}
-                dash={[5, 5]}
-              />
-            )}
-          </Group>
+          )}
+        </Group>
       )
     }
 

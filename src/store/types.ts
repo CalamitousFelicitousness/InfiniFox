@@ -61,6 +61,11 @@ export interface ImageRole {
   role: 'img2img_init' | 'inpaint_image' | 'controlnet'
 }
 
+export interface LayerRole {
+  layerId: string
+  role: 'img2img_init' | 'inpaint_image' | 'controlnet'
+}
+
 export interface CanvasSelectionMode {
   active: boolean
   mode: 'img2img_init' | 'inpaint_image' | 'controlnet' | null

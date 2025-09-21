@@ -107,7 +107,6 @@ export function CanvasContextMenu({
   const {
     setImageRole,
     getImageRole,
-    clearImageRoles,
     activeImageRoles,
     generationFrames,
     removeGenerationFrame,
@@ -503,6 +502,107 @@ export function CanvasContextMenu({
           </>
         )}
 
+        {/* AI Generation operations */}
+        {(currentLayer.type === 'image' || currentLayer.type === 'drawing' || isGroup) && (
+          <>
+            <hr className="menu-divider" />
+            <button
+              className="menu-item"
+              onPointerDown={(e) => {
+                e.preventDefault()
+                const store = useStore.getState()
+                const { setLayerRole, getLayerRole } = store
+
+                // Toggle role - if already has this role, clear it
+                const currentRole = getLayerRole(layerId)
+                if (currentRole === 'img2img_init') {
+                  setLayerRole(layerId, null)
+                } else {
+                  setLayerRole(layerId, 'img2img_init')
+                }
+                onClose()
+              }}
+            >
+              <Icon icon="image" size={16} />
+              {getLayer(layerId) && useStore.getState().getLayerRole(layerId) === 'img2img_init' ? (
+                <>
+                  <Check size={12} style={{ marginLeft: 'auto' }} />
+                  Remove from Img2Img
+                </>
+              ) : (
+                'Set for Image to Image'
+              )}
+            </button>
+
+            <button
+              className="menu-item"
+              onPointerDown={(e) => {
+                e.preventDefault()
+                const store = useStore.getState()
+                const { setLayerRole, getLayerRole } = store
+
+                // Toggle role
+                const currentRole = getLayerRole(layerId)
+                if (currentRole === 'inpaint_image') {
+                  setLayerRole(layerId, null)
+                } else {
+                  setLayerRole(layerId, 'inpaint_image')
+                }
+                onClose()
+              }}
+            >
+              <Icon icon="edit-2" size={16} />
+              {getLayer(layerId) &&
+              useStore.getState().getLayerRole(layerId) === 'inpaint_image' ? (
+                <>
+                  <Check size={12} style={{ marginLeft: 'auto' }} />
+                  Remove from Inpaint
+                </>
+              ) : (
+                'Set for Inpainting'
+              )}
+            </button>
+
+            {currentLayer.type === 'drawing' && (
+              <button
+                className="menu-item"
+                onPointerDown={(e) => {
+                  e.preventDefault()
+                  const store = useStore.getState()
+                  const { setLayerRole } = store
+
+                  // Set as img2img with drawing
+                  setLayerRole(layerId, 'img2img_init')
+                  onClose()
+                }}
+              >
+                <Icon icon="wand-2" size={16} />
+                Use Drawing for Generation
+              </button>
+            )}
+
+            {/* Clear all roles option - show if any roles are assigned */}
+            {(useStore.getState().activeLayerRoles.length > 0 ||
+              useStore.getState().activeImageRoles.length > 0) && (
+              <>
+                <hr className="menu-divider" />
+                <button
+                  className="menu-item"
+                  onPointerDown={(e) => {
+                    e.preventDefault()
+                    const store = useStore.getState()
+                    store.clearAllRoles()
+                    onClose()
+                  }}
+                >
+                  <Icon icon="x-circle" size={16} />
+                  Clear All Generation Roles
+                </button>
+              </>
+            )}
+          </>
+        )}
+
         <hr className="menu-divider" />
 
         <button
@@ -817,18 +917,21 @@ export function CanvasContextMenu({
           >
             Upload Image
           </button>
-          {activeImageRoles.length > 0 && (
+          {(useStore.getState().activeLayerRoles.length > 0 ||
+            useStore.getState().activeImageRoles.length > 0) && (
             <>
               <hr className="menu-divider" />
               <button
                 className="menu-item"
                 onPointerDown={(e) => {
                   e.preventDefault()
-                  clearImageRoles()
+                  const store = useStore.getState()
+                  store.clearAllRoles()
                   onClose()
                 }}
               >
-                Clear All Image Roles ({activeImageRoles.length} active)
+                <Icon icon="x-circle" size={16} />
+                Clear All Generation Roles
               </button>
             </>
           )}
