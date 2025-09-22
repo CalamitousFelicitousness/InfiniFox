@@ -18,6 +18,9 @@ export interface GenerationFrame {
   error?: string
   label?: string
   locked?: boolean
+  // Batch progress tracking
+  jobCount?: number
+  jobNo?: number
 }
 
 interface UseGenerationFramesProps {
@@ -53,6 +56,12 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
     // Layer system state
     activeLayerRoles,
     getLayer,
+    // Generation parameters from store
+    denoisingStrength,
+    maskBlur,
+    inpaintingFill,
+    inpaintFullRes,
+    inpaintFullResPadding,
   } = useStore()
 
   // Local state
@@ -77,12 +86,16 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
           progress,
           previewImage: message.preview ? `data:image/png;base64,${message.preview}` : undefined,
           isGenerating: true,
+          jobCount: message.jobCount,
+          jobNo: message.jobNo,
         })
       } else if (message.phase === 'vae' || message.phase === 'postprocessing') {
         updateGenerationFrame(currentlyGeneratingFrameId, {
           progress: 95,
           previewImage: message.preview ? `data:image/png;base64,${message.preview}` : undefined,
           isGenerating: true,
+          jobCount: message.jobCount,
+          jobNo: message.jobNo,
         })
       } else if (message.phase === 'completed') {
         updateGenerationFrame(currentlyGeneratingFrameId, {
@@ -119,11 +132,11 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
                         {
                           baseImage: baseImageBase64,
                           maskImage: baseImageBase64,
-                          denoisingStrength: 0.75,
-                          maskBlur: 4,
-                          inpaintingFill: 'original',
-                          inpaintFullRes: false,
-                          inpaintFullResPadding: 32,
+                          denoisingStrength,
+                          maskBlur,
+                          inpaintingFill,
+                          inpaintFullRes,
+                          inpaintFullResPadding,
                         },
                         nextId
                       )
@@ -139,11 +152,11 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
                     {
                       baseImage: baseImageBase64,
                       maskImage: baseImageBase64,
-                      denoisingStrength: 0.75,
-                      maskBlur: 4,
-                      inpaintingFill: 'original',
-                      inpaintFullRes: false,
-                      inpaintFullResPadding: 32,
+                      denoisingStrength,
+                      maskBlur,
+                      inpaintingFill,
+                      inpaintFullRes,
+                      inpaintFullResPadding,
                     },
                     nextId
                   )
@@ -155,7 +168,7 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
                 LayerExportService.exportLayerAsBase64(layerImg2imgRole.layerId).then(
                   (baseImageBase64) => {
                     if (baseImageBase64) {
-                      generateImg2Img(baseImageBase64, 0.5, nextId)
+                      generateImg2Img(baseImageBase64, denoisingStrength, nextId)
                     }
                   }
                 )
@@ -164,7 +177,7 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
               const img2imgImage = images.find((img) => img.id === imageImg2imgRole.imageId)
               if (img2imgImage) {
                 exportImageAsBase64(img2imgImage.id).then((baseImageBase64) => {
-                  generateImg2Img(baseImageBase64, 0.5, nextId)
+                  generateImg2Img(baseImageBase64, denoisingStrength, nextId)
                 })
               }
             } else {
@@ -247,7 +260,7 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
                   LayerExportService.exportLayerAsBase64(layerImg2imgRole.layerId).then(
                     (baseImageBase64) => {
                       if (baseImageBase64) {
-                        generateImg2Img(baseImageBase64, 0.5, nextId)
+                        generateImg2Img(baseImageBase64, denoisingStrength, nextId)
                       }
                     }
                   )
@@ -256,7 +269,7 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
                 const img2imgImage = images.find((img) => img.id === imageImg2imgRole.imageId)
                 if (img2imgImage) {
                   exportImageAsBase64(img2imgImage.id).then((baseImageBase64) => {
-                    generateImg2Img(baseImageBase64, 0.5, nextId)
+                    generateImg2Img(baseImageBase64, denoisingStrength, nextId)
                   })
                 }
               } else {
@@ -290,6 +303,11 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
     generateTxt2Img,
     generateImg2Img,
     generateInpaint,
+    denoisingStrength,
+    maskBlur,
+    inpaintingFill,
+    inpaintFullRes,
+    inpaintFullResPadding,
   ])
 
   /**
@@ -410,11 +428,11 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
                 {
                   baseImage: baseImageBase64,
                   maskImage: baseImageBase64, // TODO: Implement proper mask drawing
-                  denoisingStrength: 0.75,
-                  maskBlur: 4,
-                  inpaintingFill: 'original',
-                  inpaintFullRes: false,
-                  inpaintFullResPadding: 32,
+                  denoisingStrength,
+                  maskBlur,
+                  inpaintingFill,
+                  inpaintFullRes,
+                  inpaintFullResPadding,
                 },
                 frameId
               )
@@ -433,11 +451,11 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
               {
                 baseImage: baseImageBase64,
                 maskImage: baseImageBase64, // TODO: Implement proper mask drawing
-                denoisingStrength: 0.75,
-                maskBlur: 4,
-                inpaintingFill: 'original',
-                inpaintFullRes: false,
-                inpaintFullResPadding: 32,
+                denoisingStrength,
+                maskBlur,
+                inpaintingFill,
+                inpaintFullRes,
+                inpaintFullResPadding,
               },
               frameId
             )
@@ -452,7 +470,7 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
               layerImg2imgRole.layerId
             )
             if (baseImageBase64) {
-              await generateImg2Img(baseImageBase64, 0.5, frameId)
+              await generateImg2Img(baseImageBase64, denoisingStrength, frameId)
             } else {
               throw new Error('Failed to export layer for img2img')
             }
@@ -464,7 +482,7 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
           const img2imgImage = images.find((img) => img.id === imageImg2imgRole.imageId)
           if (img2imgImage) {
             const baseImageBase64 = await exportImageAsBase64(img2imgImage.id)
-            await generateImg2Img(baseImageBase64, 0.5, frameId)
+            await generateImg2Img(baseImageBase64, denoisingStrength, frameId)
           } else {
             throw new Error('Img2Img init image not found')
           }
@@ -493,6 +511,11 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
       generateTxt2Img,
       generateImg2Img,
       generateInpaint,
+      denoisingStrength,
+      maskBlur,
+      inpaintingFill,
+      inpaintFullRes,
+      inpaintFullResPadding,
     ]
   )
 

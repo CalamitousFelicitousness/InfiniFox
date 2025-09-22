@@ -2,6 +2,11 @@ import { sdnextApi } from '../../api/sdnextApi'
 import { LayerExportService } from '../../services/layers/LayerExportService'
 import { progressService } from '../../services/progress/ProgressService'
 import { imageStorage } from '../../services/storage/UnifiedImageStorageService'
+import {
+  validateGenerationParams,
+  autoFixGenerationParams,
+  formatValidationErrors,
+} from '../../utils/validation/generationValidation'
 import { useQueueStore } from '../queueStore'
 import type { InpaintParams, SliceCreator } from '../types'
 
@@ -44,11 +49,10 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       removeGenerationFrame,
       addActiveGenerationFrameId,
       removeActiveGenerationFrameId,
-      addToGenerationQueue,
-      removeFromGenerationQueue,
-      setCurrentlyGeneratingFrame,
-      getNextInQueue,
       currentlyGeneratingFrameId,
+      addToGenerationQueue,
+      setCurrentlyGeneratingFrame,
+      removeFromGenerationQueue,
     } = get()
 
     if (!prompt) {
@@ -56,20 +60,70 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       return
     }
 
-    const params = {
-      prompt,
-      negative_prompt: negativePrompt,
-      sampler_name: sampler,
-      seed,
-      steps,
-      cfg_scale: cfgScale,
+    // Validate generation parameters
+    const validationErrors = validateGenerationParams({
       width,
       height,
+      seed,
+      steps,
+      cfgScale,
+    })
+
+    let finalWidth = width
+    let finalHeight = height
+    let finalSeed = seed
+    let finalSteps = steps
+    let finalCfgScale = cfgScale
+
+    if (validationErrors.length > 0) {
+      // Auto-fix validation errors
+      const fixed = autoFixGenerationParams(
+        { width, height, seed, steps, cfgScale },
+        validationErrors
+      )
+      finalWidth = fixed.width || width
+      finalHeight = fixed.height || height
+      finalSeed = fixed.seed !== undefined ? fixed.seed : seed
+      finalSteps = fixed.steps || steps
+      finalCfgScale = fixed.cfgScale || cfgScale
+
+      // Notify user of auto-corrections
+      console.warn(
+        'Generation parameters auto-corrected:',
+        formatValidationErrors(validationErrors)
+      )
     }
 
     // Check if batch mode is enabled
     const { batchSettings } = useQueueStore.getState()
-    if (batchSettings.enabled) {
+
+    // Determine if we should use native batch support
+    const shouldUseNativeBatch =
+      batchSettings.count > 1 &&
+      !batchSettings.variations.prompt &&
+      !batchSettings.variations.steps &&
+      !batchSettings.variations.cfgScale
+
+    const params = {
+      prompt,
+      negative_prompt: negativePrompt,
+      sampler_name: sampler,
+      seed: finalSeed,
+      steps: finalSteps,
+      cfg_scale: finalCfgScale,
+      width: finalWidth,
+      height: finalHeight,
+      // Add native batch parameters when appropriate
+      ...(shouldUseNativeBatch
+        ? {
+            n_iter: batchSettings.count,
+            batch_size: 1, // Use n_iter for sequential generation, batch_size for parallel
+          }
+        : {}),
+    }
+
+    // Use queue system only for variations
+    if (batchSettings.count > 1 && !shouldUseNativeBatch) {
       useQueueStore.getState().addBatch(params, 'txt2img')
       return
     }
@@ -107,76 +161,90 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       const response = await sdnextApi.txt2img(params)
       console.log('Generation response received:', response)
 
-      // Create unique ID for the image
-      const imageId = `img-${Date.now()}`
-
-      // Convert base64 to blob
-      const base64 = response.images[0]
-      const binaryString = atob(base64.startsWith('data:') ? base64.split(',')[1] : base64)
-      const bytes = new Uint8Array(binaryString.length)
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i)
+      // Handle multiple images in response
+      const images = response.images || []
+      if (images.length === 0) {
+        throw new Error('No images returned from API')
       }
-      const blob = new Blob([bytes], { type: 'image/png' })
 
-      // Store the blob
-      const storedImage = await imageStorage.createFromBlob(imageId, blob, {
-        type: 'generated',
-        prompt,
-        negativePrompt,
-        seed,
-        steps,
-        cfgScale,
-        width,
-        height,
-        sampler,
-        usedIn: new Set(),
-      })
-
-      // Get object URL for display
-      const objectUrl = await imageStorage.getOrCreateObjectUrl(imageId)
-
-      // Use the frame position
+      // Use the frame position for first image
       const frame = generationFrames.find((f) => f.id === actualFrameId)
-      const frameX = frame ? frame.x : Math.random() * (window.innerWidth - 400)
-      const frameY = frame ? frame.y : Math.random() * (window.innerHeight - 200)
+      const baseX = frame ? frame.x : Math.random() * (window.innerWidth - 400)
+      const baseY = frame ? frame.y : Math.random() * (window.innerHeight - 200)
 
-      // Check if layer system is enabled (look for addLayer function)
-      const hasLayerSystem = typeof get().addLayer === 'function'
+      // Process all images returned (for batch generation)
+      for (let i = 0; i < images.length; i++) {
+        const imageId = `img-${Date.now()}-${i}`
 
-      if (hasLayerSystem) {
-        // Add as layer for layer system
-        get().addLayer(
-          {
-            type: 'image',
-            name: prompt ? `Generated: ${prompt.slice(0, 30)}...` : 'Generated Image',
+        // Convert base64 to blob
+        const base64 = images[i]
+        const binaryString = atob(base64.startsWith('data:') ? base64.split(',')[1] : base64)
+        const bytes = new Uint8Array(binaryString.length)
+        for (let j = 0; j < binaryString.length; j++) {
+          bytes[j] = binaryString.charCodeAt(j)
+        }
+        const blob = new Blob([bytes], { type: 'image/png' })
+
+        // Store the blob
+        const storedImage = await imageStorage.createFromBlob(imageId, blob, {
+          type: 'generated',
+          prompt,
+          negativePrompt,
+          seed: finalSeed + i, // Increment seed for batch images
+          steps: finalSteps,
+          cfgScale: finalCfgScale,
+          width: finalWidth,
+          height: finalHeight,
+          sampler,
+          usedIn: new Set(),
+        })
+
+        // Get object URL for display
+        const objectUrl = await imageStorage.getOrCreateObjectUrl(imageId)
+
+        // Offset position for multiple images (cascade them)
+        const frameX = baseX + i * 30
+        const frameY = baseY + i * 30
+
+        // Check if layer system is enabled (look for addLayer function)
+        const hasLayerSystem = typeof get().addLayer === 'function'
+
+        if (hasLayerSystem) {
+          // Add as layer for layer system
+          get().addLayer(
+            {
+              type: 'image',
+              name: prompt
+                ? `Generated: ${prompt.slice(0, 30)}... (${i + 1}/${images.length})`
+                : `Generated Image ${i + 1}`,
+              x: frameX,
+              y: frameY,
+              imageProps: {
+                imageId, // Reference to unified storage
+                width: finalWidth,
+                height: finalHeight,
+                naturalWidth: finalWidth,
+                naturalHeight: finalHeight,
+              },
+            },
+            undefined // No parent - add as root layer
+          )
+        } else {
+          // Add to flat images array for old system
+          const newImage = {
+            id: imageId,
+            src: objectUrl, // Use object URL instead of base64
             x: frameX,
             y: frameY,
-            imageProps: {
-              imageId, // Reference to unified storage
-              width,
-              height,
-              naturalWidth: width,
-              naturalHeight: height,
-            },
-          },
-          undefined // No parent - add as root layer
-        )
-      } else {
-        // Add to flat images array for old system
-        const newImage = {
-          id: imageId,
-          src: objectUrl, // Use object URL instead of base64
-          x: frameX,
-          y: frameY,
-          width,
-          height,
-          metadata: storedImage.metadata,
-          blobId: imageId, // Reference to stored blob
-          isTemporary: false,
-        }
+            width: finalWidth,
+            height: finalHeight,
+            metadata: storedImage.metadata,
+            blobId: imageId, // Reference to stored blob
+            isTemporary: false,
+          }
 
-        get().addImage(newImage)
+          get().addImage(newImage)
+        }
       }
 
       // Remove the generation frame
@@ -241,11 +309,6 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       updateGenerationFrame,
       addActiveGenerationFrameId,
       removeActiveGenerationFrameId,
-      addToGenerationQueue,
-      removeFromGenerationQueue,
-      setCurrentlyGeneratingFrame,
-      getNextInQueue,
-      currentlyGeneratingFrameId,
     } = get()
 
     const frame = generationFrames.find((f) => f.id === frameId)
@@ -259,26 +322,76 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       return
     }
 
+    // Validate generation parameters
+    const validationErrors = validateGenerationParams({
+      width: frame.width,
+      height: frame.height,
+      seed,
+      steps,
+      cfgScale,
+    })
+
+    let finalWidth = frame.width
+    let finalHeight = frame.height
+    let finalSeed = seed
+    let finalSteps = steps
+    let finalCfgScale = cfgScale
+
+    if (validationErrors.length > 0) {
+      // Auto-fix validation errors
+      const fixed = autoFixGenerationParams(
+        { width: frame.width, height: frame.height, seed, steps, cfgScale },
+        validationErrors
+      )
+      finalWidth = fixed.width || frame.width
+      finalHeight = fixed.height || frame.height
+      finalSeed = fixed.seed !== undefined ? fixed.seed : seed
+      finalSteps = fixed.steps || steps
+      finalCfgScale = fixed.cfgScale || cfgScale
+
+      // Notify user of auto-corrections
+      console.warn(
+        'Generation parameters auto-corrected:',
+        formatValidationErrors(validationErrors)
+      )
+    }
+
     // Convert placeholder to active
     convertPlaceholderToActive?.(frameId)
     addActiveGenerationFrameId(frameId)
 
     set({ isLoading: true })
 
+    // Check if batch mode is enabled
+    const { batchSettings } = useQueueStore.getState()
+
+    // Determine if we should use native batch support
+    const shouldUseNativeBatch =
+      batchSettings.count > 1 &&
+      !batchSettings.variations.prompt &&
+      !batchSettings.variations.steps &&
+      !batchSettings.variations.cfgScale
+
     const params = {
       prompt,
       negative_prompt: negativePrompt,
       sampler_name: sampler,
-      seed,
-      steps,
-      cfg_scale: cfgScale,
-      width: frame.width,
-      height: frame.height,
+      seed: finalSeed,
+      steps: finalSteps,
+      cfg_scale: finalCfgScale,
+      width: finalWidth,
+      height: finalHeight,
+      // Add native batch parameters when appropriate
+      ...(shouldUseNativeBatch
+        ? {
+            n_iter: batchSettings.count,
+            batch_size: 1, // Use n_iter for sequential generation, batch_size for parallel
+          }
+        : {}),
     }
 
-    // Check if batch mode is enabled
-    const { batchSettings } = useQueueStore.getState()
-    if (batchSettings.enabled) {
+    // Use queue system only for variations
+    if (batchSettings.count > 1 && !shouldUseNativeBatch) {
       useQueueStore.getState().addBatch(params, 'txt2img')
       set({ isLoading: false })
       return
@@ -288,67 +401,82 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       progressService.startPolling()
       const response = await sdnextApi.txt2img(params)
 
-      const imageId = `img-${Date.now()}`
-      // Convert base64 to blob
-      const base64 = response.images[0]
-      const binaryString = atob(base64.startsWith('data:') ? base64.split(',')[1] : base64)
-      const bytes = new Uint8Array(binaryString.length)
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i)
+      // Handle multiple images in response
+      const images = response.images || []
+      if (images.length === 0) {
+        throw new Error('No images returned from API')
       }
-      const blob = new Blob([bytes], { type: 'image/png' })
 
-      const storedImage = await imageStorage.createFromBlob(imageId, blob, {
-        type: 'generated',
-        prompt,
-        negativePrompt,
-        seed,
-        steps,
-        cfgScale,
-        width: frame.width,
-        height: frame.height,
-        sampler,
-        usedIn: new Set(),
-      })
+      // Process all images returned (for batch generation)
+      for (let i = 0; i < images.length; i++) {
+        const imageId = `img-${Date.now()}-${i}`
+        // Convert base64 to blob
+        const base64 = images[i]
+        const binaryString = atob(base64.startsWith('data:') ? base64.split(',')[1] : base64)
+        const bytes = new Uint8Array(binaryString.length)
+        for (let j = 0; j < binaryString.length; j++) {
+          bytes[j] = binaryString.charCodeAt(j)
+        }
+        const blob = new Blob([bytes], { type: 'image/png' })
 
-      const objectUrl = await imageStorage.getOrCreateObjectUrl(imageId)
-
-      // Check if layer system is enabled
-      const hasLayerSystem = typeof get().addLayer === 'function'
-
-      if (hasLayerSystem) {
-        // Add as layer for layer system
-        get().addLayer(
-          {
-            type: 'image',
-            name: prompt ? `Generated: ${prompt.slice(0, 30)}...` : 'Generated Image',
-            x: frame.x,
-            y: frame.y,
-            imageProps: {
-              imageId,
-              width: frame.width,
-              height: frame.height,
-              naturalWidth: frame.width,
-              naturalHeight: frame.height,
-            },
-          },
-          undefined
-        )
-      } else {
-        // Add to flat images array for old system
-        const newImage = {
-          id: imageId,
-          src: objectUrl,
-          x: frame.x,
-          y: frame.y,
+        const storedImage = await imageStorage.createFromBlob(imageId, blob, {
+          type: 'generated',
+          prompt,
+          negativePrompt,
+          seed: finalSeed + i, // Increment seed for batch images
+          steps: finalSteps,
+          cfgScale: finalCfgScale,
           width: frame.width,
           height: frame.height,
-          metadata: storedImage.metadata,
-          blobId: imageId,
-          isTemporary: false,
-        }
+          sampler,
+          usedIn: new Set(),
+        })
 
-        get().addImage(newImage)
+        const objectUrl = await imageStorage.getOrCreateObjectUrl(imageId)
+
+        // Check if layer system is enabled
+        const hasLayerSystem = typeof get().addLayer === 'function'
+
+        // Offset position for multiple images (cascade them)
+        const offsetX = frame.x + i * 30
+        const offsetY = frame.y + i * 30
+
+        if (hasLayerSystem) {
+          // Add as layer for layer system
+          get().addLayer(
+            {
+              type: 'image',
+              name: prompt
+                ? `Generated: ${prompt.slice(0, 30)}... (${i + 1}/${images.length})`
+                : `Generated Image ${i + 1}`,
+              x: offsetX,
+              y: offsetY,
+              imageProps: {
+                imageId,
+                width: frame.width,
+                height: frame.height,
+                naturalWidth: frame.width,
+                naturalHeight: frame.height,
+              },
+            },
+            undefined
+          )
+        } else {
+          // Add to flat images array for old system
+          const newImage = {
+            id: imageId,
+            src: objectUrl,
+            x: offsetX,
+            y: offsetY,
+            width: frame.width,
+            height: frame.height,
+            metadata: storedImage.metadata,
+            blobId: imageId,
+            isTemporary: false,
+          }
+
+          get().addImage(newImage)
+        }
       }
 
       // Remove frame after successful generation
@@ -388,17 +516,20 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       cfgScale,
       width,
       height,
+      denoisingStrength: storeDenoisingStrength,
       generationFrames,
       removeGenerationFrame,
       updateGenerationFrame,
       addActiveGenerationFrameId,
       removeActiveGenerationFrameId,
-      addToGenerationQueue,
-      removeFromGenerationQueue,
-      setCurrentlyGeneratingFrame,
-      getNextInQueue,
       currentlyGeneratingFrameId,
+      addToGenerationQueue,
+      setCurrentlyGeneratingFrame,
+      removeFromGenerationQueue,
     } = get()
+
+    // Use passed denoisingStrength or fallback to store value
+    const finalDenoisingStrength = denoisingStrength ?? storeDenoisingStrength
 
     if (!prompt) {
       alert('Please enter a prompt.')
@@ -412,25 +543,86 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
 
     // Determine dimensions based on frame or default
     const frame = frameId ? generationFrames.find((f) => f.id === frameId) : null
-    const finalWidth = frame ? frame.width : width
-    const finalHeight = frame ? frame.height : height
+    const baseWidth = frame ? frame.width : width
+    const baseHeight = frame ? frame.height : height
+
+    // Validate generation parameters
+    const validationErrors = validateGenerationParams({
+      width: baseWidth,
+      height: baseHeight,
+      seed,
+      steps,
+      cfgScale,
+      denoisingStrength: finalDenoisingStrength,
+    })
+
+    let finalWidth = baseWidth
+    let finalHeight = baseHeight
+    let finalSeed = seed
+    let finalSteps = steps
+    let finalCfgScale = cfgScale
+    let validatedDenoisingStrength = finalDenoisingStrength
+
+    if (validationErrors.length > 0) {
+      // Auto-fix validation errors
+      const fixed = autoFixGenerationParams(
+        {
+          width: baseWidth,
+          height: baseHeight,
+          seed,
+          steps,
+          cfgScale,
+          denoisingStrength: finalDenoisingStrength,
+        },
+        validationErrors
+      )
+      finalWidth = fixed.width || baseWidth
+      finalHeight = fixed.height || baseHeight
+      finalSeed = fixed.seed !== undefined ? fixed.seed : seed
+      finalSteps = fixed.steps || steps
+      finalCfgScale = fixed.cfgScale || cfgScale
+      validatedDenoisingStrength =
+        fixed.denoisingStrength !== undefined ? fixed.denoisingStrength : finalDenoisingStrength
+
+      // Notify user of auto-corrections
+      console.warn(
+        'Generation parameters auto-corrected:',
+        formatValidationErrors(validationErrors)
+      )
+    }
+
+    // Check if batch mode is enabled
+    const { batchSettings } = useQueueStore.getState()
+
+    // Determine if we should use native batch support
+    const shouldUseNativeBatch =
+      batchSettings.count > 1 &&
+      !batchSettings.variations.prompt &&
+      !batchSettings.variations.steps &&
+      !batchSettings.variations.cfgScale
 
     const params = {
       init_images: [baseImage],
       prompt,
       negative_prompt: negativePrompt,
       sampler_name: sampler,
-      seed,
-      steps,
-      cfg_scale: cfgScale,
+      seed: finalSeed,
+      steps: finalSteps,
+      cfg_scale: finalCfgScale,
       width: finalWidth,
       height: finalHeight,
-      denoising_strength: denoisingStrength,
+      denoising_strength: validatedDenoisingStrength,
+      // Add native batch parameters when appropriate
+      ...(shouldUseNativeBatch
+        ? {
+            n_iter: batchSettings.count,
+            batch_size: 1, // Use n_iter for sequential generation
+          }
+        : {}),
     }
 
-    // Check if batch mode is enabled
-    const { batchSettings } = useQueueStore.getState()
-    if (batchSettings.enabled) {
+    // Use queue system only for variations
+    if (batchSettings.count > 1 && !shouldUseNativeBatch) {
       useQueueStore.getState().addBatch(params, 'img2img')
       return
     }
@@ -460,79 +652,93 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
 
       const response = await sdnextApi.img2img(params)
 
-      // Create unique ID for the image
-      const imageId = `img-${Date.now()}`
-
-      // Convert base64 to blob
-      const base64 = response.images[0]
-      const binaryString = atob(base64.startsWith('data:') ? base64.split(',')[1] : base64)
-      const bytes = new Uint8Array(binaryString.length)
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i)
+      // Handle multiple images in response
+      const images = response.images || []
+      if (images.length === 0) {
+        throw new Error('No images returned from API')
       }
-      const blob = new Blob([bytes], { type: 'image/png' })
 
-      const storedImage = await imageStorage.createFromBlob(imageId, blob, {
-        type: 'generated',
-        prompt,
-        negativePrompt,
-        seed,
-        steps,
-        cfgScale,
-        width: finalWidth,
-        height: finalHeight,
-        sampler,
-        denoisingStrength,
-        usedIn: new Set(),
-      })
-
-      const objectUrl = await imageStorage.getOrCreateObjectUrl(imageId)
-
-      // Determine position based on frame or active generation frame
-      let x: number, y: number
+      // Determine base position based on frame or active generation frame
+      let baseX: number, baseY: number
       if (frame) {
-        x = frame.x
-        y = frame.y
+        baseX = frame.x
+        baseY = frame.y
       } else {
         const activeFrame = generationFrames.find((f) => f.isGenerating)
-        x = activeFrame ? activeFrame.x : Math.random() * (window.innerWidth - 200)
-        y = activeFrame ? activeFrame.y : Math.random() * (window.innerHeight - 200)
+        baseX = activeFrame ? activeFrame.x : Math.random() * (window.innerWidth - 200)
+        baseY = activeFrame ? activeFrame.y : Math.random() * (window.innerHeight - 200)
       }
 
-      // Check if layer system is enabled
-      const hasLayerSystem = typeof get().addLayer === 'function'
+      // Process all images returned (for batch generation)
+      for (let i = 0; i < images.length; i++) {
+        const imageId = `img-${Date.now()}-${i}`
 
-      if (hasLayerSystem) {
-        get().addLayer(
-          {
-            type: 'image',
-            name: prompt ? `Img2Img: ${prompt.slice(0, 25)}...` : 'Img2Img Result',
-            x,
-            y,
-            imageProps: {
-              imageId,
-              width: finalWidth,
-              height: finalHeight,
-              naturalWidth: finalWidth,
-              naturalHeight: finalHeight,
-            },
-          },
-          undefined
-        )
-      } else {
-        const newImage = {
-          id: imageId,
-          src: objectUrl,
-          x,
-          y,
+        // Convert base64 to blob
+        const base64 = images[i]
+        const binaryString = atob(base64.startsWith('data:') ? base64.split(',')[1] : base64)
+        const bytes = new Uint8Array(binaryString.length)
+        for (let j = 0; j < binaryString.length; j++) {
+          bytes[j] = binaryString.charCodeAt(j)
+        }
+        const blob = new Blob([bytes], { type: 'image/png' })
+
+        const storedImage = await imageStorage.createFromBlob(imageId, blob, {
+          type: 'generated',
+          prompt,
+          negativePrompt,
+          seed: finalSeed + i, // Increment seed for batch images
+          steps: finalSteps,
+          cfgScale: finalCfgScale,
           width: finalWidth,
           height: finalHeight,
-          metadata: storedImage.metadata,
-          blobId: imageId,
-          isTemporary: false,
+          sampler,
+          denoisingStrength: validatedDenoisingStrength,
+          usedIn: new Set(),
+        })
+
+        const objectUrl = await imageStorage.getOrCreateObjectUrl(imageId)
+
+        // Offset position for multiple images
+        const x = baseX + i * 30
+        const y = baseY + i * 30
+
+        // Check if layer system is enabled
+        const hasLayerSystem = typeof get().addLayer === 'function'
+
+        if (hasLayerSystem) {
+          get().addLayer(
+            {
+              type: 'image',
+              name: prompt
+                ? `Img2Img: ${prompt.slice(0, 25)}... (${i + 1}/${images.length})`
+                : `Img2Img Result ${i + 1}`,
+              x,
+              y,
+              imageProps: {
+                imageId,
+                width: finalWidth,
+                height: finalHeight,
+                naturalWidth: finalWidth,
+                naturalHeight: finalHeight,
+              },
+            },
+            undefined
+          )
+        } else {
+          const newImage = {
+            id: imageId,
+            src: objectUrl,
+            x,
+            y,
+            width: finalWidth,
+            height: finalHeight,
+            metadata: storedImage.metadata,
+            blobId: imageId,
+            isTemporary: false,
+          }
+          get().addImage(newImage)
         }
-        get().addImage(newImage)
-      }
+      } // Close the for loop
 
       // Remove frame and update queue
       if (frameId) {
@@ -586,17 +792,31 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
       cfgScale,
       width,
       height,
+      denoisingStrength: storeDenoisingStrength,
+      maskBlur: storeMaskBlur,
+      inpaintingFill: storeInpaintingFill,
+      inpaintFullRes: storeInpaintFullRes,
+      inpaintFullResPadding: storeInpaintFullResPadding,
       generationFrames,
       removeGenerationFrame,
       updateGenerationFrame,
       addActiveGenerationFrameId,
       removeActiveGenerationFrameId,
-      addToGenerationQueue,
-      removeFromGenerationQueue,
-      setCurrentlyGeneratingFrame,
-      getNextInQueue,
       currentlyGeneratingFrameId,
+      addToGenerationQueue,
+      setCurrentlyGeneratingFrame,
+      removeFromGenerationQueue,
     } = get()
+
+    // Use passed params or fallback to store values
+    const finalParams = {
+      ...params,
+      denoisingStrength: params.denoisingStrength ?? storeDenoisingStrength,
+      maskBlur: params.maskBlur ?? storeMaskBlur,
+      inpaintingFill: params.inpaintingFill ?? storeInpaintingFill,
+      inpaintFullRes: params.inpaintFullRes ?? storeInpaintFullRes,
+      inpaintFullResPadding: params.inpaintFullResPadding ?? storeInpaintFullResPadding,
+    }
 
     if (!prompt) {
       alert('Please enter a prompt.')
@@ -605,37 +825,90 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
 
     // Determine dimensions based on frame or default
     const frame = frameId ? generationFrames.find((f) => f.id === frameId) : null
-    const finalWidth = frame ? frame.width : width
-    const finalHeight = frame ? frame.height : height
+    const baseWidth = frame ? frame.width : width
+    const baseHeight = frame ? frame.height : height
+
+    // Validate generation parameters
+    const validationErrors = validateGenerationParams({
+      width: baseWidth,
+      height: baseHeight,
+      seed,
+      steps,
+      cfgScale,
+      denoisingStrength: finalParams.denoisingStrength,
+      maskBlur: finalParams.maskBlur,
+      inpaintFullResPadding: finalParams.inpaintFullResPadding,
+    })
+
+    let finalWidth = baseWidth
+    let finalHeight = baseHeight
+    let finalSeed = seed
+    let finalSteps = steps
+    let finalCfgScale = cfgScale
+    let finalDenoisingStrength = finalParams.denoisingStrength
+    let finalMaskBlur = finalParams.maskBlur
+
+    if (validationErrors.length > 0) {
+      // Auto-fix validation errors
+      const fixed = autoFixGenerationParams(
+        {
+          width: baseWidth,
+          height: baseHeight,
+          seed,
+          steps,
+          cfgScale,
+          denoisingStrength: finalParams.denoisingStrength,
+          maskBlur: finalParams.maskBlur,
+          inpaintFullResPadding: finalParams.inpaintFullResPadding,
+        },
+        validationErrors
+      )
+      finalWidth = fixed.width || baseWidth
+      finalHeight = fixed.height || baseHeight
+      finalSeed = fixed.seed !== undefined ? fixed.seed : seed
+      finalSteps = fixed.steps || steps
+      finalCfgScale = fixed.cfgScale || cfgScale
+      finalDenoisingStrength =
+        fixed.denoisingStrength !== undefined
+          ? fixed.denoisingStrength
+          : finalParams.denoisingStrength
+      finalMaskBlur = fixed.maskBlur !== undefined ? fixed.maskBlur : finalParams.maskBlur
+
+      // Notify user of auto-corrections
+      console.warn(
+        'Generation parameters auto-corrected:',
+        formatValidationErrors(validationErrors)
+      )
+    }
 
     const apiParams = {
-      init_images: [params.baseImage],
-      mask: params.maskImage,
+      init_images: [finalParams.baseImage],
+      mask: finalParams.maskImage,
       prompt,
       negative_prompt: negativePrompt,
       sampler_name: sampler,
-      seed,
-      steps,
-      cfg_scale: cfgScale,
+      seed: finalSeed,
+      steps: finalSteps,
+      cfg_scale: finalCfgScale,
       width: finalWidth,
       height: finalHeight,
-      denoising_strength: params.denoisingStrength,
-      mask_blur: params.maskBlur,
+      denoising_strength: finalDenoisingStrength,
+      mask_blur: finalMaskBlur,
       inpainting_fill:
-        params.inpaintingFill === 'fill'
+        finalParams.inpaintingFill === 'fill'
           ? 0
-          : params.inpaintingFill === 'original'
+          : finalParams.inpaintingFill === 'original'
             ? 1
-            : params.inpaintingFill === 'latent_noise'
+            : finalParams.inpaintingFill === 'latent_noise'
               ? 2
               : 3,
-      inpaint_full_res: params.inpaintFullRes,
-      inpaint_full_res_padding: params.inpaintFullResPadding,
+      inpaint_full_res: finalParams.inpaintFullRes,
+      inpaint_full_res_padding: finalParams.inpaintFullResPadding,
     }
 
     // Check if batch mode is enabled
     const { batchSettings } = useQueueStore.getState()
-    if (batchSettings.enabled) {
+    if (batchSettings.count > 1) {
       useQueueStore.getState().addBatch(apiParams, 'inpaint')
       return
     }
@@ -687,7 +960,7 @@ export const createGenerationActionsSlice: SliceCreator<GenerationActionsSlice> 
         width: finalWidth,
         height: finalHeight,
         sampler,
-        denoisingStrength: params.denoisingStrength,
+        denoisingStrength: finalParams.denoisingStrength,
         usedIn: new Set(),
       })
 

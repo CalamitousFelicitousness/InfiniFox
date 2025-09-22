@@ -46,6 +46,9 @@ export interface GenerationFrame {
   isPlaceholder?: boolean
   locked?: boolean
   label?: string
+  // Batch progress tracking
+  jobCount?: number
+  jobNo?: number
 }
 
 export interface CanvasViewport {

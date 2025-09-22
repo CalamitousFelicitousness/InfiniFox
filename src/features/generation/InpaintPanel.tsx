@@ -24,6 +24,16 @@ export function InpaintPanel() {
     setSteps,
     cfgScale,
     setCfgScale,
+    denoisingStrength,
+    setDenoisingStrength,
+    maskBlur,
+    setMaskBlur,
+    inpaintingFill,
+    setInpaintingFill,
+    inpaintFullRes,
+    setInpaintFullRes,
+    inpaintFullResPadding,
+    setInpaintFullResPadding,
     generateInpaint,
     isLoading,
     images,
@@ -39,17 +49,9 @@ export function InpaintPanel() {
 
   const [baseImage, setBaseImage] = useState<string>('')
   const [maskImage, setMaskImage] = useState<string>('')
-  const [denoisingStrength, setDenoisingStrength] = useState(0.75)
-  const [maskBlur, setMaskBlur] = useState(4)
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null)
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null)
   const [useLayerSystem, setUseLayerSystem] = useState(false)
-
-  const [inpaintingFill, setInpaintingFill] = useState<
-    'fill' | 'original' | 'latent_noise' | 'latent_nothing'
-  >('original')
-  const [inpaintFullRes, setInpaintFullRes] = useState(true)
-  const [inpaintFullResPadding, setInpaintFullResPadding] = useState(32)
 
   // Check if layer system is enabled
   useEffect(() => {

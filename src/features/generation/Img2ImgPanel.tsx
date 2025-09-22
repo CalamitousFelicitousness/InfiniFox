@@ -27,6 +27,8 @@ export function Img2ImgPanel() {
     setWidth,
     height,
     setHeight,
+    denoisingStrength,
+    setDenoisingStrength,
     generateImg2Img,
     isLoading,
     exportImageAsBase64,
@@ -41,7 +43,6 @@ export function Img2ImgPanel() {
   } = useStore()
 
   const [baseImage, setBaseImage] = useState<string>('')
-  const [denoisingStrength, setDenoisingStrength] = useState(0.75)
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null)
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null)
   const [selectedLayerIds, setSelectedLayerIds] = useState<string[]>([])

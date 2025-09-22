@@ -18,6 +18,9 @@ interface GenerationFrame {
   error?: string
   label?: string
   locked?: boolean
+  // Batch progress tracking
+  jobCount?: number
+  jobNo?: number
 }
 
 interface FrameLayerProps {
@@ -176,14 +179,29 @@ function FrameLayerComponent({
     if (!frame.isGenerating && !isQueued) return null
     if (frame.isPlaceholder) return null
 
+    // Build progress text
+    let progressText = ''
+    if (isQueued) {
+      progressText = 'Queued...'
+    } else {
+      progressText = `${Math.round(frame.progress)}%`
+      // Add batch info if available
+      if (frame.jobCount && frame.jobCount > 1 && frame.jobNo) {
+        progressText = `Image ${frame.jobNo}/${frame.jobCount} - ${Math.round(frame.progress)}%`
+      }
+    }
+
+    // Calculate height for progress bar (increase if showing batch info)
+    const barHeight = frame.jobCount && frame.jobCount > 1 ? 24 : 20
+
     return (
       <>
         {/* Progress bar background */}
         <Rect
           x={frame.x}
-          y={frame.y - 25}
+          y={frame.y - barHeight - 5}
           width={frame.width}
-          height={20}
+          height={barHeight}
           fill={tokens.colors.backgroundPrimary}
           cornerRadius={tokens.borders.radiusSm}
           listening={false}
@@ -193,9 +211,9 @@ function FrameLayerComponent({
         {frame.id === currentlyGeneratingFrameId && (
           <Rect
             x={frame.x + 2}
-            y={frame.y - 23}
+            y={frame.y - barHeight - 3}
             width={(frame.width - 4) * (frame.progress / 100)}
-            height={16}
+            height={barHeight - 4}
             fill={tokens.colors.interactivePrimary}
             cornerRadius={tokens.borders.radiusSm}
             listening={false}
@@ -205,10 +223,10 @@ function FrameLayerComponent({
         {/* Progress text */}
         <Text
           x={frame.x}
-          y={frame.y - 20}
+          y={frame.y - barHeight}
           width={frame.width}
-          height={20}
-          text={isQueued ? 'Queued...' : `${Math.round(frame.progress)}%`}
+          height={barHeight}
+          text={progressText}
           fontSize={tokens.typography.fontSizeXs}
           fontFamily={tokens.typography.fontFamilyMono}
           fill={tokens.colors.textPrimary}
