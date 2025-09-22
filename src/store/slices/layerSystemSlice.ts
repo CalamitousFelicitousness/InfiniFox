@@ -292,6 +292,7 @@ export interface LayerSystemSlice {
   renameArtboard: (artboardId: string, name: string) => void
   clearArtboard: (artboardId: string) => Promise<void>
   setArtboardBackground: (artboardId: string, color: string) => void
+  convertToArtboard: (layerId: string) => string | null
 
   // Phase 2: Advanced Artboard operations
   moveArtboardToFront: (artboardId: string) => void
@@ -1330,6 +1331,81 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
         },
       })
     }
+  },
+
+  convertToArtboard: (layerId: string): string | null => {
+    const layer = get().getLayer(layerId)
+    if (!layer || layer.type === 'artboard' || layer.type === 'group') {
+      return null
+    }
+
+    // Calculate the bounds of the layer
+    const layerX = layer.x || 0
+    const layerY = layer.y || 0
+    let width = 1024
+    let height = 1024
+
+    // For image layers, use the actual image dimensions
+    if (layer.type === 'image' && layer.imageProps) {
+      width = layer.imageProps.width || 1024
+      height = layer.imageProps.height || 1024
+    }
+    // For drawing layers, calculate bounds from strokes
+    else if (layer.type === 'drawing' && layer.drawingProps) {
+      let maxX = 0
+      let maxY = 0
+
+      layer.drawingProps.strokes.forEach(stroke => {
+        // Check points
+        for (let i = 0; i < stroke.points.length; i += 2) {
+          maxX = Math.max(maxX, stroke.points[i])
+          maxY = Math.max(maxY, stroke.points[i + 1])
+        }
+        // Check outline if exists
+        if (stroke.outline) {
+          stroke.outline.forEach(point => {
+            if (point.length >= 2) {
+              maxX = Math.max(maxX, point[0])
+              maxY = Math.max(maxY, point[1])
+            }
+          })
+        }
+      })
+
+      // Add padding for stroke width
+      const padding = 50
+      width = Math.max(1024, maxX + padding)
+      height = Math.max(1024, maxY + padding)
+    }
+    // For text and shape layers, use default size
+    else {
+      width = 1024
+      height = 1024
+    }
+
+    // Create a new artboard at the layer's position
+    const artboardName = layer.name + ' Artboard'
+    const artboardId = get().addArtboard(
+      {
+        width,
+        height,
+        name: artboardName,
+      },
+      { x: layerX, y: layerY }
+    )
+
+    // Move the layer into the artboard and reset its position to 0,0 relative to artboard
+    get().moveLayer(layerId, artboardId, 0)
+    get().updateLayer(layerId, {
+      x: 0,
+      y: 0,
+    })
+
+    // Set the new artboard as active
+    get().setActiveArtboard(artboardId)
+    get().selectLayer(artboardId, false, false, 'canvas')
+
+    return artboardId
   },
 
   // Phase 2: Advanced Artboard operations

@@ -129,6 +129,7 @@ export function CanvasContextMenu({
     resizeArtboard: storeResizeArtboard,
     clearArtboard: storeClearArtboard,
     setArtboardBackground: storeSetArtboardBackground,
+    convertToArtboard: storeConvertToArtboard,
   } = useStore()
 
   useEffect(() => {
@@ -534,8 +535,9 @@ export function CanvasContextMenu({
                 e.preventDefault()
                 if (onConvertToArtboard) {
                   onConvertToArtboard(layerId)
+                } else {
+                  storeConvertToArtboard(layerId)
                 }
-                // TODO: Implement convert to artboard in store
                 onClose()
               }}
             >
