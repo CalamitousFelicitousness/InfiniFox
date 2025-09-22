@@ -113,8 +113,8 @@ export function Canvas() {
     const layers = Array.from(state.layers.values())
     return JSON.stringify({
       count: layers.length,
-      version: state.layersVersion,
-      // Include key properties that might change
+      // Track updatedAt for all layers to catch any modifications
+      updates: layers.map(l => ({ id: l.id, updatedAt: l.updatedAt })),
       visibility: layers.map(l => ({ id: l.id, visible: l.visible })),
       order: state.layerOrder,
     })
@@ -122,7 +122,6 @@ export function Canvas() {
   const {
     layers,
     layerOrder,
-    layersVersion,
     getArtboards,
     getRootLayers,
     activeArtboardId,
@@ -422,6 +421,22 @@ export function Canvas() {
         {
           const canvasPos = events.screenToCanvas({ x: contextX, y: contextY })
           frames.generateAtPosition(canvasPos.x, canvasPos.y)
+        }
+        break
+
+      case 'newArtboard':
+        {
+          const canvasPos = events.screenToCanvas({ x: contextX, y: contextY })
+          const artboardId = addArtboard(
+            {
+              width: 800,
+              height: 600,
+              name: `Artboard ${getArtboards().length + 1}`
+            },
+            { x: canvasPos.x, y: canvasPos.y }
+          )
+          setActiveArtboard(artboardId)
+          selectLayer(artboardId, false, false, 'canvas')
         }
         break
     }
@@ -924,6 +939,7 @@ export function Canvas() {
           onUploadImage={() => handleContextMenuAction('uploadImage')}
           onGenerateHere={() => handleContextMenuAction('generateHere')}
           onPlaceEmptyFrame={() => handleContextMenuAction('placeEmptyFrame')}
+          onNewArtboard={() => handleContextMenuAction('newArtboard')}
           onExportLayer={async (layerId: string) => {
             const { LayerExportService } = await import('../../services/layers/LayerExportService')
             const layer = useStore.getState().getLayer(layerId)

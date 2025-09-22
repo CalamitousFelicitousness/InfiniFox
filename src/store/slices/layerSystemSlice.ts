@@ -223,7 +223,6 @@ export interface LayerSystemSlice {
   // State
   layers: Map<string, LayerNode>
   layerOrder: string[] // Root layer IDs in order
-  layersVersion: number // Increments on any layer change to force re-renders
   activeArtboardId?: string | null
   selectedLayerIds: Set<string>
   lastSelectedLayerId?: string | null // Track last selected for range selection
@@ -346,7 +345,6 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
   // Initial state
   layers: new Map(),
   layerOrder: [],
-  layersVersion: 0,
   activeArtboardId: null,
   selectedLayerIds: new Set(),
   lastSelectedLayerId: null,
@@ -517,12 +515,10 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
         activeArtboardId: state.activeArtboardId,
       })
 
-      const newVersion = (state.layersVersion || 0) + 1
-      console.log('[Store] Layer added - new version:', newVersion, 'layers count:', newLayers.size)
+      console.log('[Store] Layer added - layers count:', newLayers.size)
       return {
         layers: newLayers,
         layerOrder: newLayerOrder,
-        layersVersion: newVersion,
       }
     })
   },
@@ -566,7 +562,6 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
 
       return {
         layers: newLayers,
-        layersVersion: state.layersVersion + 1,
       }
     })
   },
@@ -673,7 +668,6 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
         layers: newLayers,
         layerOrder: newLayerOrder,
         selectedLayerIds: newSelectedIds,
-        layersVersion: state.layersVersion + 1,
       }
     })
   },
@@ -767,7 +761,6 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
         layers: newLayers,
         layerOrder: newLayerOrder,
         selectedLayerIds: newSelectedIds,
-        layersVersion: state.layersVersion + 1,
       }
     })
   },
@@ -891,7 +884,6 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
 
       return {
         layers: newLayers,
-        layersVersion: state.layersVersion + 1,
       }
     })
   },
@@ -1537,7 +1529,6 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
       set({
         layers: new Map(data.layers.map((l: LayerNode) => [l.id, l])),
         layerOrder: data.layerOrder || [],
-        layersVersion: (get().layersVersion || 0) + 1,
         activeArtboardId: data.activeArtboardId || null,
         selectedLayerIds: new Set(),
       })
@@ -1637,7 +1628,6 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
     set({
       layers: new Map(),
       layerOrder: [],
-      layersVersion: (get().layersVersion || 0) + 1,
       activeArtboardId: null,
       selectedLayerIds: new Set(),
     })
@@ -1674,7 +1664,6 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
       set({
         layers: data.layers,
         layerOrder: data.layerOrder,
-        layersVersion: (get().layersVersion || 0) + 1,
         activeArtboardId: data.activeArtboardId,
         selectedLayerIds: new Set(),
         lastPersistedAt: Date.now(),

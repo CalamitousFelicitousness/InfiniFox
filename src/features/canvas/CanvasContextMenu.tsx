@@ -22,6 +22,7 @@ interface CanvasContextMenuProps {
   onUploadImage: () => void
   onGenerateHere: () => void
   onPlaceEmptyFrame: () => void
+  onNewArtboard?: () => void
   onClose: () => void
   // Multi-selection operations
   onGroupSelection?: () => void
@@ -72,6 +73,7 @@ export function CanvasContextMenu({
   onUploadImage,
   onGenerateHere,
   onPlaceEmptyFrame,
+  onNewArtboard,
   onClose,
   onGroupSelection,
   onUngroupSelection,
@@ -967,6 +969,19 @@ export function CanvasContextMenu({
       {imageId === null ? (
         // Context menu for empty canvas space
         <>
+          <button
+            className="menu-item"
+            onPointerDown={(e) => {
+              e.preventDefault()
+              if (onNewArtboard) {
+                onNewArtboard()
+              }
+              onClose()
+            }}
+          >
+            New Artboard
+          </button>
+          <hr className="menu-divider" />
           <button
             className="menu-item"
             onPointerDown={(e) => {
