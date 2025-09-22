@@ -66,6 +66,67 @@ export class LayerExportService {
   }
 
   /**
+   * Export artboard as base64 string for AI generation
+   */
+  static async exportArtboardAsBase64(
+    artboardId: string,
+    format: 'png' | 'jpeg' = 'png',
+    quality: number = 0.92
+  ): Promise<string | null> {
+    const { getLayer, getLayerChildren } = useStore.getState()
+    const artboard = getLayer(artboardId)
+
+    if (!artboard || artboard.type !== 'artboard') {
+      console.error('Invalid artboard ID')
+      return null
+    }
+
+    const { width = 800, height = 600, backgroundColor = '#ffffff' } = artboard.artboardProps || {}
+
+    // Create temporary stage for export
+    const tempContainer = document.createElement('div')
+    tempContainer.style.position = 'absolute'
+    tempContainer.style.left = '-9999px'
+    document.body.appendChild(tempContainer)
+
+    try {
+      const stage = new Konva.Stage({
+        container: tempContainer,
+        width,
+        height,
+      })
+
+      const layer = new Konva.Layer()
+      stage.add(layer)
+
+      // Add background
+      const bg = new Konva.Rect({
+        width,
+        height,
+        fill: backgroundColor,
+      })
+      layer.add(bg)
+
+      // Recursively add layers
+      await this.renderLayersToKonva(artboard, layer, getLayer, getLayerChildren)
+
+      // Export to data URL
+      const dataURL = stage.toDataURL({
+        mimeType: format === 'jpeg' ? 'image/jpeg' : 'image/png',
+        quality,
+        pixelRatio: 1,
+      })
+
+      // Extract base64 part (remove data:image/png;base64, prefix)
+      const base64 = dataURL.split(',')[1]
+      return base64
+    } finally {
+      // Cleanup
+      document.body.removeChild(tempContainer)
+    }
+  }
+
+  /**
    * Export selected layers as PNG
    */
   static async exportSelectedLayers(

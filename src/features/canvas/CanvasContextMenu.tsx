@@ -323,6 +323,65 @@ export function CanvasContextMenu({
 
             <hr className="menu-divider" />
 
+            {/* AI Generation inputs for artboards */}
+            <button
+              className="menu-item"
+              onPointerDown={(e) => {
+                e.preventDefault()
+                const store = useStore.getState()
+                const { setLayerRole, getLayerRole } = store
+
+                // Toggle role - if already has this role, clear it
+                const currentRole = getLayerRole(layerId)
+                if (currentRole === 'img2img_init') {
+                  setLayerRole(layerId, null)
+                } else {
+                  setLayerRole(layerId, 'img2img_init')
+                }
+                onClose()
+              }}
+            >
+              <Icon icon={Image} size={16} />
+              {useStore.getState().getLayerRole(layerId) === 'img2img_init' ? (
+                <>
+                  <Check size={12} style={{ marginLeft: 'auto' }} />
+                  Remove from Img2Img
+                </>
+              ) : (
+                'Set as Img2Img Input'
+              )}
+            </button>
+
+            <button
+              className="menu-item"
+              onPointerDown={(e) => {
+                e.preventDefault()
+                const store = useStore.getState()
+                const { setLayerRole, getLayerRole } = store
+
+                // Toggle role
+                const currentRole = getLayerRole(layerId)
+                if (currentRole === 'inpaint_image') {
+                  setLayerRole(layerId, null)
+                } else {
+                  setLayerRole(layerId, 'inpaint_image')
+                }
+                onClose()
+              }}
+            >
+              <Icon icon={Edit2} size={16} />
+              {useStore.getState().getLayerRole(layerId) === 'inpaint_image' ? (
+                <>
+                  <Check size={12} style={{ marginLeft: 'auto' }} />
+                  Remove from Inpaint
+                </>
+              ) : (
+                'Set as Inpaint Input'
+              )}
+            </button>
+
+            <hr className="menu-divider" />
+
             {/* Phase 2: Advanced Artboard Operations */}
             <button
               className="menu-item"

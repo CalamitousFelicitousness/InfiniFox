@@ -38,6 +38,8 @@ export interface DrawingState {
   // Layer system integration
   useLayerSystem: boolean
   currentDrawingLayerId?: string | null
+  // Map of artboard IDs to their drawing layer IDs
+  artboardDrawingLayers: Record<string, string>
 }
 
 export interface DrawingActions {
@@ -105,6 +107,7 @@ export const createDrawingSlice: StateCreator<StoreWithLayerSystem, [], [], Draw
 
   useLayerSystem: true,
   currentDrawingLayerId: null,
+  artboardDrawingLayers: {},
 
   // Actions
   setDrawingMode: (enabled) => set({ isDrawingMode: enabled }),
@@ -144,27 +147,47 @@ export const createDrawingSlice: StateCreator<StoreWithLayerSystem, [], [], Draw
 
   endDrawingStroke: (targetArtboardId?: string | null) => {
     const state = get()
-    const { currentStroke, drawingStrokes, useLayerSystem } = state
-    let currentDrawingLayerId = state.currentDrawingLayerId // Get fresh value
+    const { currentStroke, drawingStrokes, useLayerSystem, artboardDrawingLayers } = state
     if (!currentStroke) return
 
     // If layer system is enabled and we have access to layer functions
     if (useLayerSystem && state.addLayer) {
-      // Check if we have a current drawing layer AND it still exists
-      if (currentDrawingLayerId && state.getLayer) {
-        const existingLayer = state.getLayer(currentDrawingLayerId)
+      // Determine which drawing layer to use based on target
+      let drawingLayerId: string | null | undefined = null
 
-        // If the layer was deleted, clear the ID
-        if (!existingLayer) {
-          currentDrawingLayerId = null
-          set({ currentDrawingLayerId: null })
+      if (targetArtboardId) {
+        // Drawing on an artboard - check if this artboard has a drawing layer
+        drawingLayerId = artboardDrawingLayers[targetArtboardId] || null
+      } else {
+        // Drawing on canvas (not on an artboard) - use global drawing layer
+        drawingLayerId = state.currentDrawingLayerId
+      }
+
+      // Validate the drawing layer still exists
+      if (drawingLayerId && state.getLayer) {
+        const existingLayer = state.getLayer(drawingLayerId)
+
+        // If the layer was deleted or is not a drawing layer, clear it
+        if (!existingLayer || existingLayer.type !== 'drawing') {
+          drawingLayerId = null
+
+          if (targetArtboardId) {
+            // Clear from artboard map
+            set((state) => ({
+              artboardDrawingLayers: {
+                ...state.artboardDrawingLayers,
+                [targetArtboardId]: undefined
+              } as Record<string, string>
+            }))
+          } else {
+            // Clear global layer
+            set({ currentDrawingLayerId: null })
+          }
         }
       }
 
-      // Now check if we have a valid current drawing layer
-      if (currentDrawingLayerId && state.getLayer && state.updateLayer) {
-        const existingLayer = state.getLayer(currentDrawingLayerId)
-
+      // If we have a valid drawing layer, add the stroke to it
+      if (drawingLayerId && state.getLayer && state.updateLayer) {
         // If drawing on an artboard, we need to adjust the stroke coordinates
         let adjustedStroke = currentStroke
         if (targetArtboardId) {
@@ -198,7 +221,7 @@ export const createDrawingSlice: StateCreator<StoreWithLayerSystem, [], [], Draw
         }
 
         // Add stroke to existing layer
-        get().addStrokeToLayer(adjustedStroke, currentDrawingLayerId)
+        get().addStrokeToLayer(adjustedStroke, drawingLayerId)
       } else {
         // Create new layer for first stroke
         const strokeLayer = get().convertStrokeToLayer(currentStroke)
@@ -222,7 +245,19 @@ export const createDrawingSlice: StateCreator<StoreWithLayerSystem, [], [], Draw
             strokeLayer as Partial<LayerNode>,
             targetArtboardId || undefined
           )
-          set({ currentDrawingLayerId: newLayerId })
+          // Track the new layer ID appropriately
+          if (targetArtboardId) {
+            // Store in artboard map
+            set((state) => ({
+              artboardDrawingLayers: {
+                ...state.artboardDrawingLayers,
+                [targetArtboardId]: newLayerId
+              }
+            }))
+          } else {
+            // Store as global drawing layer
+            set({ currentDrawingLayerId: newLayerId })
+          }
         }
       }
 
@@ -311,8 +346,19 @@ export const createDrawingSlice: StateCreator<StoreWithLayerSystem, [], [], Draw
   },
 
   createNewDrawingLayer: (targetArtboardId?: string | null) => {
-    // Clear current drawing layer ID so next stroke creates a new layer
-    set({ currentDrawingLayerId: null })
+    // Clear appropriate drawing layer ID so next stroke creates a new layer
+    if (targetArtboardId) {
+      // Clear artboard-specific drawing layer
+      set((state) => ({
+        artboardDrawingLayers: {
+          ...state.artboardDrawingLayers,
+          [targetArtboardId]: undefined
+        } as Record<string, string>
+      }))
+    } else {
+      // Clear global drawing layer
+      set({ currentDrawingLayerId: null })
+    }
   },
 
   convertStrokeToLayer: (stroke: DrawingStroke): LayerNode | null => {

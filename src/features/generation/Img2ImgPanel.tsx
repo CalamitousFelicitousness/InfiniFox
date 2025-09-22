@@ -59,20 +59,36 @@ export function Img2ImgPanel() {
     const roleLayer = activeLayerRoles.find((r) => r.role === 'img2img_init')
     if (roleLayer) {
       const layer = getLayer(roleLayer.layerId)
-      if (layer && (layer.type === 'image' || layer.type === 'drawing' || layer.type === 'text')) {
+      if (
+        layer &&
+        (layer.type === 'image' ||
+          layer.type === 'drawing' ||
+          layer.type === 'text' ||
+          layer.type === 'artboard')
+      ) {
         setSelectedLayerId(roleLayer.layerId)
         setSelectedLayerIds([roleLayer.layerId])
         setSelectedImageId(null)
         // Export layer as base64
-        LayerExportService.exportLayerAsBase64(roleLayer.layerId)
+        const exportPromise =
+          layer.type === 'artboard'
+            ? LayerExportService.exportArtboardAsBase64(roleLayer.layerId)
+            : LayerExportService.exportLayerAsBase64(roleLayer.layerId)
+
+        exportPromise
           .then((base64) => {
             if (base64) {
               setBaseImage(base64)
               // Try to get dimensions from layer
-              const bounds = useStore.getState().getLayerBounds(roleLayer.layerId)
-              if (bounds) {
-                setWidth(bounds.width)
-                setHeight(bounds.height)
+              if (layer.type === 'artboard' && layer.artboardProps) {
+                setWidth(layer.artboardProps.width || 800)
+                setHeight(layer.artboardProps.height || 600)
+              } else {
+                const bounds = useStore.getState().getLayerBounds(roleLayer.layerId)
+                if (bounds) {
+                  setWidth(bounds.width)
+                  setHeight(bounds.height)
+                }
               }
             }
           })
@@ -88,7 +104,7 @@ export function Img2ImgPanel() {
     if (useLayerSystem && storeSelectedLayerIds.size > 1) {
       const validLayerIds = Array.from(storeSelectedLayerIds).filter((id) => {
         const layer = getLayer(id)
-        return layer && layer.type !== 'artboard' && layer.type !== 'group'
+        return layer && layer.type !== 'group'
       })
 
       if (validLayerIds.length > 0) {
@@ -117,21 +133,31 @@ export function Img2ImgPanel() {
       const layerId = Array.from(storeSelectedLayerIds)[0]
       const layer = getLayer(layerId)
 
-      // Skip artboard and group layers
-      if (layer && layer.type !== 'artboard' && layer.type !== 'group') {
+      // Skip group layers
+      if (layer && layer.type !== 'group') {
         setSelectedLayerId(layerId)
         setSelectedLayerIds([layerId])
         setSelectedImageId(null)
         // Export layer as base64
-        LayerExportService.exportLayerAsBase64(layerId)
+        const exportPromise =
+          layer.type === 'artboard'
+            ? LayerExportService.exportArtboardAsBase64(layerId)
+            : LayerExportService.exportLayerAsBase64(layerId)
+
+        exportPromise
           .then((base64) => {
             if (base64) {
               setBaseImage(base64)
               // Try to get dimensions from layer
-              const bounds = useStore.getState().getLayerBounds(layerId)
-              if (bounds) {
-                setWidth(bounds.width)
-                setHeight(bounds.height)
+              if (layer.type === 'artboard' && layer.artboardProps) {
+                setWidth(layer.artboardProps.width || 800)
+                setHeight(layer.artboardProps.height || 600)
+              } else {
+                const bounds = useStore.getState().getLayerBounds(layerId)
+                if (bounds) {
+                  setWidth(bounds.width)
+                  setHeight(bounds.height)
+                }
               }
             }
           })
@@ -209,7 +235,11 @@ export function Img2ImgPanel() {
     } else if (selectedLayerId) {
       // Export single layer
       try {
-        const exported = await LayerExportService.exportLayerAsBase64(selectedLayerId)
+        const layer = getLayer(selectedLayerId)
+        const exported =
+          layer?.type === 'artboard'
+            ? await LayerExportService.exportArtboardAsBase64(selectedLayerId)
+            : await LayerExportService.exportLayerAsBase64(selectedLayerId)
         if (exported) {
           finalBase64 = exported
         } else {

@@ -1,6 +1,6 @@
 import Konva from 'konva'
 import React, { useCallback, useRef, useState, useEffect, useMemo } from 'react'
-import { Group, Rect, Image as KonvaImage, Line } from 'react-konva'
+import { Group, Rect, Image as KonvaImage, Line, Text } from 'react-konva'
 
 import { CanvasTool } from '../../../../features/canvas/hooks/useCanvasTools'
 import { snappingManager } from '../../../../services/canvas/SnappingManager'
@@ -12,7 +12,6 @@ import type {
   SelectionContext,
 } from '../../../../store/slices/layerSystemSlice'
 import { useStore } from '../../../../store/store'
-import { getSelectionGlowStyles } from '../../../../utils/selectionStyles'
 
 interface LayerRendererProps {
   layer: LayerNode
@@ -94,7 +93,6 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
     selectedLayerIds,
     selectLayer,
     getLayer,
-    moveLayer,
     activeLayerRoles,
   } = useStore()
 
@@ -280,7 +278,7 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
 
           if (shape && shape !== node) {
             // Check if the shape belongs to an artboard by checking its parent group
-            let parent: any = shape.getParent()
+            let parent: Konva.Node | null = shape.getParent()
             // Navigate up to find the artboard group
             while (parent && parent.className !== 'Group') {
               parent = parent.getParent()
@@ -456,7 +454,7 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
               }
             } else {
               // Try to navigate up to find an artboard group
-              let parent: any = shape.getParent()
+              let parent: Konva.Node | null = shape.getParent()
               console.log('Initial parent:', parent, 'className:', parent?.className)
               while (parent && parent.className !== 'Group') {
                 parent = parent.getParent()
@@ -552,14 +550,33 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
     return role
   }, [activeLayerRoles, layer.id])
 
+  // Get role colors from CSS variables (defined in role-indicators.css)
+  const roleColors = useMemo(() => {
+    // These match the CSS variables in role-indicators.css
+    return {
+      img2img_init: '#4caf50', // --color-success-500
+      inpaint_image: '#ff9800', // --color-warning-500
+      controlnet: '#2196f3', // --color-info-500
+      selection: '#646cff', // --color-primary-500
+    }
+  }, [])
+
   // Get border color based on role
   const getBorderColor = useCallback(() => {
-    if (layerRole === 'img2img_init') return '#4ade80' // Green
-    if (layerRole === 'inpaint_image') return '#fbbf24' // Yellow/amber
-    if (layerRole === 'controlnet') return '#3b82f6' // Blue
-    if (isSelected) return '#646cff' // Selection blue
+    if (layerRole === 'img2img_init') return roleColors.img2img_init
+    if (layerRole === 'inpaint_image') return roleColors.inpaint_image
+    if (layerRole === 'controlnet') return roleColors.controlnet
+    if (isSelected) return roleColors.selection
     return 'transparent'
-  }, [layerRole, isSelected])
+  }, [layerRole, isSelected, roleColors])
+
+  // Get role label text
+  const getRoleLabel = useCallback(() => {
+    if (layerRole === 'img2img_init') return 'Img2Img'
+    if (layerRole === 'inpaint_image') return 'Inpaint'
+    if (layerRole === 'controlnet') return 'ControlNet'
+    return null
+  }, [layerRole])
 
   // Get children for group layers (must be before any returns for React hooks rule)
   const children = useMemo(
@@ -752,16 +769,48 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
           />
           {/* Selection/role border rendered on top */}
           {(isSelected || layerRole) && (
-            <Rect
-              x={0}
-              y={0}
-              width={layer.imageProps.width}
-              height={layer.imageProps.height}
-              stroke={getBorderColor()}
-              strokeWidth={layerRole ? 3 : 2}
-              fill="transparent"
-              listening={false}
-            />
+            <>
+              <Rect
+                x={0}
+                y={0}
+                width={layer.imageProps.width}
+                height={layer.imageProps.height}
+                stroke={getBorderColor()}
+                strokeWidth={layerRole ? 3 : 2}
+                fill="transparent"
+                listening={false}
+                dash={layerRole ? [10, 5] : undefined}
+                shadowBlur={layerRole ? 15 : 0}
+                shadowColor={getBorderColor()}
+                shadowOpacity={layerRole ? 0.6 : 0}
+              />
+              {/* Role label - positioned outside/above the image */}
+              {layerRole && getRoleLabel() && (
+                <Group>
+                  {/* Label background */}
+                  <Rect
+                    x={0}
+                    y={-48}
+                    width={getRoleLabel()!.length * 16 + 32}
+                    height={40}
+                    fill="rgba(42, 42, 42, 0.9)"
+                    stroke={getBorderColor()}
+                    strokeWidth={2}
+                    cornerRadius={6}
+                  />
+                  {/* Label text */}
+                  <Text
+                    x={16}
+                    y={-36}
+                    text={getRoleLabel()!}
+                    fontSize={24}
+                    fontFamily="Inter, system-ui, sans-serif"
+                    fill={getBorderColor()}
+                    listening={false}
+                  />
+                </Group>
+              )}
+            </>
           )}
         </Group>
       )
@@ -843,21 +892,49 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({
 
           {/* Selection indicator with role-based coloring */}
           {(selectedLayerIds.has(layer.id) || layerRole) && (
-            <Rect
-              x={drawingBounds.x}
-              y={drawingBounds.y}
-              width={drawingBounds.width}
-              height={drawingBounds.height}
-              stroke={getBorderColor()}
-              strokeWidth={layerRole ? 3 / parentScale : 2 / parentScale}
-              strokeScaleEnabled={false}
-              fill="transparent"
-              listening={false}
-              dash={[5, 5]}
-              shadowBlur={layerRole ? 15 : 0}
-              shadowColor={getBorderColor()}
-              shadowOpacity={layerRole ? 0.6 : 0}
-            />
+            <>
+              <Rect
+                x={drawingBounds.x}
+                y={drawingBounds.y}
+                width={drawingBounds.width}
+                height={drawingBounds.height}
+                stroke={getBorderColor()}
+                strokeWidth={layerRole ? 3 / parentScale : 2 / parentScale}
+                strokeScaleEnabled={false}
+                fill="transparent"
+                listening={false}
+                dash={layerRole ? [10, 5] : [5, 5]}
+                shadowBlur={layerRole ? 15 : 0}
+                shadowColor={getBorderColor()}
+                shadowOpacity={layerRole ? 0.6 : 0}
+              />
+              {/* Role label for drawing layers - positioned outside/above */}
+              {layerRole && getRoleLabel() && (
+                <Group>
+                  {/* Label background */}
+                  <Rect
+                    x={drawingBounds.x}
+                    y={drawingBounds.y - 48}
+                    width={getRoleLabel()!.length * 16 + 32}
+                    height={40}
+                    fill="rgba(42, 42, 42, 0.9)"
+                    stroke={getBorderColor()}
+                    strokeWidth={2}
+                    cornerRadius={6}
+                  />
+                  {/* Label text */}
+                  <Text
+                    x={drawingBounds.x + 16}
+                    y={drawingBounds.y - 36}
+                    text={getRoleLabel()!}
+                    fontSize={24}
+                    fontFamily="Inter, system-ui, sans-serif"
+                    fill={getBorderColor()}
+                    listening={false}
+                  />
+                </Group>
+              )}
+            </>
           )}
         </Group>
       )

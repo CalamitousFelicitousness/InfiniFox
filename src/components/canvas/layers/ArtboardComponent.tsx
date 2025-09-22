@@ -1,6 +1,6 @@
 import Konva from 'konva'
 import React, { useCallback, useMemo, useRef, useEffect, useState } from 'react'
-import { Group, Rect } from 'react-konva'
+import { Group, Rect, Text } from 'react-konva'
 
 import { CanvasTool } from '../../../features/canvas/hooks/useCanvasTools'
 import { snappingManager } from '../../../services/canvas/SnappingManager'
@@ -100,7 +100,7 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
     operationLoadingStates,
     moveLayer,
     getLayer,
-    layers, // Add layers to track changes
+    getLayerRole,
   } = useStore()
 
   // Get artboard properties
@@ -117,11 +117,8 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
 
   const { width, height, backgroundColor, clipped } = artboardProps
 
-  // Get child layers - include layers in dependencies to re-render when children change
-  const children = useMemo(
-    () => getLayerChildren(artboard.id),
-    [artboard.id, getLayerChildren, layers]
-  )
+  // Get child layers
+  const children = useMemo(() => getLayerChildren(artboard.id), [artboard.id, getLayerChildren])
 
   // Check for active loading operations on this artboard
   const loadingOperation = useMemo(() => {
@@ -302,22 +299,19 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
   )
 
   // Handle drag enter on artboard background
-  const handleDragEnter = useCallback(
-    (e: Konva.KonvaEventObject<DragEvent>) => {
-      // Check if a layer is being dragged and it's not the artboard itself
-      if (isDraggingLayer && draggingLayerId && draggingLayerId !== artboard.id) {
-        const draggedLayer = getLayer(draggingLayerId)
-        // Prevent artboards from being dropped into other artboards
-        if (draggedLayer && draggedLayer.type !== 'artboard') {
-          setIsDragHovering(true)
-        }
+  const handleDragEnter = useCallback(() => {
+    // Check if a layer is being dragged and it's not the artboard itself
+    if (isDraggingLayer && draggingLayerId && draggingLayerId !== artboard.id) {
+      const draggedLayer = getLayer(draggingLayerId)
+      // Prevent artboards from being dropped into other artboards
+      if (draggedLayer && draggedLayer.type !== 'artboard') {
+        setIsDragHovering(true)
       }
-    },
-    [isDraggingLayer, draggingLayerId, artboard.id, getLayer]
-  )
+    }
+  }, [isDraggingLayer, draggingLayerId, artboard.id, getLayer])
 
   // Handle drag leave from artboard background
-  const handleDragLeave = useCallback((e: Konva.KonvaEventObject<DragEvent>) => {
+  const handleDragLeave = useCallback(() => {
     setIsDragHovering(false)
   }, [])
 
@@ -450,6 +444,40 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
     [onContextMenu]
   )
 
+  // Check if we're in SELECT mode
+  const isSelectTool = currentTool === CanvasTool.SELECT
+
+  // Check artboard role for visual indication
+  const artboardRole = getLayerRole(artboard.id)
+
+  // Get role colors from CSS variables (defined in role-indicators.css)
+  const roleColors = useMemo(() => {
+    // These match the CSS variables in role-indicators.css
+    return {
+      img2img_init: '#4caf50', // --color-success-500
+      inpaint_image: '#ff9800', // --color-warning-500
+      controlnet: '#2196f3', // --color-info-500
+    }
+  }, [])
+
+  // Get role-based border color
+  const getRoleBorderColor = useCallback(() => {
+    if (artboardRole === 'img2img_init') return roleColors.img2img_init
+    if (artboardRole === 'inpaint_image') return roleColors.inpaint_image
+    if (artboardRole === 'controlnet') return roleColors.controlnet
+    return null
+  }, [artboardRole, roleColors])
+
+  const roleBorderColor = getRoleBorderColor()
+
+  // Get role label text
+  const getRoleLabel = useCallback(() => {
+    if (artboardRole === 'img2img_init') return 'Img2Img'
+    if (artboardRole === 'inpaint_image') return 'Inpaint'
+    if (artboardRole === 'controlnet') return 'ControlNet'
+    return null
+  }, [artboardRole])
+
   // Skip rendering if artboard is not visible
   if (!isArtboardVisible) {
     return null
@@ -475,9 +503,6 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
         clipHeight: height,
       }
     : {}
-
-  // Check if we're in SELECT mode
-  const isSelectTool = currentTool === CanvasTool.SELECT
 
   return (
     <Group
@@ -527,6 +552,25 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
             </>
           )
         })()}
+
+      {/* Role indicator border - shows when artboard has a role assigned */}
+      {roleBorderColor && (
+        <Rect
+          x={0}
+          y={0}
+          width={width}
+          height={height}
+          stroke={roleBorderColor}
+          strokeWidth={3}
+          strokeScaleEnabled={false}
+          listening={false}
+          dash={[10, 5]}
+          cornerRadius={4}
+          shadowBlur={15}
+          shadowColor={roleBorderColor}
+          shadowOpacity={0.6}
+        />
+      )}
 
       {/* Clipped content group */}
       <Group {...clipConfig}>
@@ -578,6 +622,33 @@ export const ArtboardComponent: React.FC<ArtboardComponentProps> = ({
           />
         ))}
       </Group>
+
+      {/* Role label indicator - positioned outside/above the artboard */}
+      {roleBorderColor && getRoleLabel() && (
+        <>
+          {/* Label background */}
+          <Rect
+            x={0}
+            y={-48}
+            width={getRoleLabel()!.length * 16 + 32}
+            height={40}
+            fill="rgba(42, 42, 42, 0.9)"
+            stroke={roleBorderColor}
+            strokeWidth={2}
+            cornerRadius={6}
+          />
+          {/* Label text */}
+          <Text
+            x={16}
+            y={-36}
+            text={getRoleLabel()!}
+            fontSize={24}
+            fontFamily="Inter, system-ui, sans-serif"
+            fill={roleBorderColor}
+            listening={false}
+          />
+        </>
+      )}
 
       {/* Artboard label */}
       {scale < 0.5 && ( // Only show label when zoomed out

@@ -65,10 +65,18 @@ export function InpaintPanel() {
       const roleLayer = activeLayerRoles.find((r) => r.role === 'inpaint_image')
       if (roleLayer) {
         const layer = getLayer(roleLayer.layerId)
-        if (layer && (layer.type === 'image' || layer.type === 'drawing')) {
+        if (
+          layer &&
+          (layer.type === 'image' || layer.type === 'drawing' || layer.type === 'artboard')
+        ) {
           setSelectedLayerId(roleLayer.layerId)
           // Export layer as base64
-          LayerExportService.exportLayerAsBase64(roleLayer.layerId)
+          const exportPromise =
+            layer.type === 'artboard'
+              ? LayerExportService.exportArtboardAsBase64(roleLayer.layerId)
+              : LayerExportService.exportLayerAsBase64(roleLayer.layerId)
+
+          exportPromise
             .then((base64) => {
               if (base64) {
                 setBaseImage(base64)
@@ -85,10 +93,18 @@ export function InpaintPanel() {
       if (selectedLayerIds.size > 0) {
         const firstSelectedId = Array.from(selectedLayerIds)[0]
         const layer = getLayer(firstSelectedId)
-        if (layer && (layer.type === 'image' || layer.type === 'drawing')) {
+        if (
+          layer &&
+          (layer.type === 'image' || layer.type === 'drawing' || layer.type === 'artboard')
+        ) {
           setSelectedLayerId(firstSelectedId)
           // Export layer as base64
-          LayerExportService.exportLayerAsBase64(firstSelectedId)
+          const exportPromise =
+            layer.type === 'artboard'
+              ? LayerExportService.exportArtboardAsBase64(firstSelectedId)
+              : LayerExportService.exportLayerAsBase64(firstSelectedId)
+
+          exportPromise
             .then((base64) => {
               if (base64) {
                 setBaseImage(base64)
@@ -147,7 +163,11 @@ export function InpaintPanel() {
     if (useLayerSystem && selectedLayerId) {
       // Export from layer
       try {
-        const exported = await LayerExportService.exportLayerAsBase64(selectedLayerId)
+        const layer = getLayer(selectedLayerId)
+        const exported =
+          layer?.type === 'artboard'
+            ? await LayerExportService.exportArtboardAsBase64(selectedLayerId)
+            : await LayerExportService.exportLayerAsBase64(selectedLayerId)
         if (exported) {
           finalBase64 = exported
         } else {

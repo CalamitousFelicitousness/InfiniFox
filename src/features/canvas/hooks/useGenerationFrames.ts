@@ -124,25 +124,30 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
             // Start the appropriate generation
             if (layerInpaintRole) {
               const layer = getLayer(layerInpaintRole.layerId)
-              if (layer && (layer.type === 'image' || layer.type === 'drawing')) {
-                LayerExportService.exportLayerAsBase64(layerInpaintRole.layerId).then(
-                  (baseImageBase64) => {
-                    if (baseImageBase64) {
-                      generateInpaint(
-                        {
-                          baseImage: baseImageBase64,
-                          maskImage: baseImageBase64,
-                          denoisingStrength,
-                          maskBlur,
-                          inpaintingFill,
-                          inpaintFullRes,
-                          inpaintFullResPadding,
-                        },
-                        nextId
-                      )
-                    }
+              if (
+                layer &&
+                (layer.type === 'image' || layer.type === 'drawing' || layer.type === 'artboard')
+              ) {
+                const exportPromise =
+                  layer.type === 'artboard'
+                    ? LayerExportService.exportArtboardAsBase64(layerInpaintRole.layerId)
+                    : LayerExportService.exportLayerAsBase64(layerInpaintRole.layerId)
+                exportPromise.then((baseImageBase64) => {
+                  if (baseImageBase64) {
+                    generateInpaint(
+                      {
+                        baseImage: baseImageBase64,
+                        maskImage: baseImageBase64,
+                        denoisingStrength,
+                        maskBlur,
+                        inpaintingFill,
+                        inpaintFullRes,
+                        inpaintFullResPadding,
+                      },
+                      nextId
+                    )
                   }
-                )
+                })
               }
             } else if (imageInpaintRole) {
               const inpaintImage = images.find((img) => img.id === imageInpaintRole.imageId)
@@ -164,14 +169,19 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
               }
             } else if (layerImg2imgRole) {
               const layer = getLayer(layerImg2imgRole.layerId)
-              if (layer && (layer.type === 'image' || layer.type === 'drawing')) {
-                LayerExportService.exportLayerAsBase64(layerImg2imgRole.layerId).then(
-                  (baseImageBase64) => {
-                    if (baseImageBase64) {
-                      generateImg2Img(baseImageBase64, denoisingStrength, nextId)
-                    }
+              if (
+                layer &&
+                (layer.type === 'image' || layer.type === 'drawing' || layer.type === 'artboard')
+              ) {
+                const exportPromise =
+                  layer.type === 'artboard'
+                    ? LayerExportService.exportArtboardAsBase64(layerImg2imgRole.layerId)
+                    : LayerExportService.exportLayerAsBase64(layerImg2imgRole.layerId)
+                exportPromise.then((baseImageBase64) => {
+                  if (baseImageBase64) {
+                    generateImg2Img(baseImageBase64, denoisingStrength, nextId)
                   }
-                )
+                })
               }
             } else if (imageImg2imgRole) {
               const img2imgImage = images.find((img) => img.id === imageImg2imgRole.imageId)
@@ -419,10 +429,14 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
         if (layerInpaintRole) {
           // Use inpainting mode with layer
           const layer = getLayer(layerInpaintRole.layerId)
-          if (layer && (layer.type === 'image' || layer.type === 'drawing')) {
-            const baseImageBase64 = await LayerExportService.exportLayerAsBase64(
-              layerInpaintRole.layerId
-            )
+          if (
+            layer &&
+            (layer.type === 'image' || layer.type === 'drawing' || layer.type === 'artboard')
+          ) {
+            const baseImageBase64 =
+              layer.type === 'artboard'
+                ? await LayerExportService.exportArtboardAsBase64(layerInpaintRole.layerId)
+                : await LayerExportService.exportLayerAsBase64(layerInpaintRole.layerId)
             if (baseImageBase64) {
               await generateInpaint(
                 {
@@ -465,10 +479,14 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
         } else if (layerImg2imgRole) {
           // Use img2img mode with layer
           const layer = getLayer(layerImg2imgRole.layerId)
-          if (layer && (layer.type === 'image' || layer.type === 'drawing')) {
-            const baseImageBase64 = await LayerExportService.exportLayerAsBase64(
-              layerImg2imgRole.layerId
-            )
+          if (
+            layer &&
+            (layer.type === 'image' || layer.type === 'drawing' || layer.type === 'artboard')
+          ) {
+            const baseImageBase64 =
+              layer.type === 'artboard'
+                ? await LayerExportService.exportArtboardAsBase64(layerImg2imgRole.layerId)
+                : await LayerExportService.exportLayerAsBase64(layerImg2imgRole.layerId)
             if (baseImageBase64) {
               await generateImg2Img(baseImageBase64, denoisingStrength, frameId)
             } else {

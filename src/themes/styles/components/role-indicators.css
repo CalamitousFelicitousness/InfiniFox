@@ -1,0 +1,168 @@
+/**
+ * InfiniFox Role Indicator Styles
+ * Shared styles for layer role indicators (img2img, inpaint, controlnet)
+ * Used by both images and artboards in the canvas
+ */
+
+/* ==========================================
+   Role Indicator Variables
+   ========================================== */
+
+:root {
+  /* Role-specific colors */
+  --color-role-img2img: var(--color-success-500);
+  --color-role-inpaint: var(--color-warning-500);
+  --color-role-controlnet: var(--color-info-500);
+
+  /* Role indicator styling */
+  --role-indicator-stroke-width: 3;
+  --role-indicator-dash-pattern: 10, 5;
+  --role-indicator-corner-radius: 4;
+  --role-indicator-shadow-blur: 15;
+  --role-indicator-shadow-opacity: 0.6;
+  --role-indicator-label-padding: var(--spacing-2) var(--spacing-4);
+  --role-indicator-label-offset: -48px;
+  --role-indicator-label-font-size: 24px;
+  --role-indicator-label-height: 40px;
+}
+
+/* ==========================================
+   Role Indicator Base Styles
+   ========================================== */
+
+.role-indicator {
+  position: relative;
+}
+
+/* Border styles for different roles */
+.role-indicator-border {
+  stroke-width: var(--role-indicator-stroke-width);
+  stroke-dasharray: var(--role-indicator-dash-pattern);
+  fill: transparent;
+  pointer-events: none;
+}
+
+.role-indicator-border.img2img {
+  stroke: var(--color-role-img2img);
+}
+
+.role-indicator-border.inpaint {
+  stroke: var(--color-role-inpaint);
+}
+
+.role-indicator-border.controlnet {
+  stroke: var(--color-role-controlnet);
+}
+
+/* Label styles */
+.role-indicator-label {
+  position: absolute;
+  top: var(--role-indicator-label-offset);
+  left: var(--role-indicator-label-offset);
+  padding: var(--role-indicator-label-padding);
+  background: var(--custom-glass-bg);
+  backdrop-filter: blur(var(--custom-glass-blur));
+  -webkit-backdrop-filter: blur(var(--custom-glass-blur));
+  border: 1px solid;
+  border-radius: var(--radius-sm);
+  font-size: var(--role-indicator-label-font-size);
+  font-weight: var(--font-weight-medium);
+  pointer-events: none;
+  z-index: var(--z-tooltip);
+  white-space: nowrap;
+}
+
+.role-indicator-label.img2img {
+  border-color: var(--color-role-img2img);
+  color: var(--color-role-img2img);
+}
+
+.role-indicator-label.inpaint {
+  border-color: var(--color-role-inpaint);
+  color: var(--color-role-inpaint);
+}
+
+.role-indicator-label.controlnet {
+  border-color: var(--color-role-controlnet);
+  color: var(--color-role-controlnet);
+}
+
+/* Shadow/glow effect for better visibility */
+.role-indicator-glow {
+  filter: drop-shadow(0 0 var(--role-indicator-shadow-blur) currentColor);
+  opacity: var(--role-indicator-shadow-opacity);
+}
+
+/* ==========================================
+   Konva-specific styles
+   ========================================== */
+
+/* These values are used in the React components for Konva shapes */
+.role-indicator-konva {
+  /* Export values as CSS custom properties for use in JS */
+  --konva-stroke-width: 3;
+  --konva-dash-pattern-1: 10;
+  --konva-dash-pattern-2: 5;
+  --konva-corner-radius: 4;
+  --konva-shadow-blur: 15;
+  --konva-shadow-opacity: 0.6;
+}
+
+/* ==========================================
+   Animation for role indicators
+   ========================================== */
+
+@keyframes role-indicator-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.role-indicator-animated {
+  animation: role-indicator-pulse 2s ease-in-out infinite;
+}
+
+/* ==========================================
+   Combined role + selection state
+   ========================================== */
+
+.role-indicator.selected {
+  /* When both role and selection are active, prioritize role color */
+  /* but add additional visual indicator */
+}
+
+.role-indicator.selected .role-indicator-border {
+  stroke-width: calc(var(--role-indicator-stroke-width) + 1);
+}
+
+/* ==========================================
+   Hover states for interactive elements
+   ========================================== */
+
+.role-indicator-interactive:hover .role-indicator-label {
+  transform: scale(1.05);
+  transition: var(--transition-transform);
+}
+
+/* ==========================================
+   Responsive adjustments
+   ========================================== */
+
+/* Touch devices - larger indicators */
+@media (hover: none) and (pointer: coarse) {
+  .role-indicator-label {
+    font-size: var(--font-size-sm);
+    padding: var(--spacing-2) var(--spacing-3);
+  }
+}
+
+/* Small screens */
+@media (max-width: 640px) {
+  .role-indicator-label {
+    display: none; /* Hide labels on very small screens to reduce clutter */
+  }
+}

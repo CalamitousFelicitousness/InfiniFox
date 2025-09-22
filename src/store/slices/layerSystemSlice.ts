@@ -223,6 +223,7 @@ export interface LayerSystemSlice {
   // State
   layers: Map<string, LayerNode>
   layerOrder: string[] // Root layer IDs in order
+  layersVersion: number // Increments on any layer change to force re-renders
   activeArtboardId?: string | null
   selectedLayerIds: Set<string>
   lastSelectedLayerId?: string | null // Track last selected for range selection
@@ -345,6 +346,7 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
   // Initial state
   layers: new Map(),
   layerOrder: [],
+  layersVersion: 0,
   activeArtboardId: null,
   selectedLayerIds: new Set(),
   lastSelectedLayerId: null,
@@ -515,9 +517,12 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
         activeArtboardId: state.activeArtboardId,
       })
 
+      const newVersion = (state.layersVersion || 0) + 1
+      console.log('[Store] Layer added - new version:', newVersion, 'layers count:', newLayers.size)
       return {
         layers: newLayers,
         layerOrder: newLayerOrder,
+        layersVersion: newVersion,
       }
     })
   },
@@ -559,7 +564,10 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
         activeArtboardId: state.activeArtboardId,
       })
 
-      return { layers: newLayers }
+      return {
+        layers: newLayers,
+        layersVersion: state.layersVersion + 1,
+      }
     })
   },
 
@@ -617,12 +625,41 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
       // Remove from layers
       newLayers.delete(layerId)
 
+      // If this was an artboard, clear its drawing layer reference
+      // @ts-expect-error - accessing drawing slice
+      if (layer.type === 'artboard' && get().artboardDrawingLayers?.[layerId]) {
+        // @ts-expect-error - accessing drawing slice
+        const updatedMap = { ...get().artboardDrawingLayers }
+        delete updatedMap[layerId]
+        set({ artboardDrawingLayers: updatedMap })
+      }
+
       // Remove from root order if applicable
       const newLayerOrder = state.layerOrder.filter((id) => id !== layerId)
 
       // Clean up image references
       if (layer.type === 'image' && layer.imageProps?.imageId) {
         imageStorage.removeLayerReference(layer.imageProps.imageId, layerId).catch(console.error)
+      }
+
+      // Clear currentDrawingLayerId if this was the active drawing layer
+      // @ts-expect-error - accessing drawing slice
+      const drawingState = get()
+      if (drawingState.currentDrawingLayerId === layerId && drawingState.setCurrentDrawingLayerId) {
+        drawingState.setCurrentDrawingLayerId(null)
+      }
+
+      // Also clear from artboardDrawingLayers map
+      // @ts-expect-error - accessing drawing slice
+      if (drawingState.artboardDrawingLayers) {
+        const updatedMap = { ...drawingState.artboardDrawingLayers }
+        for (const [artboardId, drawingLayerId] of Object.entries(updatedMap)) {
+          if (drawingLayerId === layerId) {
+            delete updatedMap[artboardId]
+          }
+        }
+        // @ts-expect-error - accessing drawing slice
+        set({ artboardDrawingLayers: updatedMap })
       }
 
       // Schedule auto-save
@@ -636,6 +673,7 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
         layers: newLayers,
         layerOrder: newLayerOrder,
         selectedLayerIds: newSelectedIds,
+        layersVersion: state.layersVersion + 1,
       }
     })
   },
@@ -682,12 +720,41 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
       // Remove from layers
       newLayers.delete(layerId)
 
+      // If this was an artboard, clear its drawing layer reference
+      // @ts-expect-error - accessing drawing slice
+      if (layer.type === 'artboard' && get().artboardDrawingLayers?.[layerId]) {
+        // @ts-expect-error - accessing drawing slice
+        const updatedMap = { ...get().artboardDrawingLayers }
+        delete updatedMap[layerId]
+        set({ artboardDrawingLayers: updatedMap })
+      }
+
       // Remove from root order if applicable
       const newLayerOrder = state.layerOrder.filter((id) => id !== layerId)
 
       // NOTE: We intentionally DO NOT remove the image reference from storage
       // This allows the image to be restored if the delete is undone
       // The image will be cleaned up later by garbage collection if needed
+
+      // Clear currentDrawingLayerId if this was the active drawing layer
+      // @ts-expect-error - accessing drawing slice
+      const drawingState = get()
+      if (drawingState.currentDrawingLayerId === layerId && drawingState.setCurrentDrawingLayerId) {
+        drawingState.setCurrentDrawingLayerId(null)
+      }
+
+      // Also clear from artboardDrawingLayers map
+      // @ts-expect-error - accessing drawing slice
+      if (drawingState.artboardDrawingLayers) {
+        const updatedMap = { ...drawingState.artboardDrawingLayers }
+        for (const [artboardId, drawingLayerId] of Object.entries(updatedMap)) {
+          if (drawingLayerId === layerId) {
+            delete updatedMap[artboardId]
+          }
+        }
+        // @ts-expect-error - accessing drawing slice
+        set({ artboardDrawingLayers: updatedMap })
+      }
 
       // Schedule auto-save
       layerPersistenceManager.scheduleSave({
@@ -700,6 +767,7 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
         layers: newLayers,
         layerOrder: newLayerOrder,
         selectedLayerIds: newSelectedIds,
+        layersVersion: state.layersVersion + 1,
       }
     })
   },
@@ -821,7 +889,10 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
         activeArtboardId: state.activeArtboardId,
       })
 
-      return { layers: newLayers }
+      return {
+        layers: newLayers,
+        layersVersion: state.layersVersion + 1,
+      }
     })
   },
 
@@ -1466,6 +1537,7 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
       set({
         layers: new Map(data.layers.map((l: LayerNode) => [l.id, l])),
         layerOrder: data.layerOrder || [],
+        layersVersion: (get().layersVersion || 0) + 1,
         activeArtboardId: data.activeArtboardId || null,
         selectedLayerIds: new Set(),
       })
@@ -1565,6 +1637,7 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
     set({
       layers: new Map(),
       layerOrder: [],
+      layersVersion: (get().layersVersion || 0) + 1,
       activeArtboardId: null,
       selectedLayerIds: new Set(),
     })
@@ -1601,6 +1674,7 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
       set({
         layers: data.layers,
         layerOrder: data.layerOrder,
+        layersVersion: (get().layersVersion || 0) + 1,
         activeArtboardId: data.activeArtboardId,
         selectedLayerIds: new Set(),
         lastPersistedAt: Date.now(),

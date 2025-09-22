@@ -107,9 +107,22 @@ export function Canvas() {
   } = useStore()
 
   // Layer system state
+  // Create a stable dependency that captures all layer changes
+  const layersHash = useStore((state) => {
+    // Create a hash that changes when any layer property changes
+    const layers = Array.from(state.layers.values())
+    return JSON.stringify({
+      count: layers.length,
+      version: state.layersVersion,
+      // Include key properties that might change
+      visibility: layers.map(l => ({ id: l.id, visible: l.visible })),
+      order: state.layerOrder,
+    })
+  })
   const {
     layers,
     layerOrder,
+    layersVersion,
     getArtboards,
     getRootLayers,
     activeArtboardId,
@@ -462,21 +475,18 @@ export function Canvas() {
   const { konvaImages, getImageBorderColor } = images_
 
   // Get artboards and root layers for rendering
-  // Note: getRootLayers() filters out layers that have a parentId
-  const artboards = useMemo(() => (USE_LAYER_SYSTEM ? getArtboards() : []), [layers, layerOrder])
+  // Use layersHash to detect any layer changes
+  const artboards = useMemo(() => {
+    const result = USE_LAYER_SYSTEM ? getArtboards() : []
+    return result
+  }, [getArtboards, layersHash])
+
   const rootLayers = useMemo(() => {
     if (!USE_LAYER_SYSTEM) return []
     const allRootLayers = getRootLayers()
-    // Double-check that we're only getting layers without parents
     const filtered = allRootLayers.filter((layer) => !layer.parentId)
-    if (filtered.length !== allRootLayers.length) {
-      console.warn('getRootLayers returned layers with parents!', {
-        all: allRootLayers.map((l) => ({ id: l.id, parentId: l.parentId })),
-        filtered: filtered.map((l) => ({ id: l.id, parentId: l.parentId })),
-      })
-    }
     return filtered
-  }, [layers, layerOrder])
+  }, [getRootLayers, layersHash])
 
   // State for minimap image URLs
   const [layerImageUrls, setLayerImageUrls] = useState<Record<string, string>>({})
@@ -706,7 +716,7 @@ export function Canvas() {
                 {/* Render artboards first (so they appear below images) */}
                 {artboards.map((artboard) => (
                   <ArtboardComponent
-                    key={artboard.id}
+                    key={`${artboard.id}-${artboard.updatedAt || 0}`}
                     artboard={artboard}
                     isActive={activeArtboardId === artboard.id}
                     currentTool={tools.currentTool}
@@ -741,7 +751,7 @@ export function Canvas() {
                   .filter((layer) => layer.type !== 'artboard')
                   .map((layer) => (
                     <LayerRenderer
-                      key={layer.id}
+                      key={`${layer.id}-${layer.updatedAt || 0}`}
                       layer={layer}
                       currentTool={tools.currentTool}
                       parentScale={viewport.scale}
