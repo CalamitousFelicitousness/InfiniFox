@@ -137,7 +137,9 @@
 
 .background-picker-color-swatch.selected {
   border: 2px solid var(--color-primary-500);
-  box-shadow: 0 0 0 2px var(--color-primary-500), 0 2px 8px rgba(100, 108, 255, 0.4);
+  box-shadow:
+    0 0 0 2px var(--color-primary-500),
+    0 2px 8px rgba(100, 108, 255, 0.4);
   transform: scale(1.1);
 }
 

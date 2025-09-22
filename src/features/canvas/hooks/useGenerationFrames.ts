@@ -39,7 +39,6 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
     removeActiveGenerationFrameId,
     currentlyGeneratingFrameId,
     setCurrentlyGeneratingFrame,
-    addToGenerationQueue,
     removeFromGenerationQueue,
     getNextInQueue,
     width,
@@ -51,6 +50,9 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
     images,
     activeImageRoles,
     exportImageAsBase64,
+    // Layer system state
+    activeLayerRoles,
+    getLayer,
   } = useStore()
 
   // Local state
@@ -98,40 +100,78 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
           // Remove from queue first
           removeFromGenerationQueue(nextId)
 
-          // Determine generation type based on active image roles
-          const img2imgRole = activeImageRoles.find((r) => r.role === 'img2img_init')
-          const inpaintRole = activeImageRoles.find((r) => r.role === 'inpaint_image')
+          // Determine generation type based on active roles (check layers first, then images)
+          const layerImg2imgRole = activeLayerRoles.find((r) => r.role === 'img2img_init')
+          const layerInpaintRole = activeLayerRoles.find((r) => r.role === 'inpaint_image')
+          const imageImg2imgRole = activeImageRoles.find((r) => r.role === 'img2img_init')
+          const imageInpaintRole = activeImageRoles.find((r) => r.role === 'inpaint_image')
 
-          // Start the appropriate generation
-          if (inpaintRole) {
-            const inpaintImage = images.find((img) => img.id === inpaintRole.imageId)
-            if (inpaintImage) {
-              exportImageAsBase64(inpaintImage.id).then((baseImageBase64) => {
-                generateInpaint(
-                  {
-                    baseImage: baseImageBase64,
-                    maskImage: baseImageBase64,
-                    denoisingStrength: 0.75,
-                    maskBlur: 4,
-                    inpaintingFill: 'original',
-                    inpaintFullRes: false,
-                    inpaintFullResPadding: 32,
-                  },
-                  nextId
+          // Import LayerExportService dynamically
+          import('../../../services/layers/LayerExportService').then(({ LayerExportService }) => {
+            // Start the appropriate generation
+            if (layerInpaintRole) {
+              const layer = getLayer(layerInpaintRole.layerId)
+              if (layer && (layer.type === 'image' || layer.type === 'drawing')) {
+                LayerExportService.exportLayerAsBase64(layerInpaintRole.layerId).then(
+                  (baseImageBase64) => {
+                    if (baseImageBase64) {
+                      generateInpaint(
+                        {
+                          baseImage: baseImageBase64,
+                          maskImage: baseImageBase64,
+                          denoisingStrength: 0.75,
+                          maskBlur: 4,
+                          inpaintingFill: 'original',
+                          inpaintFullRes: false,
+                          inpaintFullResPadding: 32,
+                        },
+                        nextId
+                      )
+                    }
+                  }
                 )
-              })
+              }
+            } else if (imageInpaintRole) {
+              const inpaintImage = images.find((img) => img.id === imageInpaintRole.imageId)
+              if (inpaintImage) {
+                exportImageAsBase64(inpaintImage.id).then((baseImageBase64) => {
+                  generateInpaint(
+                    {
+                      baseImage: baseImageBase64,
+                      maskImage: baseImageBase64,
+                      denoisingStrength: 0.75,
+                      maskBlur: 4,
+                      inpaintingFill: 'original',
+                      inpaintFullRes: false,
+                      inpaintFullResPadding: 32,
+                    },
+                    nextId
+                  )
+                })
+              }
+            } else if (layerImg2imgRole) {
+              const layer = getLayer(layerImg2imgRole.layerId)
+              if (layer && (layer.type === 'image' || layer.type === 'drawing')) {
+                LayerExportService.exportLayerAsBase64(layerImg2imgRole.layerId).then(
+                  (baseImageBase64) => {
+                    if (baseImageBase64) {
+                      generateImg2Img(baseImageBase64, 0.5, nextId)
+                    }
+                  }
+                )
+              }
+            } else if (imageImg2imgRole) {
+              const img2imgImage = images.find((img) => img.id === imageImg2imgRole.imageId)
+              if (img2imgImage) {
+                exportImageAsBase64(img2imgImage.id).then((baseImageBase64) => {
+                  generateImg2Img(baseImageBase64, 0.5, nextId)
+                })
+              }
+            } else {
+              // Default to txt2img
+              generateTxt2Img(nextId)
             }
-          } else if (img2imgRole) {
-            const img2imgImage = images.find((img) => img.id === img2imgRole.imageId)
-            if (img2imgImage) {
-              exportImageAsBase64(img2imgImage.id).then((baseImageBase64) => {
-                generateImg2Img(baseImageBase64, 0.5, nextId)
-              })
-            }
-          } else {
-            // Default to txt2img
-            generateTxt2Img(nextId)
-          }
+          })
         }
       } else if (message.phase === 'waiting') {
         // Initial waiting state, don't update
@@ -153,38 +193,76 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
             console.log('Starting next in queue after error:', nextId)
             removeFromGenerationQueue(nextId)
 
-            // Determine generation type and start
-            const img2imgRole = activeImageRoles.find((r) => r.role === 'img2img_init')
-            const inpaintRole = activeImageRoles.find((r) => r.role === 'inpaint_image')
+            // Determine generation type and start (check layers first, then images)
+            const layerImg2imgRole = activeLayerRoles.find((r) => r.role === 'img2img_init')
+            const layerInpaintRole = activeLayerRoles.find((r) => r.role === 'inpaint_image')
+            const imageImg2imgRole = activeImageRoles.find((r) => r.role === 'img2img_init')
+            const imageInpaintRole = activeImageRoles.find((r) => r.role === 'inpaint_image')
 
-            if (inpaintRole) {
-              const inpaintImage = images.find((img) => img.id === inpaintRole.imageId)
-              if (inpaintImage) {
-                exportImageAsBase64(inpaintImage.id).then((baseImageBase64) => {
-                  generateInpaint(
-                    {
-                      baseImage: baseImageBase64,
-                      maskImage: baseImageBase64,
-                      denoisingStrength: 0.75,
-                      maskBlur: 4,
-                      inpaintingFill: 'original',
-                      inpaintFullRes: false,
-                      inpaintFullResPadding: 32,
-                    },
-                    nextId
+            // Import LayerExportService dynamically
+            import('../../../services/layers/LayerExportService').then(({ LayerExportService }) => {
+              if (layerInpaintRole) {
+                const layer = getLayer(layerInpaintRole.layerId)
+                if (layer && (layer.type === 'image' || layer.type === 'drawing')) {
+                  LayerExportService.exportLayerAsBase64(layerInpaintRole.layerId).then(
+                    (baseImageBase64) => {
+                      if (baseImageBase64) {
+                        generateInpaint(
+                          {
+                            baseImage: baseImageBase64,
+                            maskImage: baseImageBase64,
+                            denoisingStrength: 0.75,
+                            maskBlur: 4,
+                            inpaintingFill: 'original',
+                            inpaintFullRes: false,
+                            inpaintFullResPadding: 32,
+                          },
+                          nextId
+                        )
+                      }
+                    }
                   )
-                })
+                }
+              } else if (imageInpaintRole) {
+                const inpaintImage = images.find((img) => img.id === imageInpaintRole.imageId)
+                if (inpaintImage) {
+                  exportImageAsBase64(inpaintImage.id).then((baseImageBase64) => {
+                    generateInpaint(
+                      {
+                        baseImage: baseImageBase64,
+                        maskImage: baseImageBase64,
+                        denoisingStrength: 0.75,
+                        maskBlur: 4,
+                        inpaintingFill: 'original',
+                        inpaintFullRes: false,
+                        inpaintFullResPadding: 32,
+                      },
+                      nextId
+                    )
+                  })
+                }
+              } else if (layerImg2imgRole) {
+                const layer = getLayer(layerImg2imgRole.layerId)
+                if (layer && (layer.type === 'image' || layer.type === 'drawing')) {
+                  LayerExportService.exportLayerAsBase64(layerImg2imgRole.layerId).then(
+                    (baseImageBase64) => {
+                      if (baseImageBase64) {
+                        generateImg2Img(baseImageBase64, 0.5, nextId)
+                      }
+                    }
+                  )
+                }
+              } else if (imageImg2imgRole) {
+                const img2imgImage = images.find((img) => img.id === imageImg2imgRole.imageId)
+                if (img2imgImage) {
+                  exportImageAsBase64(img2imgImage.id).then((baseImageBase64) => {
+                    generateImg2Img(baseImageBase64, 0.5, nextId)
+                  })
+                }
+              } else {
+                generateTxt2Img(nextId)
               }
-            } else if (img2imgRole) {
-              const img2imgImage = images.find((img) => img.id === img2imgRole.imageId)
-              if (img2imgImage) {
-                exportImageAsBase64(img2imgImage.id).then((baseImageBase64) => {
-                  generateImg2Img(baseImageBase64, 0.5, nextId)
-                })
-              }
-            } else {
-              generateTxt2Img(nextId)
-            }
+            })
           }
         }, 3000)
       }
@@ -204,7 +282,9 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
     removeFromGenerationQueue,
     setCurrentlyGeneratingFrame,
     getNextInQueue,
+    activeLayerRoles,
     activeImageRoles,
+    getLayer,
     images,
     exportImageAsBase64,
     generateTxt2Img,
@@ -307,13 +387,46 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
       // This prevents duplication and race conditions
 
       try {
-        // Check for active image roles to determine generation mode
-        const img2imgRole = activeImageRoles.find((r) => r.role === 'img2img_init')
-        const inpaintRole = activeImageRoles.find((r) => r.role === 'inpaint_image')
+        // Import LayerExportService dynamically
+        const { LayerExportService } = await import('../../../services/layers/LayerExportService')
 
-        if (inpaintRole) {
-          // Use inpainting mode if an inpaint image is set
-          const inpaintImage = images.find((img) => img.id === inpaintRole.imageId)
+        // Check for active layer roles first (higher priority)
+        const layerImg2imgRole = activeLayerRoles.find((r) => r.role === 'img2img_init')
+        const layerInpaintRole = activeLayerRoles.find((r) => r.role === 'inpaint_image')
+
+        // Then check for active image roles as fallback
+        const imageImg2imgRole = activeImageRoles.find((r) => r.role === 'img2img_init')
+        const imageInpaintRole = activeImageRoles.find((r) => r.role === 'inpaint_image')
+
+        if (layerInpaintRole) {
+          // Use inpainting mode with layer
+          const layer = getLayer(layerInpaintRole.layerId)
+          if (layer && (layer.type === 'image' || layer.type === 'drawing')) {
+            const baseImageBase64 = await LayerExportService.exportLayerAsBase64(
+              layerInpaintRole.layerId
+            )
+            if (baseImageBase64) {
+              await generateInpaint(
+                {
+                  baseImage: baseImageBase64,
+                  maskImage: baseImageBase64, // TODO: Implement proper mask drawing
+                  denoisingStrength: 0.75,
+                  maskBlur: 4,
+                  inpaintingFill: 'original',
+                  inpaintFullRes: false,
+                  inpaintFullResPadding: 32,
+                },
+                frameId
+              )
+            } else {
+              throw new Error('Failed to export layer for inpainting')
+            }
+          } else {
+            throw new Error('Invalid layer for inpainting')
+          }
+        } else if (imageInpaintRole) {
+          // Fallback to image inpainting
+          const inpaintImage = images.find((img) => img.id === imageInpaintRole.imageId)
           if (inpaintImage) {
             const baseImageBase64 = await exportImageAsBase64(inpaintImage.id)
             await generateInpaint(
@@ -331,9 +444,24 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
           } else {
             throw new Error('Inpaint image not found')
           }
-        } else if (img2imgRole) {
-          // Use img2img mode if an img2img init image is set
-          const img2imgImage = images.find((img) => img.id === img2imgRole.imageId)
+        } else if (layerImg2imgRole) {
+          // Use img2img mode with layer
+          const layer = getLayer(layerImg2imgRole.layerId)
+          if (layer && (layer.type === 'image' || layer.type === 'drawing')) {
+            const baseImageBase64 = await LayerExportService.exportLayerAsBase64(
+              layerImg2imgRole.layerId
+            )
+            if (baseImageBase64) {
+              await generateImg2Img(baseImageBase64, 0.5, frameId)
+            } else {
+              throw new Error('Failed to export layer for img2img')
+            }
+          } else {
+            throw new Error('Invalid layer for img2img')
+          }
+        } else if (imageImg2imgRole) {
+          // Fallback to image img2img
+          const img2imgImage = images.find((img) => img.id === imageImg2imgRole.imageId)
           if (img2imgImage) {
             const baseImageBase64 = await exportImageAsBase64(img2imgImage.id)
             await generateImg2Img(baseImageBase64, 0.5, frameId)
@@ -341,7 +469,7 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
             throw new Error('Img2Img init image not found')
           }
         } else {
-          // Default to txt2img if no image roles are set
+          // Default to txt2img if no roles are set
           await generateTxt2Img(frameId)
         }
       } catch (error: unknown) {
@@ -357,7 +485,9 @@ export function useGenerationFrames({ currentTool }: UseGenerationFramesProps) {
       updateGenerationFrame,
       width,
       height,
+      activeLayerRoles,
       activeImageRoles,
+      getLayer,
       images,
       exportImageAsBase64,
       generateTxt2Img,

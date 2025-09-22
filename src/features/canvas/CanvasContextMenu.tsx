@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react'
+import { Check, Edit2, Image, Wand2, XCircle } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 
 import { Icon } from '../../components/common/Icon'
@@ -114,6 +114,7 @@ export function CanvasContextMenu({
     generateInFrame,
     // Layer system state
     getLayer,
+    activeLayerRoles,
     selectedLayerIds: storeSelectedLayerIds,
     toggleLayerVisibility: storeToggleLayerVisibility,
     toggleLayerLock: storeToggleLock,
@@ -523,7 +524,7 @@ export function CanvasContextMenu({
                 onClose()
               }}
             >
-              <Icon icon="image" size={16} />
+              <Icon icon={Image} size={16} />
               {getLayer(layerId) && useStore.getState().getLayerRole(layerId) === 'img2img_init' ? (
                 <>
                   <Check size={12} style={{ marginLeft: 'auto' }} />
@@ -551,7 +552,7 @@ export function CanvasContextMenu({
                 onClose()
               }}
             >
-              <Icon icon="edit-2" size={16} />
+              <Icon icon={Edit2} size={16} />
               {getLayer(layerId) &&
               useStore.getState().getLayerRole(layerId) === 'inpaint_image' ? (
                 <>
@@ -576,7 +577,7 @@ export function CanvasContextMenu({
                   onClose()
                 }}
               >
-                <Icon icon="wand-2" size={16} />
+                <Icon icon={Wand2} size={16} />
                 Use Drawing for Generation
               </button>
             )}
@@ -595,7 +596,7 @@ export function CanvasContextMenu({
                     onClose()
                   }}
                 >
-                  <Icon icon="x-circle" size={16} />
+                  <Icon icon={XCircle} size={16} />
                   Clear All Generation Roles
                 </button>
               </>
@@ -954,22 +955,34 @@ export function CanvasContextMenu({
             }}
           >
             {(() => {
-              // Determine which generation mode will be used
-              const img2imgRole = activeImageRoles.find((r) => r.role === 'img2img_init')
-              const inpaintRole = activeImageRoles.find((r) => r.role === 'inpaint_image')
+              // Determine which generation mode will be used (check layers first, then images)
+              const layerImg2imgRole = activeLayerRoles.find((r) => r.role === 'img2img_init')
+              const layerInpaintRole = activeLayerRoles.find((r) => r.role === 'inpaint_image')
+              const imageImg2imgRole = activeImageRoles.find((r) => r.role === 'img2img_init')
+              const imageInpaintRole = activeImageRoles.find((r) => r.role === 'inpaint_image')
 
-              if (inpaintRole) {
+              if (layerInpaintRole || imageInpaintRole) {
                 return 'Quick Inpaint Here'
-              } else if (img2imgRole) {
+              } else if (layerImg2imgRole || imageImg2imgRole) {
                 return 'Quick Img2Img Here'
               } else {
                 return 'Quick Generate Here'
               }
             })()}
           </button>
-          {/* Show info about active image roles */}
-          {activeImageRoles.length > 0 && (
+          {/* Show info about active roles */}
+          {(activeLayerRoles.length > 0 || activeImageRoles.length > 0) && (
             <div className="canvas-context-menu__role-info">
+              {activeLayerRoles.map((role) => (
+                <div key={role.layerId} className="canvas-context-menu__role-item">
+                  <span className="canvas-context-menu__role-text">
+                    {role.role === 'img2img_init' && 'Img2Img'}
+                    {role.role === 'inpaint_image' && 'Inpaint'}
+                    {role.role === 'controlnet' && 'ControlNet'}: Layer{' '}
+                    {getLayer(role.layerId)?.name || role.layerId.slice(-6)}
+                  </span>
+                </div>
+              ))}
               {activeImageRoles.map((role) => (
                 <div key={role.imageId} className="canvas-context-menu__role-item">
                   <span className="canvas-context-menu__role-text">

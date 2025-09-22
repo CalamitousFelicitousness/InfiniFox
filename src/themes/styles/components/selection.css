@@ -48,7 +48,7 @@
   --stroke-opacity: var(--selection-border-opacity-base);
 }
 
-.canvas-selection[data-active="true"] {
+.canvas-selection[data-active='true'] {
   --stroke: var(--selection-border-color-active);
   --stroke-width: var(--selection-border-width-active);
   --stroke-opacity: var(--selection-border-opacity-active);
@@ -74,7 +74,7 @@
   --shadow-opacity: var(--selection-glow-opacity-strong);
 }
 
-.canvas-selection-glow--artboard[data-active="true"] {
+.canvas-selection-glow--artboard[data-active='true'] {
   --shadow-color: rgba(var(--selection-glow-color-rgb), var(--selection-glow-opacity-intense));
   --shadow-blur: var(--selection-glow-blur-xl);
   --shadow-opacity: var(--selection-glow-opacity-intense);
@@ -87,7 +87,7 @@
   --shadow-opacity: var(--selection-glow-opacity-subtle);
 }
 
-.canvas-selection-glow--image[data-active="true"] {
+.canvas-selection-glow--image[data-active='true'] {
   --shadow-color: rgba(var(--selection-glow-color-rgb), var(--selection-glow-opacity-base));
   --shadow-blur: var(--selection-glow-blur-base);
   --shadow-opacity: var(--selection-glow-opacity-base);
@@ -122,7 +122,7 @@
   --stroke-width: var(--selection-border-width);
 }
 
-.canvas-selection-border--artboard[data-active="true"] {
+.canvas-selection-border--artboard[data-active='true'] {
   --stroke: rgba(var(--selection-glow-color-rgb), var(--selection-border-opacity-active));
   --stroke-width: var(--selection-border-width-active);
 }
@@ -132,17 +132,17 @@
    ========================================== */
 
 /* Hide selection effects at very low zoom levels */
-.canvas-selection-glow[data-zoom-level="low"] {
+.canvas-selection-glow[data-zoom-level='low'] {
   --shadow-blur: calc(var(--selection-glow-blur-sm) * 0.5);
   --shadow-opacity: calc(var(--selection-glow-opacity-base) * 0.5);
 }
 
-.canvas-selection-glow[data-zoom-level="very-low"] {
+.canvas-selection-glow[data-zoom-level='very-low'] {
   display: none;
 }
 
 /* Enhance selection at high zoom levels */
-.canvas-selection-glow[data-zoom-level="high"] {
+.canvas-selection-glow[data-zoom-level='high'] {
   --shadow-blur: calc(var(--selection-glow-blur-base) * 1.2);
 }
 
@@ -188,7 +188,8 @@
    ========================================== */
 
 @keyframes selection-pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: var(--selection-glow-opacity-base);
   }
   50% {
@@ -226,22 +227,22 @@
    ========================================== */
 
 /* These data attributes help JavaScript apply the right values to Konva */
-[data-selection-type="artboard"] {
+[data-selection-type='artboard'] {
   --selection-type: artboard;
 }
 
-[data-selection-type="image"] {
+[data-selection-type='image'] {
   --selection-type: image;
 }
 
-[data-selection-type="group"] {
+[data-selection-type='group'] {
   --selection-type: group;
 }
 
-[data-selection-active="true"] {
+[data-selection-active='true'] {
   --selection-active: true;
 }
 
-[data-selection-active="false"] {
+[data-selection-active='false'] {
   --selection-active: false;
 }
