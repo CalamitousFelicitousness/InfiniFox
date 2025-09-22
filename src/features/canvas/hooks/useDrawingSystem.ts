@@ -74,7 +74,12 @@ export function useDrawingSystem({
       size: brushSize,
     })
     const pressureManager = new PressureManager()
-    const lazyBrush = new LazyBrush({ radius: smoothing, enabled: true })
+    // Reduced radius and friction for more responsive drawing
+    const lazyBrush = new LazyBrush({
+      radius: Math.max(5, smoothing * 0.5), // Reduced from full smoothing value
+      friction: 0.3, // Reduced friction for less lag
+      enabled: smoothing > 0
+    })
 
     perfectFreehandRef.current = perfectFreehand
     pressureManagerRef.current = pressureManager
@@ -110,7 +115,11 @@ export function useDrawingSystem({
 
   useEffect(() => {
     if (lazyBrushRef.current) {
-      lazyBrushRef.current.configure({ radius: smoothing })
+      lazyBrushRef.current.configure({
+        radius: Math.max(5, smoothing * 0.5),
+        friction: 0.3,
+        enabled: smoothing > 0
+      })
     }
   }, [smoothing])
 
@@ -219,15 +228,16 @@ export function useDrawingSystem({
           perfectFreehandRef.current.addPoint({ x: smoothed.x, y: smoothed.y, pressure })
         }
 
-        // Update current stroke points and generate outline
+        // Update current stroke points immediately
         if (currentStroke) {
           const newPoints = [...currentStroke.points, smoothed.x, smoothed.y]
 
-          // Generate stroke outline using PerfectFreehand with actual pressure values
-          const outline =
-            perfectFreehandRef.current?.generateStrokeOutline(strokePointsRef.current) || null
+          // For smooth rendering, always provide the outline
+          const outline = perfectFreehandRef.current
+            ? perfectFreehandRef.current.generateStrokeOutline(strokePointsRef.current)
+            : undefined
 
-          updateCurrentStroke(newPoints, outline || undefined)
+          updateCurrentStroke(newPoints, outline)
         }
       }
 
@@ -248,6 +258,7 @@ export function useDrawingSystem({
       return false
     }
 
+    // Generate final high-quality outline
     if (perfectFreehandRef.current) {
       const finalOutline = perfectFreehandRef.current.endStroke()
       if (finalOutline && currentStroke) {
