@@ -114,8 +114,8 @@ export function Canvas() {
     return JSON.stringify({
       count: layers.length,
       // Track updatedAt for all layers to catch any modifications
-      updates: layers.map(l => ({ id: l.id, updatedAt: l.updatedAt })),
-      visibility: layers.map(l => ({ id: l.id, visible: l.visible })),
+      updates: layers.map((l) => ({ id: l.id, updatedAt: l.updatedAt })),
+      visibility: layers.map((l) => ({ id: l.id, visible: l.visible })),
       order: state.layerOrder,
     })
   })
@@ -431,7 +431,7 @@ export function Canvas() {
             {
               width: 800,
               height: 600,
-              name: `Artboard ${getArtboards().length + 1}`
+              name: `Artboard ${getArtboards().length + 1}`,
             },
             { x: canvasPos.x, y: canvasPos.y }
           )
