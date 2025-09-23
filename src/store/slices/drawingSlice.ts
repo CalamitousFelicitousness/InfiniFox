@@ -1,5 +1,8 @@
 import type { StateCreator } from 'zustand'
 
+import { StrokeOptimizer, StrokeLODManager } from '../../services/drawing/StrokeOptimizer'
+import type { StrokeLOD } from '../../services/drawing/StrokeOptimizer'
+
 import type { LayerNode, LayerSystemSlice } from './layerSystemSlice'
 
 export interface DrawingStroke {
@@ -12,6 +15,10 @@ export interface DrawingStroke {
   strokeWidth: number
   globalCompositeOperation: GlobalCompositeOperation
   timestamp: number
+  // Optimization fields
+  optimizedPoints?: number[] // Optimized points for current zoom
+  lod?: StrokeLOD // Level of detail versions
+  boundingBox?: { x: number; y: number; width: number; height: number }
 }
 
 export interface DrawingState {
@@ -40,6 +47,16 @@ export interface DrawingState {
   currentDrawingLayerId?: string | null
   // Map of artboard IDs to their drawing layer IDs
   artboardDrawingLayers: Record<string, string>
+
+  // Optimization settings
+  strokeOptimizationEnabled: boolean
+  regionUpdateEnabled: boolean
+  lodEnabled: boolean
+  optimizationMetrics: {
+    totalPointsReduced: number
+    averageReductionPercentage: number
+    lastOptimizationTime: number
+  } | null
 }
 
 export interface DrawingActions {
@@ -77,12 +94,24 @@ export interface DrawingActions {
   convertStrokeToLayer: (stroke: DrawingStroke) => LayerNode | null
   addStrokeToLayer: (stroke: DrawingStroke, layerId: string) => void
   finalizeDrawingLayer: () => void
+
+  // Optimization actions
+  setStrokeOptimizationEnabled: (enabled: boolean) => void
+  setRegionUpdateEnabled: (enabled: boolean) => void
+  setLODEnabled: (enabled: boolean) => void
+  optimizeStroke: (points: number[], zoom: number) => number[]
+  updateStrokeLOD: (strokeId: string, lod: StrokeLOD) => void
+  getStrokeForZoom: (stroke: DrawingStroke, zoom: number) => number[]
 }
 
 export type DrawingSlice = DrawingState & DrawingActions
 
 // The slice needs access to LayerSystemSlice for layer operations
 type StoreWithLayerSystem = DrawingSlice & LayerSystemSlice
+
+// Create singleton instances of optimization services
+const strokeOptimizer = new StrokeOptimizer()
+const lodManager = new StrokeLODManager()
 
 export const createDrawingSlice: StateCreator<StoreWithLayerSystem, [], [], DrawingSlice> = (
   set,
@@ -108,6 +137,12 @@ export const createDrawingSlice: StateCreator<StoreWithLayerSystem, [], [], Draw
   useLayerSystem: true,
   currentDrawingLayerId: null,
   artboardDrawingLayers: {},
+
+  // Optimization settings initialized
+  strokeOptimizationEnabled: true,
+  regionUpdateEnabled: true,
+  lodEnabled: true,
+  optimizationMetrics: null,
 
   // Actions
   setDrawingMode: (enabled) => set({ isDrawingMode: enabled }),
@@ -147,8 +182,45 @@ export const createDrawingSlice: StateCreator<StoreWithLayerSystem, [], [], Draw
 
   endDrawingStroke: (targetArtboardId?: string | null) => {
     const state = get()
-    const { currentStroke, drawingStrokes, useLayerSystem, artboardDrawingLayers } = state
+    const {
+      currentStroke,
+      drawingStrokes,
+      useLayerSystem,
+      artboardDrawingLayers,
+      lodEnabled,
+      strokeOptimizationEnabled,
+    } = state
     if (!currentStroke) return
+
+    // Apply optimization if enabled
+    let finalStroke = currentStroke
+    if (strokeOptimizationEnabled) {
+      // Generate LOD if enabled
+      if (lodEnabled) {
+        const lod = lodManager.generateLOD(currentStroke.points)
+        finalStroke = { ...currentStroke, lod }
+      }
+
+      // Calculate bounding box
+      let minX = Infinity,
+        minY = Infinity,
+        maxX = -Infinity,
+        maxY = -Infinity
+      for (let i = 0; i < currentStroke.points.length; i += 2) {
+        const x = currentStroke.points[i]
+        const y = currentStroke.points[i + 1]
+        minX = Math.min(minX, x)
+        minY = Math.min(minY, y)
+        maxX = Math.max(maxX, x)
+        maxY = Math.max(maxY, y)
+      }
+      finalStroke.boundingBox = {
+        x: minX - currentStroke.strokeWidth / 2,
+        y: minY - currentStroke.strokeWidth / 2,
+        width: maxX - minX + currentStroke.strokeWidth,
+        height: maxY - minY + currentStroke.strokeWidth,
+      }
+    }
 
     // If layer system is enabled and we have access to layer functions
     if (useLayerSystem && state.addLayer) {
@@ -176,8 +248,8 @@ export const createDrawingSlice: StateCreator<StoreWithLayerSystem, [], [], Draw
             set((state) => ({
               artboardDrawingLayers: {
                 ...state.artboardDrawingLayers,
-                [targetArtboardId]: undefined
-              } as Record<string, string>
+                [targetArtboardId]: undefined,
+              } as Record<string, string>,
             }))
           } else {
             // Clear global layer
@@ -189,7 +261,7 @@ export const createDrawingSlice: StateCreator<StoreWithLayerSystem, [], [], Draw
       // If we have a valid drawing layer, add the stroke to it
       if (drawingLayerId && state.getLayer && state.updateLayer) {
         // If drawing on an artboard, we need to adjust the stroke coordinates
-        let adjustedStroke = currentStroke
+        let adjustedStroke = finalStroke
         if (targetArtboardId) {
           const artboard = state.getLayer(targetArtboardId)
           if (artboard) {
@@ -198,22 +270,22 @@ export const createDrawingSlice: StateCreator<StoreWithLayerSystem, [], [], Draw
 
             // Adjust stroke points to be relative to artboard
             const adjustedPoints = []
-            for (let i = 0; i < currentStroke.points.length; i += 2) {
-              adjustedPoints.push(currentStroke.points[i] - artboardX)
-              adjustedPoints.push(currentStroke.points[i + 1] - artboardY)
+            for (let i = 0; i < finalStroke.points.length; i += 2) {
+              adjustedPoints.push(finalStroke.points[i] - artboardX)
+              adjustedPoints.push(finalStroke.points[i + 1] - artboardY)
             }
 
             // Adjust outline if it exists
-            let adjustedOutline = currentStroke.outline
-            if (currentStroke.outline && currentStroke.outline.length > 0) {
-              adjustedOutline = currentStroke.outline.map((point) => [
+            let adjustedOutline = finalStroke.outline
+            if (finalStroke.outline && finalStroke.outline.length > 0) {
+              adjustedOutline = finalStroke.outline.map((point) => [
                 point[0] - artboardX,
                 point[1] - artboardY,
               ])
             }
 
             adjustedStroke = {
-              ...currentStroke,
+              ...finalStroke,
               points: adjustedPoints,
               outline: adjustedOutline,
             }
@@ -224,7 +296,7 @@ export const createDrawingSlice: StateCreator<StoreWithLayerSystem, [], [], Draw
         get().addStrokeToLayer(adjustedStroke, drawingLayerId)
       } else {
         // Create new layer for first stroke
-        const strokeLayer = get().convertStrokeToLayer(currentStroke)
+        const strokeLayer = get().convertStrokeToLayer(finalStroke)
         if (strokeLayer) {
           // If drawing on an artboard, adjust coordinates to be relative to the artboard
           if (targetArtboardId) {
@@ -251,8 +323,8 @@ export const createDrawingSlice: StateCreator<StoreWithLayerSystem, [], [], Draw
             set((state) => ({
               artboardDrawingLayers: {
                 ...state.artboardDrawingLayers,
-                [targetArtboardId]: newLayerId
-              }
+                [targetArtboardId]: newLayerId,
+              },
             }))
           } else {
             // Store as global drawing layer
@@ -271,7 +343,7 @@ export const createDrawingSlice: StateCreator<StoreWithLayerSystem, [], [], Draw
     } else {
       // Legacy flat system - accumulate strokes
       set({
-        drawingStrokes: [...drawingStrokes, currentStroke],
+        drawingStrokes: [...drawingStrokes, finalStroke],
         currentStroke: null,
         isDrawingActive: false,
       })
@@ -352,8 +424,8 @@ export const createDrawingSlice: StateCreator<StoreWithLayerSystem, [], [], Draw
       set((state) => ({
         artboardDrawingLayers: {
           ...state.artboardDrawingLayers,
-          [targetArtboardId]: undefined
-        } as Record<string, string>
+          [targetArtboardId]: undefined,
+        } as Record<string, string>,
       }))
     } else {
       // Clear global drawing layer
@@ -466,5 +538,60 @@ export const createDrawingSlice: StateCreator<StoreWithLayerSystem, [], [], Draw
       state.addLayer(drawingLayer, state.activeArtboardId)
       set({ drawingStrokes: [] })
     }
+  },
+
+  // Optimization actions
+  setStrokeOptimizationEnabled: (enabled) => set({ strokeOptimizationEnabled: enabled }),
+  setRegionUpdateEnabled: (enabled) => set({ regionUpdateEnabled: enabled }),
+  setLODEnabled: (enabled) => set({ lodEnabled: enabled }),
+
+  optimizeStroke: (points: number[], zoom: number) => {
+    const { strokeOptimizationEnabled } = get()
+    if (!strokeOptimizationEnabled) return points
+
+    // Update optimizer with current zoom level
+    strokeOptimizer.updateOptions({ zoomLevel: zoom })
+
+    // Optimize the stroke
+    const optimized = strokeOptimizer.optimizeStroke(points)
+
+    // Update metrics
+    const metrics = strokeOptimizer.getMetrics()
+    if (metrics) {
+      const currentMetrics = get().optimizationMetrics
+      set({
+        optimizationMetrics: {
+          totalPointsReduced:
+            (currentMetrics?.totalPointsReduced || 0) +
+            (metrics.originalPoints - metrics.optimizedPoints),
+          averageReductionPercentage: currentMetrics
+            ? (currentMetrics.averageReductionPercentage + metrics.reductionPercentage) / 2
+            : metrics.reductionPercentage,
+          lastOptimizationTime: metrics.simplificationTime,
+        },
+      })
+    }
+
+    return optimized
+  },
+
+  updateStrokeLOD: (strokeId: string, lod: StrokeLOD) => {
+    set((state) => ({
+      drawingStrokes: state.drawingStrokes.map((stroke) =>
+        stroke.id === strokeId ? { ...stroke, lod } : stroke
+      ),
+    }))
+  },
+
+  getStrokeForZoom: (stroke: DrawingStroke, zoom: number) => {
+    const { lodEnabled } = get()
+
+    // If LOD is disabled or stroke has no LOD data, return original points
+    if (!lodEnabled || !stroke.lod) {
+      return stroke.optimizedPoints || stroke.points
+    }
+
+    // Return appropriate LOD level based on zoom
+    return lodManager.getLODForZoom(stroke.lod, zoom)
   },
 })

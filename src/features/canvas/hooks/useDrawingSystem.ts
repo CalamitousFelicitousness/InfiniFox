@@ -7,6 +7,7 @@ import {
   BRUSH_PRESETS,
 } from '../../../services/drawing/PerfectFreehandService'
 import { PressureManager } from '../../../services/drawing/PressureManager'
+import { StrokeOptimizer } from '../../../services/drawing/StrokeOptimizer'
 import { useStore } from '../../../store/store'
 
 import { CanvasTool } from './useCanvasTools'
@@ -62,7 +63,9 @@ export function useDrawingSystem({
   const perfectFreehandRef = useRef<PerfectFreehandService | null>(null)
   const pressureManagerRef = useRef<PressureManager | null>(null)
   const lazyBrushRef = useRef<LazyBrush | null>(null)
+  const strokeOptimizerRef = useRef<StrokeOptimizer | null>(null)
   const strokePointsRef = useRef<{ x: number; y: number; pressure: number }[]>([])
+  const pendingPointsRef = useRef<number[]>([])
 
   /**
    * Initialize drawing services
@@ -78,26 +81,35 @@ export function useDrawingSystem({
     const lazyBrush = new LazyBrush({
       radius: Math.max(5, smoothing * 0.5), // Reduced from full smoothing value
       friction: 0.3, // Reduced friction for less lag
-      enabled: smoothing > 0
+      enabled: smoothing > 0,
+    })
+    const strokeOptimizer = new StrokeOptimizer({
+      simplificationTolerance: 2,
+      maxPointsPerStroke: 1000,
+      zoomLevel: scale,
     })
 
     perfectFreehandRef.current = perfectFreehand
     pressureManagerRef.current = pressureManager
     lazyBrushRef.current = lazyBrush
+    strokeOptimizerRef.current = strokeOptimizer
 
     pressureManager.initialize()
 
     return () => {
       // Clean up all services
       pressureManager.cleanup()
+      strokeOptimizer.clearPool()
 
       // Clear refs to allow garbage collection
       perfectFreehandRef.current = null
       pressureManagerRef.current = null
       lazyBrushRef.current = null
+      strokeOptimizerRef.current = null
       strokePointsRef.current = []
+      pendingPointsRef.current = []
     }
-  }, [brushPreset, brushSize, smoothing])
+  }, [brushPreset, brushSize, smoothing, scale])
 
   /**
    * Update drawing services when settings change
@@ -118,10 +130,19 @@ export function useDrawingSystem({
       lazyBrushRef.current.configure({
         radius: Math.max(5, smoothing * 0.5),
         friction: 0.3,
-        enabled: smoothing > 0
+        enabled: smoothing > 0,
       })
     }
   }, [smoothing])
+
+  /**
+   * Update stroke optimizer zoom level
+   */
+  useEffect(() => {
+    if (strokeOptimizerRef.current) {
+      strokeOptimizerRef.current.updateOptions({ zoomLevel: scale })
+    }
+  }, [scale])
 
   /**
    * Update cursor visibility based on tool

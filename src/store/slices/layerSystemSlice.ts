@@ -1355,7 +1355,7 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
       let maxX = 0
       let maxY = 0
 
-      layer.drawingProps.strokes.forEach(stroke => {
+      layer.drawingProps.strokes.forEach((stroke) => {
         // Check points
         for (let i = 0; i < stroke.points.length; i += 2) {
           maxX = Math.max(maxX, stroke.points[i])
@@ -1363,7 +1363,7 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
         }
         // Check outline if exists
         if (stroke.outline) {
-          stroke.outline.forEach(point => {
+          stroke.outline.forEach((point) => {
             if (point.length >= 2) {
               maxX = Math.max(maxX, point[0])
               maxY = Math.max(maxY, point[1])
@@ -1763,9 +1763,6 @@ export const createLayerSystemSlice: SliceCreator<LayerSystemSlice> = (set, get)
         emptyGroups.forEach((groupId) => {
           get().deleteLayerDirect(groupId)
         })
-
-        if (emptyGroups.length > 0) {
-        }
       }, 100)
 
       return true
