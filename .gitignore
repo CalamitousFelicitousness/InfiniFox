@@ -42,7 +42,3 @@ yarn-error.log*
 
 # Dev docs
 docs
-
-AGENTS.md
-CLAUDE.md
-.claude
