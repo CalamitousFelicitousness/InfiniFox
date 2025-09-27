@@ -1,17 +1,26 @@
 {
+  // Project-wide formatting behavior
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit",
+    "source.fixAll.eslint": "explicit"
   },
+
+  // ESLint configuration for this project
   "eslint.validate": [
     "javascript",
     "javascriptreact",
     "typescript",
-    "typescriptreact"
+    "typescriptreact",
+    "html", // Moved from user settings
+    "json", // Moved from user settings
+    "css" // Moved from user settings
   ],
   "eslint.useFlatConfig": true,
-  "typescript.tsdk": "node_modules/typescript/lib",
+
+  // CSS validation for this project
   "css.validate": false,
+
+  // Python configuration for this project
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter",
     "editor.formatOnSave": true,
@@ -19,12 +28,13 @@
       "source.organizeImports": "explicit"
     }
   },
-  "python.linting.enabled": true,
-  "python.linting.pylintEnabled": false,
-  "python.linting.flake8Enabled": false,
   "ruff.enable": true,
   "ruff.lint.enable": true,
   "ruff.format.enable": true,
+  "python.testing.pytestEnabled": true,
+  "python.analysis.typeCheckingMode": "off", // Moved from user settings
+
+  // JavaScript/TypeScript formatters for this project
   "[javascript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
@@ -42,5 +52,32 @@
   },
   "[css]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  // Markdown-specific configuration
+  "[markdown]": {
+    // Prettier handles formatting
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    // Markdownlint provides linting
+    "editor.codeActionsOnSave": {
+      "source.fixAll.markdownlint": "explicit"
+    }
+  },
+
+  // Markdownlint configuration
+  "markdownlint.config": {
+    // Disable rules that conflict with Prettier
+    "MD013": false, // Line length (Prettier handles this)
+    "MD030": false, // Spaces after list markers (Prettier handles this)
+    "MD032": false, // Blanks around lists (Prettier handles this)
+
+    // Keep rules that check for actual problems
+    "MD001": true, // Heading levels should only increment by one
+    "MD003": true, // Heading style should be consistent
+    "MD004": true, // Unordered list style should be consistent
+    "MD011": true, // Reversed link syntax
+    "MD042": true, // No empty links
+    "MD045": true // Images should have alt text
   }
 }
